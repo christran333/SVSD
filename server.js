@@ -1,0 +1,179 @@
+// SVSD toolkit — local dev server.
+// Zero dependencies (Node 20+). Serves /public, keeps the API key on the server,
+// and exposes two endpoints:
+//   POST /api/search  { q, from }  -> candidates found with Claude + web search, each with a preview
+//   GET  /api/preview?url=...      -> { image, favicon } for any saved link
+//   GET  /api/status               -> { live: boolean, model }
+
+const http = require("node:http");
+const fs = require("node:fs");
+const path = require("node:path");
+
+// ---------- tiny .env loader (no dotenv needed) ----------
+(function loadEnv() {
+  const p = path.join(__dirname, ".env");
+  if (!fs.existsSync(p)) return;
+  for (const line of fs.readFileSync(p, "utf8").split(/\r?\n/)) {
+    const m = /^\s*([A-Z0-9_]+)\s*=\s*(.*)\s*$/.exec(line);
+    if (!m || line.trim().startsWith("#")) continue;
+    if (process.env[m[1]] === undefined) process.env[m[1]] = m[2].replace(/^["']|["']$/g, "");
+  }
+})();
+
+const PORT = Number(process.env.PORT) || 3000;
+const API_KEY = process.env.ANTHROPIC_API_KEY || "";
+const MODEL = process.env.CLAUDE_MODEL || "claude-sonnet-5-5";
+const PUBLIC = path.join(__dirname, "public");
+
+// ---------- helpers ----------
+const send = (res, code, body, type = "application/json") => {
+  res.writeHead(code, { "content-type": type, "cache-control": "no-store" });
+  res.end(type === "application/json" ? JSON.stringify(body) : body);
+};
+const readBody = (req) => new Promise((ok, bad) => {
+  let d = ""; req.on("data", (c) => { d += c; if (d.length > 1e5) req.destroy(); });
+  req.on("end", () => { try { ok(d ? JSON.parse(d) : {}); } catch (e) { bad(e); } });
+});
+const hostOf = (u) => { try { return new URL(u).hostname.replace(/^www\./, ""); } catch { return ""; } };
+
+async function fetchWithTimeout(url, ms, opts = {}) {
+  const ctl = new AbortController();
+  const t = setTimeout(() => ctl.abort(), ms);
+  try { return await fetch(url, { ...opts, signal: ctl.signal, redirect: "follow" }); }
+  finally { clearTimeout(t); }
+}
+
+// ---------- previews ----------
+function youTubeId(u) {
+  try {
+    const url = new URL(u);
+    if (url.hostname === "youtu.be") return url.pathname.slice(1, 12) || null;
+    if (/(^|\.)youtube\.com$/.test(url.hostname)) {
+      if (url.searchParams.get("v")) return url.searchParams.get("v");
+      const m = /^\/(shorts|embed|live)\/([\w-]{11})/.exec(url.pathname);
+      if (m) return m[2];
+    }
+  } catch {}
+  return null;
+}
+
+const previewCache = new Map();
+async function previewFor(rawUrl) {
+  if (!/^https?:\/\//.test(rawUrl || "")) return { image: "", favicon: "" };
+  if (previewCache.has(rawUrl)) return previewCache.get(rawUrl);
+  const host = hostOf(rawUrl);
+  const out = { image: "", favicon: host ? `https://www.google.com/s2/favicons?domain=${encodeURIComponent(host)}&sz=128` : "" };
+
+  const vid = youTubeId(rawUrl);
+  if (vid) {
+    // maxres isn't generated for every video; the client falls back to hq on error.
+    out.image = `https://i.ytimg.com/vi/${vid}/maxresdefault.jpg`;
+    out.fallback = `https://i.ytimg.com/vi/${vid}/hqdefault.jpg`;
+  } else {
+    try {
+      const r = await fetchWithTimeout(rawUrl, 5000, { headers: { "user-agent": "Mozilla/5.0 (Macintosh) SVSD-preview/0.1", accept: "text/html" } });
+      if (r.ok && /html/.test(r.headers.get("content-type") || "")) {
+        const html = (await r.text()).slice(0, 400_000);
+        const meta = (prop) => {
+          const re1 = new RegExp(`<meta[^>]+(?:property|name)=["']${prop}["'][^>]*content=["']([^"']+)["']`, "i");
+          const re2 = new RegExp(`<meta[^>]+content=["']([^"']+)["'][^>]*(?:property|name)=["']${prop}["']`, "i");
+          return (re1.exec(html) || re2.exec(html) || [])[1] || "";
+        };
+        const img = meta("og:image") || meta("og:image:url") || meta("twitter:image") || meta("twitter:image:src");
+        if (img) out.image = new URL(img.replace(/&amp;/g, "&"), r.url).href;
+      }
+    } catch {}
+  }
+  previewCache.set(rawUrl, out);
+  return out;
+}
+
+// ---------- search with Claude + web search ----------
+async function search(q, from) {
+  const prompt = `A designer jotted down a note about something a friend recommended. Use web search to find what they most likely mean, then return up to 3 candidate links, best match first.
+
+Note: """${String(q).slice(0, 500)}"""
+${from ? `Who told them: """${String(from).slice(0, 200)}"""` : ""}
+
+Rules:
+- Every URL must come from your search results. Prefer the official homepage, GitHub repo, or the canonical page.
+- If the note could mean several different things, return the different interpretations.
+- "kind" is one of: tool, site, video, article.
+- "blurb" is one plain sentence (max 18 words) on what it is or does.
+- "brand" is the product's main brand color as #RRGGBB if obvious, else "".
+
+Finish with only a JSON array, no other text, like:
+[{"title":"Agentation","url":"https://github.com/benjitaylor/agentation","kind":"tool","blurb":"Comment on UI elements and send the batch to your coding agent.","brand":"#0E1116"}]`;
+
+  const r = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "x-api-key": API_KEY, "anthropic-version": "2023-06-01", "content-type": "application/json" },
+    body: JSON.stringify({
+      model: MODEL,
+      max_tokens: 1500,
+      tools: [{ type: "web_search_20250305", name: "web_search", max_uses: 3 }],
+      messages: [{ role: "user", content: prompt }],
+    }),
+  });
+  const data = await r.json();
+  if (!r.ok) {
+    const err = new Error(data?.error?.message || `Claude API error ${r.status}`);
+    err.status = r.status; throw err;
+  }
+
+  // URLs Claude actually saw in search results, used to mark candidates as verified.
+  const seen = new Set();
+  for (const b of data.content || []) {
+    if (b.type === "web_search_tool_result" && Array.isArray(b.content)) b.content.forEach((x) => x.url && seen.add(x.url));
+  }
+  const texts = (data.content || []).filter((b) => b.type === "text").map((b) => b.text);
+  const last = texts[texts.length - 1] || "";
+  const jsonText = (/\[[\s\S]*\]/.exec(last) || [])[0];
+  let list = [];
+  try { list = JSON.parse(jsonText); } catch { throw new Error("Claude's answer wasn't in the expected format. Try again."); }
+
+  const cands = (Array.isArray(list) ? list : [])
+    .filter((x) => x && typeof x.url === "string" && /^https?:\/\//.test(x.url) && typeof x.title === "string")
+    .slice(0, 3)
+    .map((x) => ({
+      title: x.title.slice(0, 80),
+      url: x.url,
+      kind: ["tool", "site", "video", "article"].includes(x.kind) ? x.kind : "site",
+      blurb: String(x.blurb || "").slice(0, 160),
+      brand: /^#[0-9a-f]{6}$/i.test(x.brand || "") ? x.brand : "",
+      verified: [...seen].some((s) => s === x.url || hostOf(s) === hostOf(x.url)),
+    }));
+
+  await Promise.all(cands.map(async (c) => Object.assign(c, await previewFor(c.url))));
+  return cands;
+}
+
+// ---------- server ----------
+const TYPES = { ".html": "text/html; charset=utf-8", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".png": "image/png", ".json": "application/json" };
+
+http.createServer(async (req, res) => {
+  const url = new URL(req.url, `http://${req.headers.host}`);
+  try {
+    if (url.pathname === "/api/status") return send(res, 200, { live: Boolean(API_KEY), model: MODEL });
+
+    if (url.pathname === "/api/preview") return send(res, 200, await previewFor(url.searchParams.get("url")));
+
+    if (url.pathname === "/api/search" && req.method === "POST") {
+      if (!API_KEY) return send(res, 400, { error: "No API key yet. Add ANTHROPIC_API_KEY to .env and restart the server." });
+      const { q, from } = await readBody(req);
+      if (!q || !String(q).trim()) return send(res, 400, { error: "Type what you heard about first." });
+      return send(res, 200, { candidates: await search(q, from) });
+    }
+
+    // static files
+    let file = path.normalize(path.join(PUBLIC, url.pathname === "/" ? "index.html" : url.pathname));
+    if (!file.startsWith(PUBLIC) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) file = path.join(PUBLIC, "index.html");
+    return send(res, 200, fs.readFileSync(file), TYPES[path.extname(file)] || "application/octet-stream");
+  } catch (e) {
+    console.error(e);
+    return send(res, e.status === 401 ? 401 : 500, { error: e.status === 401 ? "The API key was rejected. Check ANTHROPIC_API_KEY in .env." : e.message || "Something went wrong." });
+  }
+}).listen(PORT, () => {
+  console.log(`\n  SVSD toolkit running at http://localhost:${PORT}`);
+  console.log(API_KEY ? `  Live search on (${MODEL})\n` : "  No API key found: test mode only. Add ANTHROPIC_API_KEY to .env\n");
+});

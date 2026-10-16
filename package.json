@@ -1,0 +1,12 @@
+{
+  "name": "svsd-toolkit",
+  "version": "0.1.0",
+  "private": true,
+  "description": "SVSD contest prototype: save tools, links and videos you hear about, find the right link with Claude.",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

@@ -1,0 +1,710 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SVSD Toolkit (local)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Geist:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+body { margin: 0; } [hidden] { display: none !important; } img { max-width: 100%; }
+/* Layout: desktop stage — phone frame centered, decision panel pinned right; stacks under 900px */
+:root {
+  --stage: #E7E9EC;
+  --panel: #FFFFFF;
+  --panel-line: #D5D8DD;
+  --app-bg: #F4F5F7;
+  --card: #FFFFFF;
+  --line: #E1E3E8;
+  --ink: #17191E;
+  --muted: #646a75;
+  --accent: #2B47F0;
+  --accent-ink: #FFFFFF;
+  --sticky: #FFE680;
+  --sticky-ink: #2A2307;
+  --sticky-line: #E8CC55;
+  --ok: #1F8A4C;
+  --bezel: #121317;
+  --frame: #767676;
+  --dot: #C9CCD2;
+  --font-display: "Bricolage Grotesque", "Avenir Next", system-ui, sans-serif;
+  --font-body: "Geist", "Helvetica Neue", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --stage: #0E0F12; --panel: #17191E; --panel-line: #2A2D34;
+    --app-bg: #111216; --card: #1B1D23; --line: #2A2D35;
+    --ink: #EDEEF1; --muted: #9AA0AC; --accent: #6F84FF; --accent-ink: #0B0C10;
+    --sticky: #E9CF5C; --sticky-ink: #221C04; --sticky-line: #CBB043; --ok: #4CC07C; --bezel: #000000; --frame: #5A5D65; --dot: #2C2F37;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --stage: #0E0F12; --panel: #17191E; --panel-line: #2A2D34;
+  --app-bg: #111216; --card: #1B1D23; --line: #2A2D35;
+  --ink: #EDEEF1; --muted: #9AA0AC; --accent: #6F84FF; --accent-ink: #0B0C10;
+  --sticky: #E9CF5C; --sticky-ink: #221C04; --sticky-line: #CBB043; --ok: #4CC07C; --bezel: #000000; --frame: #5A5D65; --dot: #2C2F37;
+  color-scheme: dark;
+}
+html, body { min-height: 100%; }
+body { background: var(--stage); color: var(--ink); font-family: var(--font-body); font-size: 14px; }
+* { box-sizing: border-box; }
+button, input, textarea, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.page {
+  display: grid; grid-template-columns: 1fr 300px; gap: 32px; align-items: start;
+  max-width: 1100px; margin: 0 auto;
+  padding-block: 32px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+@media (max-width: 900px) { .page { grid-template-columns: 1fr; } }
+.stage { display: flex; justify-content: center; min-width: 0; }
+
+/* ---------- phone ---------- */
+.phone {
+  width: 390px; max-width: 100%; height: 820px; border-radius: 54px; padding: 12px;
+  background: var(--bezel); box-shadow: 0 30px 60px -20px rgba(0,0,0,.35);
+}
+.screen {
+  position: relative; height: 100%; border-radius: 42px; overflow: hidden;
+  background: var(--app-bg); display: flex; flex-direction: column;
+}
+.status { display: flex; justify-content: space-between; align-items: center; padding: 14px 28px 4px; font-size: 13px; font-weight: 600; }
+.island { width: 110px; height: 30px; border-radius: 20px; background: var(--bezel); }
+
+.app-head { padding: 10px 20px 8px; display: flex; flex-direction: column; gap: 12px; }
+.app-head h1 { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: 30px; letter-spacing: -0.02em; line-height: 1.05; }
+.app-head .sub { color: var(--muted); font-size: 13px; }
+.chips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
+.chips::-webkit-scrollbar { display: none; }
+.chip {
+  flex: none; border: 1px solid var(--line); background: var(--card); border-radius: 999px;
+  padding: 6px 12px; font-size: 13px; white-space: nowrap;
+}
+.chip[aria-pressed="true"] { background: var(--ink); color: var(--app-bg); border-color: var(--ink); }
+.chip .n { font-family: var(--font-mono); font-size: 11px; opacity: .6; margin-left: 4px; }
+
+.list {
+  flex: 1; overflow-y: auto; padding: 12px 18px 130px; display: flex; flex-direction: column; gap: 26px;
+  background-color: var(--app-bg);
+  background-image: radial-gradient(var(--dot) 1px, transparent 1.2px);
+  background-size: 16px 16px;
+}
+.item-body { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+
+/* ---------- preview card (reference: framed preview + tucked URL footer) ---------- */
+.pcard { position: relative; display: flex; flex-direction: column; }
+.pcard.fresh { animation: drop .55s cubic-bezier(.2,.9,.3,1.15); }
+@keyframes drop { from { transform: translateY(-14px) scale(.96); opacity: .2; } to { transform: none; opacity: 1; } }
+.fwrap { position: relative; z-index: 1; }
+.frame {
+  position: relative; display: block; aspect-ratio: 16 / 10; border: 4px solid var(--frame);
+  border-radius: 12px; overflow: hidden; background: var(--card); text-decoration: none; color: inherit;
+}
+.frame.is-video { aspect-ratio: 16 / 9; }
+.foot {
+  margin: -4px 4px 0; padding: 16px 16px 12px; background: var(--card); border: 1px solid var(--line);
+  border-top: 0; border-radius: 0 0 14px 14px; box-shadow: 0 6px 14px -8px rgba(0,0,0,.25);
+  display: flex; align-items: center; gap: 10px; min-width: 0;
+}
+.fav { flex: none; width: 20px; height: 20px; display: grid; place-items: center; }
+.fav svg { width: 20px; height: 20px; display: block; }
+.fav .letter {
+  width: 18px; height: 18px; border-radius: 5px; display: grid; place-items: center;
+  font: 700 11px/1 var(--font-display); color: var(--fav-ink, #fff); background: var(--fav-bg, var(--ink));
+}
+.url {
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted);
+  font-size: 15px; text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--line);
+}
+.under { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 8px 6px 0; font-size: 11.5px; color: var(--muted); }
+.under b { color: var(--ink); font-weight: 600; font-size: 13px; margin-right: 2px; }
+
+.pin {
+  position: absolute; z-index: 2; top: -10px; right: -6px; max-width: 58%;
+  background: var(--sticky); color: var(--sticky-ink); padding: 8px 10px 10px; font-size: 12px; line-height: 1.3;
+  border-radius: 2px 2px 10px 2px; transform: rotate(2.5deg); box-shadow: 0 6px 12px -6px rgba(0,0,0,.35);
+}
+.pin small { display: block; font-family: var(--font-mono); font-size: 9.5px; letter-spacing: .06em; text-transform: uppercase; opacity: .65; margin-bottom: 3px; }
+.cover-btn {
+  position: absolute; z-index: 2; right: 12px; bottom: 12px; border: 0; border-radius: 999px; padding: 5px 9px;
+  font-size: 11px; font-weight: 600; background: rgba(0,0,0,.55); color: #fff; backdrop-filter: blur(6px);
+}
+
+/* preview fills */
+.pv { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: flex-end; padding: 14px 16px; }
+.pv-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.pv-brand { background: var(--b); color: var(--bi); }
+.pv-brand::before {
+  content: ""; position: absolute; inset: 0; opacity: .14;
+  background-image: radial-gradient(currentColor 1px, transparent 1.3px); background-size: 12px 12px;
+  mask-image: linear-gradient(160deg, #000 0%, transparent 60%);
+}
+.pv-word { position: relative; font-family: var(--font-display); font-weight: 700; letter-spacing: -0.03em; line-height: .95; font-size: var(--ws, 44px); overflow-wrap: anywhere; }
+.pv-sub { position: relative; margin-top: 8px; font-size: 12.5px; line-height: 1.35; opacity: .8; max-width: 85%; }
+.pv-kind { position: absolute; top: 12px; left: 14px; font: 500 10px/1 var(--font-mono); text-transform: uppercase; letter-spacing: .1em; opacity: .7; }
+.pv-video { background: radial-gradient(120% 90% at 30% 20%, #3a3d46 0%, #121317 70%); color: #fff; }
+.pv-video .play {
+  position: absolute; left: 50%; top: 45%; transform: translate(-50%, -50%); width: 62px; height: 44px; border-radius: 12px;
+  background: #FF0033; display: grid; place-items: center; box-shadow: 0 8px 20px -6px rgba(255,0,51,.6);
+}
+.pv-video .play::after { content: ""; border-left: 16px solid #fff; border-top: 10px solid transparent; border-bottom: 10px solid transparent; margin-left: 4px; }
+.pv-video .pv-word { font-size: 20px; letter-spacing: -0.01em; }
+.pv-note { background: var(--sticky); color: var(--sticky-ink); justify-content: flex-start; }
+.pv-note .pv-word { font-size: 22px; font-weight: 500; letter-spacing: -0.01em; line-height: 1.2; }
+
+/* smaller preview inside the picker */
+.cand-pv { position: relative; width: 84px; aspect-ratio: 16/10; border: 2px solid var(--frame); border-radius: 8px; overflow: hidden; flex: none; }
+.cand-pv .pv { padding: 6px 7px; }
+.cand-pv .pv-word { font-size: 13px !important; }
+.cand-pv .pv-sub, .cand-pv .pv-kind, .cand-pv .pv-brand::before { display: none; }
+.cand-pv .play { width: 26px; height: 18px; border-radius: 5px; top: 50%; }
+.cand-pv .play::after { border-left-width: 7px; border-top-width: 4px; border-bottom-width: 4px; margin-left: 2px; }
+.cand-pv .pv-video .pv-word { display: none; }
+.item-top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.item-title { font-weight: 600; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kind { flex: none; font-family: var(--font-mono); font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.domain { font-family: var(--font-mono); font-size: 11px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.blurb { color: var(--ink); font-size: 13px; line-height: 1.4; }
+.heard {
+  margin-top: 4px; background: var(--sticky); color: var(--sticky-ink); border-radius: 8px;
+  padding: 6px 9px; font-size: 12.5px; line-height: 1.35;
+}
+.meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 4px; font-size: 11.5px; color: var(--muted); }
+.pill { border: 1px dashed var(--muted); border-radius: 999px; padding: 1px 7px; }
+.example-tag { font-family: var(--font-mono); font-size: 10px; color: var(--muted); }
+.empty { text-align: center; color: var(--muted); padding: 40px 20px; line-height: 1.5; }
+
+/* capture bar */
+.capture-bar {
+  position: absolute; left: 14px; right: 14px; bottom: 18px;
+  display: flex; align-items: center; gap: 10px; padding: 14px 16px;
+  background: var(--sticky); color: var(--sticky-ink); border: 1px solid var(--sticky-line);
+  border-radius: 18px; box-shadow: 0 10px 24px -10px rgba(0,0,0,.35); text-align: left; width: auto;
+}
+.capture-bar .plus { width: 28px; height: 28px; border-radius: 50%; background: var(--sticky-ink); color: var(--sticky); display: grid; place-items: center; font-size: 18px; flex: none; }
+.capture-bar .t { font-weight: 600; }
+.capture-bar .s { font-size: 12px; opacity: .7; }
+
+/* sheet */
+.scrim { position: absolute; inset: 0; background: rgba(10,10,14,.35); opacity: 0; transition: opacity .2s; }
+.scrim.on { opacity: 1; }
+.sheet {
+  position: absolute; left: 0; right: 0; bottom: 0; max-height: 88%;
+  background: var(--card); border-radius: 26px 26px 0 0; padding: 10px 18px 24px;
+  display: flex; flex-direction: column; gap: 14px; transform: translateY(100%);
+  transition: transform .32s cubic-bezier(.2,.8,.2,1); overflow-y: auto;
+}
+.sheet.on { transform: none; }
+.grab { width: 40px; height: 5px; border-radius: 3px; background: var(--line); align-self: center; }
+.sheet h2 { margin: 0; font-family: var(--font-display); font-size: 22px; letter-spacing: -0.01em; }
+.sticky-note {
+  background: var(--sticky); color: var(--sticky-ink); border-radius: 4px 4px 14px 4px; padding: 14px;
+  box-shadow: 0 2px 0 var(--sticky-line); display: flex; flex-direction: column; gap: 10px; transform: rotate(-.6deg);
+}
+.sticky-note label { font-size: 11px; font-family: var(--font-mono); text-transform: uppercase; letter-spacing: .08em; opacity: .7; }
+.sticky-note textarea, .sticky-note input {
+  width: 100%; background: transparent; border: 0; border-bottom: 1px solid var(--sticky-line); padding: 4px 0 6px; resize: none;
+  color: var(--sticky-ink); outline: none;
+}
+.sticky-note textarea { font-size: 18px; font-weight: 500; line-height: 1.3; }
+.sticky-note ::placeholder { color: var(--sticky-ink); opacity: .45; }
+.row { display: flex; gap: 8px; }
+.btn { border: 0; border-radius: 12px; padding: 12px 16px; font-weight: 600; }
+.btn.primary { background: var(--ink); color: var(--app-bg); flex: 1; }
+.btn.primary:disabled { opacity: .35; cursor: default; }
+.btn.ghost { background: transparent; border: 1px solid var(--line); }
+.hint { font-size: 12px; color: var(--muted); line-height: 1.4; }
+
+.cands { display: flex; flex-direction: column; gap: 8px; }
+.cand {
+  display: grid; grid-template-columns: 22px 84px 1fr; gap: 10px; align-items: start; text-align: left; width: 100%;
+  border: 1px solid var(--line); background: var(--card); border-radius: 14px; padding: 12px;
+}
+.cand[aria-checked="true"] { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
+.radio { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--line); margin-top: 2px; }
+.cand[aria-checked="true"] .radio { border: 6px solid var(--accent); }
+.cand .item-title { white-space: normal; }
+.shimmer { height: 64px; border-radius: 14px; background: linear-gradient(90deg, var(--app-bg) 0%, var(--line) 50%, var(--app-bg) 100%); background-size: 200% 100%; animation: sh 1.1s linear infinite; }
+@keyframes sh { to { background-position: -200% 0; } }
+.section-label { font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+.chip.new { border-style: dashed; }
+.new-col { display: flex; gap: 6px; }
+.new-col input { flex: 1; border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; background: var(--app-bg); }
+
+.toast {
+  position: absolute; left: 50%; top: 58px; transform: translate(-50%, -20px); opacity: 0;
+  background: var(--ink); color: var(--app-bg); padding: 10px 14px; border-radius: 12px; font-size: 13px; font-weight: 500;
+  transition: all .25s; pointer-events: none; white-space: nowrap;
+}
+.toast.on { opacity: 1; transform: translate(-50%, 0); }
+
+/* ---------- side panel ---------- */
+.panel {
+  background: var(--panel); border: 1px solid var(--panel-line); border-radius: 16px; padding: 18px;
+  display: flex; flex-direction: column; gap: 18px; position: sticky; top: 24px; min-width: 0;
+}
+.panel h3 { margin: 0; font-family: var(--font-display); font-size: 18px; }
+.panel .lede { color: var(--muted); font-size: 12.5px; line-height: 1.45; margin: 4px 0 0; }
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field > span { font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+.seg { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid var(--panel-line); border-radius: 10px; overflow: hidden; }
+.seg button { border: 0; background: transparent; padding: 8px; font-weight: 500; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--panel); }
+.panel select { border: 1px solid var(--panel-line); border-radius: 10px; padding: 8px; background: var(--panel); }
+.panel .small { font-size: 12px; color: var(--muted); line-height: 1.45; }
+.status-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--muted); margin-right: 6px; vertical-align: middle; }
+.status-dot.ok { background: var(--ok); }
+.linkbtn { background: none; border: 0; padding: 0; color: var(--accent); text-align: left; font-size: 12.5px; }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+
+<div class="page">
+  <div class="stage">
+    <div class="phone">
+      <div class="screen" id="screen">
+        <div class="status"><span>9:41</span><span class="island"></span><span>5G</span></div>
+        <header class="app-head">
+          <div>
+            <h1 id="appTitle">Everything you've heard about</h1>
+            <div class="sub" id="countLine"></div>
+          </div>
+          <div class="chips" id="filters" role="group" aria-label="Filter"></div>
+        </header>
+        <main class="list" id="list"></main>
+
+        <button class="capture-bar" id="openCapture">
+          <span class="plus" aria-hidden="true">+</span>
+          <span><span class="t">Heard about something?</span><br><span class="s">Jot it down. We'll find the link.</span></span>
+        </button>
+
+        <div class="scrim" id="scrim" hidden></div>
+        <section class="sheet" id="sheet" aria-label="Capture" hidden>
+          <div class="grab"></div>
+          <div id="sheetBody"></div>
+        </section>
+        <div class="toast" id="toast" role="status"></div>
+      </div>
+    </div>
+  </div>
+
+  <aside class="panel" aria-label="Prototype controls">
+    <div>
+      <h3>Prototype controls</h3>
+      <p class="lede">Outside the phone. These change how the prototype behaves so you can compare options without rebuilding.</p>
+    </div>
+    <div class="field">
+      <span>Search mode</span>
+      <div class="seg" role="group" aria-label="Search mode">
+        <button id="modeTest" aria-pressed="true">Test</button>
+        <button id="modeLive" aria-pressed="false">Live (API)</button>
+      </div>
+      <div class="small" id="modeNote"></div>
+    </div>
+    <div class="field">
+      <label for="termSel"><span class="section-label">Name for a group</span></label>
+      <select id="termSel">
+        <option value="Stash">Stash</option>
+        <option value="Shelf">Shelf</option>
+        <option value="Kit">Kit</option>
+        <option value="Drawer">Drawer</option>
+        <option value="Pocket">Pocket</option>
+      </select>
+      <div class="small">Placeholder copy while the team picks a name that isn't "board" or "channel".</div>
+    </div>
+    <div class="field">
+      <span>Data</span>
+      <div class="small">Saves live in this browser only for now. Example items are marked.</div>
+      <button class="linkbtn" id="resetBtn">Reset to example items</button>
+      <button class="linkbtn" id="clearBtn">Clear everything</button>
+    </div>
+  </aside>
+</div>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const KEY = "svsd-toolkit-local-v1";
+  const today = () => new Date().toISOString().slice(0, 10);
+
+  const EXAMPLES = [
+    { id: "e1", title: "Agentation", url: "https://github.com/benjitaylor/agentation", kind: "tool", brand: "#0E1116",
+      blurb: "Drop comments right on a prototype's UI and send them to your agent in one batch.",
+      note: "use it to leave a bunch of edits on the vibe-coded UI at once", from: "Naheel", collection: "Design tools", savedAt: "2026-10-16", example: true },
+    { id: "e2", title: "Are.na", url: "https://www.are.na", kind: "site", brand: "#F4F1EC",
+      blurb: "Visual research tool for collecting and connecting references into channels.",
+      note: "", from: "", collection: "Inspo", savedAt: "2026-09-02", example: true },
+    { id: "e3", title: "Veo", url: "https://deepmind.google/models/veo/", kind: "tool", brand: "#1A73E8",
+      blurb: "Google DeepMind's video generation model.",
+      note: "he hooked it up to an API for the demo, like $5 total", from: "Naheel", collection: "Motion", savedAt: "2026-10-16", example: true },
+    { id: "e4", title: "Framer", url: "https://www.framer.com", kind: "tool", brand: "#0055FF",
+      blurb: "Website builder with a big library of interactive components.",
+      note: "gravity + particle sphere components", from: "", collection: "Design tools", savedAt: "2026-08-21", example: true },
+    { id: "e5", title: "Casey Neistat", url: "https://www.youtube.com/@CaseyNeistat", kind: "video",
+      blurb: "Vlogs; he built Beam, the post-without-preview camera app.",
+      note: "watch how he cuts the b-roll intros", from: "Miguel", collection: "Inspo", savedAt: "2026-10-14", example: true },
+  ];
+  const EXAMPLE_ORDER = ["e1","e5","e2","e3","e4"];
+  const DEFAULT_COLS = ["Design tools", "Motion", "Inspo"];
+
+  let state = load();
+  let filter = "All";
+  let mode = "test";
+  let term = "Stash";
+
+  function load() {
+    try {
+      const raw = localStorage.getItem(KEY);
+      if (raw) { const s = JSON.parse(raw); if (s && Array.isArray(s.items)) return s; }
+    } catch (e) {}
+    return { items: EXAMPLE_ORDER.map((id) => EXAMPLES.find((x) => x.id === id)), cols: DEFAULT_COLS.slice() };
+  }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
+
+  const domainOf = (u) => { try { return new URL(u).hostname.replace(/^www\./, ""); } catch (e) { return ""; } };
+  const fmtDate = (d) => { try { return new Date(d + "T12:00:00").toLocaleDateString(undefined, { month: "short", day: "numeric" }); } catch (e) { return d; } };
+  const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+  // ---------- home ----------
+  function renderFilters() {
+    const counts = {};
+    state.items.forEach((i) => counts[i.collection] = (counts[i.collection] || 0) + 1);
+    const names = ["All", ...state.cols];
+    $("filters").innerHTML = names.map((n) =>
+      `<button class="chip" aria-pressed="${n === filter}" data-f="${esc(n)}">${esc(n)}<span class="n">${n === "All" ? state.items.length : (counts[n] || 0)}</span></button>`
+    ).join("");
+  }
+  // ---------- previews ----------
+  // Curated cover colors for tools with no known brand color, picked by a hash of the name so a tool keeps its color.
+  const COVERS = ["#2B47F0", "#0E1116", "#E8462B", "#0F6B4A", "#F2C230", "#6B3FD4", "#F4F1EC", "#C2185B"];
+  const hash = (s) => { let h = 0; for (const c of String(s)) h = (h * 31 + c.charCodeAt(0)) | 0; return Math.abs(h); };
+  function inkOn(hex) {
+    const m = /^#?([0-9a-f]{6})$/i.exec(hex || ""); if (!m) return "#fff";
+    const n = parseInt(m[1], 16), r = n >> 16, g = (n >> 8) & 255, b = n & 255;
+    return (0.299 * r + 0.587 * g + 0.114 * b) > 160 ? "#111318" : "#FFFFFF";
+  }
+  const isYouTube = (u) => /(^|\.)youtube\.com$|(^|\.)youtu\.be$/.test(domainOf(u));
+  function wordSize(t) { const n = (t || "").length; return n <= 6 ? "52px" : n <= 10 ? "42px" : n <= 16 ? "32px" : "24px"; }
+
+  function previewHTML(i) {
+    if (i.thumb) return `<img class="pv-img" src="${esc(i.thumb)}" alt="">`;
+    if (i.image) return generatedHTML(i) + `<img class="pv-img" src="${esc(i.image)}" alt="" loading="lazy" referrerpolicy="no-referrer" data-fallback="${esc(i.fallback || "")}" onerror="pvFail(this)">`;
+    return generatedHTML(i);
+  }
+  function generatedHTML(i) {
+    if (i.kind === "note" || !i.url) return `<div class="pv pv-note"><span class="pv-kind">Note</span><span class="pv-word" style="margin-top:22px">${esc(i.title)}</span></div>`;
+    if (i.kind === "video" || isYouTube(i.url)) return `<div class="pv pv-video"><span class="play" aria-hidden="true"></span><span class="pv-word">${esc(i.title)}</span></div>`;
+    const b = /^#[0-9a-f]{6}$/i.test(i.brand || "") ? i.brand : COVERS[hash(i.title) % COVERS.length];
+    return `<div class="pv pv-brand" style="--b:${b};--bi:${inkOn(b)}"><span class="pv-kind">${esc(i.kind)}</span>
+      <span class="pv-word" style="--ws:${wordSize(i.title)}">${esc(i.title)}</span>${i.blurb ? `<span class="pv-sub">${esc(i.blurb)}</span>` : ""}</div>`;
+  }
+  const YT_ICON = `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="1" y="4.5" width="22" height="15" rx="4.5" fill="#FF0033"/><path d="M10 8.8v6.4l5.6-3.2z" fill="#fff"/></svg>`;
+  const GH_ICON = `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="currentColor"/><path d="M8.5 17.5c0-1.2.3-2 .9-2.5-2.3-.3-3.6-1.3-3.6-3.6 0-.9.3-1.6.9-2.2-.1-.5-.2-1.3.1-2.2 0 0 .8-.2 2.4.9a8.6 8.6 0 0 1 4.4 0c1.6-1.1 2.4-.9 2.4-.9.3.9.2 1.7.1 2.2.6.6.9 1.3.9 2.2 0 2.3-1.3 3.3-3.6 3.6.6.5.9 1.4.9 2.5" fill="none" stroke="var(--card)" stroke-width="1.4" stroke-linecap="round"/></svg>`;
+  function favHTML(i) {
+    const d = domainOf(i.url);
+    if (isYouTube(i.url)) return YT_ICON;
+    if (i.favicon) return `<img src="${esc(i.favicon)}" alt="" width="20" height="20" style="border-radius:4px" referrerpolicy="no-referrer">`;
+    if (d === "github.com") return GH_ICON;
+    const b = /^#[0-9a-f]{6}$/i.test(i.brand || "") ? i.brand : COVERS[hash(i.title) % COVERS.length];
+    return `<span class="letter" style="--fav-bg:${b};--fav-ink:${inkOn(b)}">${esc((d || i.title || "?")[0].toUpperCase())}</span>`;
+  }
+
+  function itemHTML(i, fresh) {
+    const isVid = i.url && (i.kind === "video" || isYouTube(i.url)) && !i.thumb && (!i.image || /ytimg/.test(i.image));
+    const open = i.url ? `href="${esc(i.url)}" target="_blank" rel="noopener"` : "";
+    const frameTag = i.url ? "a" : "div";
+    return `<article class="pcard${fresh ? " fresh" : ""}" data-id="${esc(i.id)}">
+      ${i.note ? `<div class="pin"><small>${i.from ? "From " + esc(i.from) : "Your note"}</small>${esc(i.note)}</div>` : ""}
+      <div class="fwrap"><${frameTag} class="frame${isVid ? " is-video" : ""}" ${open} aria-label="${esc(i.title)}">${previewHTML(i)}</${frameTag}>
+      <button class="cover-btn" data-cover="${esc(i.id)}">${i.thumb ? "Change cover" : "Add cover"}</button></div>
+      ${i.url
+        ? `<div class="foot"><span class="fav">${favHTML(i)}</span><a class="url" ${open}>${esc(i.url)}</a></div>`
+        : `<div class="foot"><span class="fav"><span class="letter" style="--fav-bg:var(--sticky);--fav-ink:var(--sticky-ink)">✎</span></span><span class="url" style="text-decoration:none">No link yet</span></div>`}
+      <div class="under"><b>${esc(i.title)}</b> ${i.from && !i.note ? `· Heard from ${esc(i.from)} ` : ""}· ${fmtDate(i.savedAt)} · ${esc(i.collection)} · Not tried yet${i.example ? ` <span class="example-tag">example</span>` : ""}</div>
+    </article>`;
+  }
+
+  // Attach a real cover: the viewer picks a screenshot or thumbnail; we downscale it so it fits in browser storage.
+  const coverInput = Object.assign(document.createElement("input"), { type: "file", accept: "image/*", id: "coverInput", hidden: true });
+  document.body.appendChild(coverInput);
+  let coverFor = null;
+  document.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-cover]"); if (!b) return;
+    coverFor = b.dataset.cover; coverInput.value = ""; coverInput.click();
+  });
+  coverInput.addEventListener("change", async () => {
+    const f = coverInput.files?.[0]; if (!f || !coverFor) return;
+    try {
+      const url = await downscale(f, 960);
+      const it = state.items.find((x) => x.id === coverFor); if (!it) return;
+      it.thumb = url; save(); renderHome(); toast("Cover added");
+    } catch (err) { toast("Couldn't read that image"); }
+  });
+  function downscale(file, maxW) {
+    return new Promise((res, rej) => {
+      const img = new Image(); const u = URL.createObjectURL(file);
+      img.onload = () => {
+        const s = Math.min(1, maxW / img.naturalWidth);
+        const c = document.createElement("canvas"); c.width = Math.round(img.naturalWidth * s); c.height = Math.round(img.naturalHeight * s);
+        c.getContext("2d").drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(u);
+        res(c.toDataURL("image/jpeg", 0.85));
+      };
+      img.onerror = rej; img.src = u;
+    });
+  }
+  let freshId = null;
+  function renderList() {
+    const items = state.items.filter((i) => filter === "All" || i.collection === filter);
+    $("countLine").textContent = `${state.items.length} saved · ${state.cols.length} ${state.cols.length === 1 ? term.toLowerCase() : pluralWord(term)}`;
+    $("list").innerHTML = items.length
+      ? items.map((i) => itemHTML(i, i.id === freshId)).join("")
+      : `<div class="empty">Nothing in ${esc(filter)} yet.<br>Next time someone mentions a tool, tap the yellow note.</div>`;
+    freshId = null;
+  }
+  const plural = (t) => (t.endsWith("sh") ? "es" : t === "Shelf" ? "" : "s");
+  const pluralWord = (t) => t === "Shelf" ? "shelves" : t.toLowerCase() + plural(t);
+  function renderHome() { renderFilters(); renderList(); }
+  $("filters").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-f]"); if (!b) return;
+    filter = b.dataset.f; renderHome();
+  });
+
+  // ---------- capture sheet ----------
+  let draft = null;
+  let ctl = null;
+  function openSheet() {
+    draft = { text: "", from: "", cands: [], pick: null, collection: filter !== "All" ? filter : state.cols[0] };
+    $("scrim").hidden = false; $("sheet").hidden = false;
+    requestAnimationFrame(() => { $("scrim").classList.add("on"); $("sheet").classList.add("on"); });
+    stepCompose();
+  }
+  function closeSheet() {
+    ctl?.abort();
+    $("scrim").classList.remove("on"); $("sheet").classList.remove("on");
+    setTimeout(() => { $("scrim").hidden = true; $("sheet").hidden = true; }, 320);
+  }
+  $("openCapture").addEventListener("click", openSheet);
+  $("scrim").addEventListener("click", closeSheet);
+
+  function stepCompose() {
+    $("sheetBody").innerHTML = `
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <h2>What'd you hear about?</h2>
+        <div class="sticky-note">
+          <label for="noteText">The thing</label>
+          <textarea id="noteText" rows="2" placeholder="dial kit, the animation tuning thing">${esc(draft.text)}</textarea>
+          <label for="noteFrom">Who told you</label>
+          <input id="noteFrom" placeholder="Naheel, at the opening ceremony" value="${esc(draft.from)}">
+        </div>
+        <p class="hint">Write it however it came out of their mouth. Half a name is fine.</p>
+        <div class="row">
+          <button class="btn ghost" id="cancel">Cancel</button>
+          <button class="btn primary" id="find" disabled>Find it</button>
+        </div>
+      </div>`;
+    const ta = $("noteText");
+    const sync = () => { draft.text = ta.value; draft.from = $("noteFrom").value; $("find").disabled = !draft.text.trim(); };
+    ta.addEventListener("input", sync); $("noteFrom").addEventListener("input", sync); sync();
+    $("cancel").onclick = closeSheet;
+    $("find").onclick = runSearch;
+    setTimeout(() => ta.focus(), 340);
+  }
+
+  async function runSearch() {
+    $("sheetBody").innerHTML = `
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <h2>Looking for “${esc(draft.text.trim())}”</h2>
+        <p class="hint" id="searchStatus">${mode === "live" ? "Asking Claude…" : "Searching (test mode)…"}</p>
+        <div class="shimmer"></div><div class="shimmer"></div><div class="shimmer"></div>
+        <div class="row"><button class="btn ghost" id="stop">Back</button></div>
+      </div>`;
+    $("stop").onclick = () => { ctl?.abort(); stepCompose(); };
+    ctl = new AbortController();
+    const my = ctl;
+    try {
+      const cands = mode === "live" ? await liveSearch(draft.text, my.signal) : await testSearch(draft.text, my.signal);
+      if (my.signal.aborted) return;
+      draft.cands = cands; draft.pick = cands.length ? 0 : -1;
+      stepPick();
+    } catch (e) {
+      if (my.signal.aborted || e?.code === "cancelled") return;
+      const msg = {
+        not_granted: "Claude isn't allowed on this page yet. Switch to Test mode, or allow it when asked.",
+        rate_limited: "Too many searches at once. Wait a minute and try again.",
+        invalid_json: "Claude's answer didn't come back in the expected shape. Try again.",
+        unavailable: "Live search isn't available in this view. Switch to Test mode.",
+      }[e?.code] || e?.message || "Search didn't finish. Try again, or save it as a note.";
+      draft.cands = []; draft.pick = -1; draft.error = msg;
+      stepPick();
+    }
+  }
+
+  function stepPick() {
+    const c = draft.cands;
+    const colChips = state.cols.map((n) => `<button class="chip" aria-pressed="${n === draft.collection}" data-col="${esc(n)}">${esc(n)}</button>`).join("");
+    $("sheetBody").innerHTML = `
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <h2>${c.length ? "Which one did they mean?" : "Couldn't pin it down"}</h2>
+        ${draft.error ? `<p class="hint">${esc(draft.error)}</p>` : ""}
+        <div class="cands" role="radiogroup" aria-label="Matches">
+          ${c.map((x, i) => `
+            <button class="cand" role="radio" aria-checked="${draft.pick === i}" data-i="${i}">
+              <span class="radio" aria-hidden="true"></span>
+              <span class="cand-pv">${previewHTML(x)}</span>
+              <span class="item-body">
+                <span class="item-top"><span class="item-title">${esc(x.title)}</span><span class="kind">${esc(x.kind)}</span></span>
+                <span class="domain">${esc(domainOf(x.url))}${mode === "live" && x.verified === false ? " · unverified" : ""}</span>
+                <span class="blurb">${esc(x.blurb)}</span>
+              </span>
+            </button>`).join("")}
+          <button class="cand" role="radio" aria-checked="${draft.pick === -1}" data-i="-1">
+            <span class="radio" aria-hidden="true"></span>
+            <span class="cand-pv">${previewHTML({ title: draft.text.trim(), kind: "note" })}</span>
+            <span class="item-body"><span class="item-title">None of these, keep it as a note</span>
+            <span class="blurb" style="color:var(--muted)">You can attach the link later.</span></span>
+          </button>
+        </div>
+        ${mode === "live" && c.length ? `<p class="hint">Found with web search.${c.some((x) => !x.verified) ? " Results marked unverified didn't show up in the search itself, so open them first." : ""}</p>` : ""}
+        <div class="section-label">Put it in a ${esc(term.toLowerCase())}</div>
+        <div class="chips" style="flex-wrap:wrap" id="colChips">${colChips}<button class="chip new" id="newColBtn">+ New ${esc(term.toLowerCase())}</button></div>
+        <div class="new-col" id="newColRow" hidden><input id="newColName" placeholder="${esc(term)} name"><button class="btn ghost" id="newColAdd">Add</button></div>
+        <div class="row">
+          <button class="btn ghost" id="back">Edit note</button>
+          <button class="btn primary" id="saveBtn">Save</button>
+        </div>
+      </div>`;
+    $("sheetBody").querySelector(".cands").onclick = (e) => {
+      const b = e.target.closest("[data-i]"); if (!b) return;
+      draft.pick = Number(b.dataset.i); stepPick();
+    };
+    $("colChips").onclick = (e) => {
+      const b = e.target.closest("[data-col]"); if (!b) return;
+      draft.collection = b.dataset.col; stepPick();
+    };
+    $("newColBtn").onclick = () => { $("newColRow").hidden = false; $("newColName").focus(); };
+    $("newColAdd").onclick = () => {
+      const n = $("newColName").value.trim(); if (!n) return;
+      if (!state.cols.includes(n)) state.cols.push(n);
+      draft.collection = n; save(); stepPick();
+    };
+    $("back").onclick = () => { draft.error = null; stepCompose(); };
+    $("saveBtn").onclick = commit;
+  }
+
+  function commit() {
+    const pick = draft.pick >= 0 ? draft.cands[draft.pick] : null;
+    const item = {
+      id: "i" + Date.now(),
+      title: pick ? pick.title : draft.text.trim(),
+      url: pick ? pick.url : "",
+      kind: pick ? pick.kind : "note",
+      blurb: pick ? pick.blurb : "",
+      brand: pick?.brand || "",
+      image: pick?.image || "", fallback: pick?.fallback || "", favicon: pick?.favicon || "",
+      note: pick ? draft.text.trim() : "",
+      from: draft.from.trim(),
+      collection: draft.collection,
+      savedAt: today(),
+    };
+    state.items.unshift(item); save();
+    freshId = item.id; filter = "All";
+    closeSheet(); renderHome();
+    toast(`Saved to ${item.collection}`);
+  }
+
+  let tt;
+  function toast(msg) {
+    const t = $("toast"); t.textContent = msg; t.classList.add("on");
+    clearTimeout(tt); tt = setTimeout(() => t.classList.remove("on"), 1800);
+  }
+
+  // ---------- search: test mode ----------
+  const KNOWN = [
+    { k: ["agentation"], r: { title: "Agentation", url: "https://github.com/benjitaylor/agentation", kind: "tool", brand: "#0E1116", blurb: "Visual feedback tool: comment on UI elements and hand the batch to your coding agent." } },
+    { k: ["are.na", "arena", "are na"], r: { title: "Are.na", url: "https://www.are.na", kind: "site", brand: "#F4F1EC", blurb: "Collect and connect references into channels." } },
+    { k: ["veo"], r: { title: "Veo", url: "https://deepmind.google/models/veo/", kind: "tool", brand: "#1A73E8", blurb: "Google DeepMind's video generation model." } },
+    { k: ["framer"], r: { title: "Framer", url: "https://www.framer.com", kind: "tool", brand: "#0055FF", blurb: "Website builder with interactive components." } },
+    { k: ["figma"], r: { title: "Figma", url: "https://www.figma.com", kind: "tool", brand: "#A259FF", blurb: "Collaborative interface design tool." } },
+  ];
+  function testSearch(q, signal) {
+    return new Promise((res, rej) => {
+      const t = setTimeout(() => {
+        const ql = q.toLowerCase();
+        const hits = KNOWN.filter((x) => x.k.some((k) => ql.includes(k))).map((x) => x.r);
+        const name = q.trim().split(/[,.\n]/)[0].trim();
+        const g = (s) => "https://www.google.com/search?q=" + encodeURIComponent(s);
+        const filler = [
+          { title: `${titleCase(name)}`, url: g(name + " official site"), kind: "tool", blurb: "Test result. Live mode asks Claude for the real link." },
+          { title: `${titleCase(name)} on GitHub`, url: g(name + " github"), kind: "site", blurb: "Test result: a repo with the same name." },
+          { title: `${titleCase(name)} walkthrough`, url: g(name + " tutorial video"), kind: "video", blurb: "Test result: a video showing it in use." },
+        ];
+        res([...hits, ...filler].slice(0, 3));
+      }, 1100);
+      signal.addEventListener("abort", () => { clearTimeout(t); rej({ code: "cancelled" }); });
+    });
+  }
+  const titleCase = (s) => s.replace(/\b\w/g, (c) => c.toUpperCase());
+
+  // ---------- search: live mode (local server -> Claude + web search) ----------
+  let serverStatus = { reachable: false, live: false, model: "" };
+  async function liveSearch(q, signal) {
+    const r = await fetch("/api/search", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ q, from: draft.from }), signal });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw { code: "server", message: data.error || "Search didn't finish." };
+    return data.candidates || [];
+  }
+  // Pull real previews for saved items that don't have one yet (no API key needed).
+  async function backfillPreviews() {
+    const todo = state.items.filter((i) => i.url && !i.image && !i.thumb && !i.previewTried);
+    for (const it of todo) {
+      it.previewTried = true;
+      try {
+        const p = await (await fetch("/api/preview?url=" + encodeURIComponent(it.url))).json();
+        Object.assign(it, { image: p.image || "", fallback: p.fallback || "", favicon: p.favicon || "" });
+      } catch (e) {}
+    }
+    if (todo.length) { save(); renderHome(); }
+  }
+  window.pvFail = (img) => {
+    const fb = img.dataset.fallback;
+    if (fb && img.src !== fb) { img.src = fb; img.dataset.fallback = ""; return; }
+    img.remove(); // generated cover underneath shows instead
+  };
+
+  // ---------- side panel ----------
+  function setMode(m) {
+    mode = m;
+    $("modeTest").setAttribute("aria-pressed", m === "test");
+    $("modeLive").setAttribute("aria-pressed", m === "live");
+    $("modeNote").innerHTML = m === "test"
+      ? `<span class="status-dot ok"></span>Canned results, no usage spent. Good for tuning UI and motion.`
+      : serverStatus.live
+        ? `<span class="status-dot ok"></span>Each "Find it" runs Claude (${esc(serverStatus.model)}) with web search on your API key. A few cents per search.`
+        : serverStatus.reachable
+          ? `<span class="status-dot"></span>No API key found. Add ANTHROPIC_API_KEY to .env and restart the server.`
+          : `<span class="status-dot"></span>Can't reach the local server. Run <code>npm start</code> and open localhost.`;
+  }
+  $("modeTest").onclick = () => setMode("test");
+  $("modeLive").onclick = () => setMode("live");
+  $("termSel").onchange = (e) => { term = e.target.value; applyTerm(); };
+  function applyTerm() { renderHome(); }
+  $("resetBtn").onclick = () => { state = { items: EXAMPLE_ORDER.map((id) => EXAMPLES.find((x) => x.id === id)), cols: DEFAULT_COLS.slice() }; save(); filter = "All"; renderHome(); toast("Reset to examples"); };
+  $("clearBtn").onclick = () => { state = { items: [], cols: DEFAULT_COLS.slice() }; save(); filter = "All"; renderHome(); toast("Cleared"); };
+
+  renderHome();
+  setMode("test");
+  fetch("/api/status").then((r) => r.json()).then((st) => {
+    serverStatus = { reachable: true, live: !!st.live, model: st.model || "" };
+    setMode(st.live ? "live" : "test");
+    backfillPreviews();
+  }).catch(() => setMode("test"));
+})();
+</script>
+</body>
+</html>
