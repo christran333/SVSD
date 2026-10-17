@@ -4,9 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>SVSD Toolkit (local)</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Geist:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
 <style>
+/* ABC Areal by Dinamo (licensed, kept out of git). Variable: weight 400–700. */
+@font-face { font-family: "ABC Areal"; src: url("/fonts/ABCArealVariable.woff2") format("woff2"); font-weight: 400 700; font-style: normal; font-display: swap; }
+@font-face { font-family: "ABC Areal Mono"; src: url("/fonts/ABCArealMonoVariable.woff2") format("woff2"); font-weight: 400 700; font-style: normal; font-display: swap; }
 body { margin: 0; } [hidden] { display: none !important; } img { max-width: 100%; }
 /* Layout: desktop stage — phone frame centered, decision panel pinned right; stacks under 900px */
 :root {
@@ -19,18 +20,18 @@ body { margin: 0; } [hidden] { display: none !important; } img { max-width: 100%
   --line: #26262C;
   --ink: #F2F2F4;
   --muted: #8B8B95;
-  --accent: #F5D547;
+  --accent: #C8FF5A;
   --accent-ink: #111111;
-  --sticky: #F5D547;
-  --sticky-ink: #16140A;
-  --sticky-line: #D9BB2F;
+  --sticky: #1C1C21;
+  --sticky-ink: #F2F2F4;
+  --sticky-line: #2C2C33;
   --ok: #4CC07C;
   --bezel: #1C1C20;
   --frame: #2E2E35;
   --dot: transparent;
-  --font-display: "Bricolage Grotesque", "Avenir Next", system-ui, sans-serif;
-  --font-body: "Geist", "Helvetica Neue", system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --font-display: "ABC Areal", "Helvetica Neue", system-ui, sans-serif;
+  --font-body: "ABC Areal", "Helvetica Neue", system-ui, sans-serif;
+  --font-mono: "ABC Areal Mono", ui-monospace, "SF Mono", Menlo, monospace;
   color-scheme: dark;
 }
 html, body { height: 100%; }
@@ -114,17 +115,26 @@ button { cursor: pointer; }
 .pcard { position: relative; display: flex; flex-direction: column; }
 .pcard.fresh { animation: drop .55s cubic-bezier(.2,.9,.3,1.15); }
 @keyframes drop { from { transform: translateY(-14px) scale(.96); opacity: .2; } to { transform: none; opacity: 1; } }
-.fwrap { position: relative; z-index: 1; }
-.frame {
-  position: relative; display: block; aspect-ratio: 16 / 10; border: 4px solid var(--frame);
-  border-radius: 12px; overflow: hidden; background: var(--card); text-decoration: none; color: inherit;
+/* One frame: preview and link row share a single outline, flush edges */
+.shell { position: relative; border: 3px solid var(--frame); border-radius: 16px; overflow: hidden; background: var(--card); }
+.flip { position: relative; aspect-ratio: 16 / 10; perspective: 1200px; touch-action: pan-y; }
+.flip.is-video { aspect-ratio: 16 / 9; }
+.flip-inner { position: absolute; inset: 0; transform-style: preserve-3d; transition: transform .7s cubic-bezier(.2,.8,.2,1); }
+.flip.flipped .flip-inner { transform: rotateY(180deg); }
+.face { position: absolute; inset: 0; overflow: hidden; backface-visibility: hidden; -webkit-backface-visibility: hidden; background: var(--card); }
+.face.back { transform: rotateY(180deg); padding: 14px 16px; display: flex; flex-direction: column; gap: 9px; background: #121216; }
+.back .b-label { font: 500 10px/1 var(--font-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.back .b-for { font-size: 15px; line-height: 1.3; letter-spacing: -0.01em; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.back .b-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 12px; color: var(--muted); }
+.back .b-take { font-size: 12.5px; color: var(--ink); opacity: .8; font-style: italic; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.back .b-hint { margin-top: auto; font-size: 11px; color: #55555E; }
+.flip-btn {
+  position: absolute; z-index: 3; top: 10px; right: 10px; width: 30px; height: 30px; border-radius: 50%; border: 1px solid rgba(255,255,255,.12);
+  background: rgba(18,18,22,.6); color: #fff; display: grid; place-items: center; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
 }
-.frame.is-video { aspect-ratio: 16 / 9; }
-.foot {
-  margin: -4px 4px 0; padding: 16px 16px 12px; background: var(--card); border: 1px solid var(--line);
-  border-top: 0; border-radius: 0 0 14px 14px; box-shadow: 0 6px 14px -8px rgba(0,0,0,.25);
-  display: flex; align-items: center; gap: 10px; min-width: 0;
-}
+.flip-btn svg { width: 15px; height: 15px; }
+.flipped .flip-btn.front-only { opacity: 0; pointer-events: none; }
+.foot { border-top: 1px solid var(--line); padding: 13px 16px; display: flex; align-items: center; gap: 10px; min-width: 0; background: var(--card); }
 .fav { flex: none; width: 20px; height: 20px; display: grid; place-items: center; }
 .fav svg { width: 20px; height: 20px; display: block; }
 .fav .letter {
@@ -138,14 +148,26 @@ button { cursor: pointer; }
 .under { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 8px 6px 0; font-size: 11.5px; color: var(--muted); }
 .under b { color: var(--ink); font-weight: 600; font-size: 13px; margin-right: 2px; }
 
+.caption {
+  position: absolute; z-index: 2; left: 10px; right: 10px; bottom: 10px; padding: 9px 12px; font-size: 12.5px; line-height: 1.35; color: var(--ink);
+  background: rgba(14,14,18,.72); border: 1px solid rgba(255,255,255,.08); border-radius: 12px; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  display: flex; gap: 8px; align-items: baseline;
+}
+.caption small { flex: none; font: 500 9.5px/1 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.caption span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pin {
-  position: absolute; z-index: 2; top: -10px; right: -6px; max-width: 58%;
-  background: var(--sticky); color: var(--sticky-ink); padding: 8px 10px 10px; font-size: 12px; line-height: 1.3;
-  border-radius: 10px; box-shadow: 0 6px 12px -6px rgba(0,0,0,.35);
+  position: absolute; z-index: 2; top: 10px; right: 10px; max-width: 62%;
+  background: rgba(18,18,22,.78); color: var(--ink); padding: 8px 10px; font-size: 12px; line-height: 1.35;
+  border: 1px solid rgba(255,255,255,.08); border-radius: 12px; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
 }
 .pin small { display: block; font-family: var(--font-mono); font-size: 9.5px; letter-spacing: .06em; text-transform: uppercase; opacity: .65; margin-bottom: 3px; }
+.shell .cover-btn { opacity: 0; transition: opacity .2s; }
+.shell:hover .cover-btn, .shell:focus-within .cover-btn { opacity: 1; }
+.shell.info-flip .cover-btn { right: 48px; }
+.shell.info-bottom .pv-sub { display: none; }
+.shell.info-bottom .front:has(.caption) .pv { padding-bottom: 62px; }
 .cover-btn {
-  position: absolute; z-index: 2; right: 12px; bottom: 12px; border: 0; border-radius: 999px; padding: 5px 9px;
+  position: absolute; z-index: 2; right: 10px; top: 12px; border: 0; border-radius: 999px; padding: 5px 9px;
   font-size: 11px; font-weight: 600; background: rgba(0,0,0,.55); color: #fff; backdrop-filter: blur(6px);
 }
 
@@ -194,16 +216,6 @@ button { cursor: pointer; }
 .empty { text-align: center; color: var(--muted); padding: 40px 20px; line-height: 1.5; }
 
 /* capture bar */
-.capture-bar {
-  position: absolute; z-index: 5; left: 16px; right: 16px; bottom: 34px;
-  display: flex; align-items: center; gap: 10px; padding: 14px 16px;
-  background: var(--sticky); color: var(--sticky-ink); border: 1px solid var(--sticky-line);
-  border-radius: 18px; box-shadow: 0 10px 24px -10px rgba(0,0,0,.35); text-align: left; width: auto;
-}
-.capture-bar .plus { width: 28px; height: 28px; border-radius: 50%; background: var(--sticky-ink); color: var(--sticky); display: grid; place-items: center; font-size: 18px; flex: none; }
-.capture-bar .t { font-weight: 600; }
-.capture-bar .s { font-size: 12px; opacity: .7; }
-
 /* sheet */
 .scrim { position: absolute; inset: 0; z-index: 10; background: rgba(10,10,14,.35); opacity: 0; transition: opacity .2s; }
 .scrim.on { opacity: 1; }
@@ -251,28 +263,63 @@ button { cursor: pointer; }
 .new-col input { flex: 1; border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; background: var(--app-bg); }
 
 .toast {
-  position: absolute; z-index: 12; left: 50%; bottom: 30px; transform: translate(-50%, 20px); opacity: 0;
+  position: absolute; z-index: 12; left: 50%; top: 62px; transform: translate(-50%, -12px); opacity: 0;
   background: var(--ink); color: var(--app-bg); padding: 10px 14px; border-radius: 12px; font-size: 13px; font-weight: 500;
   transition: all .25s; pointer-events: none; white-space: nowrap;
 }
+.toast.has-act { pointer-events: auto; display: flex; align-items: center; gap: 12px; }
+.toast-act { border: 0; background: transparent; color: var(--app-bg); font-weight: 700; padding: 0; text-decoration: underline; text-underline-offset: 3px; }
 .toast.on { opacity: 1; transform: translate(-50%, 0); }
 
-/* ---------- capture-first home ---------- */
-.quick { flex: none; padding: 2px 20px 16px; display: flex; flex-direction: column; gap: 12px; }
-.quick h1 { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: 30px; letter-spacing: -0.02em; line-height: 1.05; }
-.qbox { background: var(--sticky); color: var(--sticky-ink); border-radius: 20px; padding: 14px 16px 12px; display: flex; flex-direction: column; gap: 10px; }
-.qbox textarea { width: 100%; background: transparent; border: 0; outline: none; resize: none; color: var(--sticky-ink); font-size: 20px; font-weight: 500; line-height: 1.25; padding: 0; }
-.qbox ::placeholder { color: var(--sticky-ink); opacity: .45; }
-.qrow { display: flex; align-items: center; gap: 10px; border-top: 1px solid var(--sticky-line); padding-top: 10px; }
-.qrow input { flex: 1; min-width: 0; background: transparent; border: 0; outline: none; color: var(--sticky-ink); font-size: 13px; padding: 0; }
-.qbtn { flex: none; border: 0; border-radius: 12px; padding: 10px 14px; font-weight: 600; background: var(--sticky-ink); color: var(--sticky); }
-.qbtn:disabled { opacity: .3; cursor: default; }
-#screen[data-open="capture"] .capture-bar { display: none; }
-#screen[data-open="library"] .quick { display: none; }
-#screen[data-open="capture"] .app-head { padding-top: 4px; gap: 10px; }
-#screen[data-open="capture"] .app-head h1 { font: 600 13px/1 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
-#screen[data-open="capture"] .app-head .sub { display: none; }
-#screen[data-open="capture"] .list { padding-bottom: 40px; }
+/* ---------- two views: Capture (opens first, like a camera) and Saves ---------- */
+.views { position: relative; flex: 1; min-height: 0; }
+/* Side-by-side pages: Add on the left, Saves on the right. Swipe or tap to move between them. */
+.views { touch-action: pan-y; overflow: hidden; }
+.view { position: absolute; inset: 0; display: flex; flex-direction: column; background: var(--app-bg); transition: transform .5s cubic-bezier(.2,.85,.2,1), opacity .5s; }
+#screen[data-view="cap"] .lib { transform: translateX(100%); pointer-events: none; }
+#screen[data-view="lib"] .cap { transform: translateX(-28%); opacity: .25; pointer-events: none; }
+.views.dragging .view { transition: none; }
+.view { user-select: none; -webkit-user-select: none; }
+.view textarea, .view input, .sheet { user-select: text; -webkit-user-select: text; }
+.pager { position: absolute; z-index: 6; left: 50%; bottom: 20px; transform: translateX(-50%); display: flex; gap: 6px; pointer-events: none; }
+.pager i { width: 6px; height: 6px; border-radius: 3px; background: #3A3A42; transition: width .3s, background .3s; }
+#screen[data-view="cap"] .pager i:first-child, #screen[data-view="lib"] .pager i:last-child { width: 16px; background: var(--ink); }
+
+.cap { padding: 8px 24px 34px; }
+.cap-top { display: flex; align-items: center; justify-content: space-between; }
+.avatar { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; font: 600 13px/1 var(--font-body); background: #232328; color: var(--ink); }
+.saves-btn { display: flex; align-items: center; gap: 8px; border: 1px solid var(--line); background: transparent; border-radius: 999px; padding: 4px 12px 4px 5px; font-size: 13px; font-weight: 500; color: var(--ink); }
+.stack { display: flex; }
+.stack i { width: 22px; height: 22px; border-radius: 7px; border: 2px solid var(--app-bg); display: grid; place-items: center; font: 700 10px/1 var(--font-display); font-style: normal; }
+.stack i + i { margin-left: -8px; }
+.saves-btn.bump { animation: bump .5s cubic-bezier(.3,1.6,.5,1); }
+@keyframes bump { 40% { transform: scale(1.08); } }
+
+.cap-body { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 14px; padding-bottom: 40px; }
+.cap-date { font: 500 12px/1 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.cap-q { margin: 0; font-family: var(--font-display); font-weight: 600; font-size: 34px; line-height: 1.02; letter-spacing: -0.035em; text-wrap: balance; }
+.cap textarea {
+  width: 100%; background: transparent; border: 0; outline: none; resize: none; padding: 0; margin-top: 6px;
+  color: var(--ink); caret-color: var(--accent); font-family: var(--font-body); font-size: 22px; font-weight: 500; line-height: 1.3; letter-spacing: -0.01em;
+}
+.cap textarea::placeholder { color: #4A4A52; }
+.cap-from { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 14px; }
+.cap-from input { flex: 1; min-width: 0; background: transparent; border: 0; outline: none; color: var(--ink); font-size: 14px; padding: 0; }
+.cap-from input::placeholder { color: #4A4A52; }
+
+.cap-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.cap-hint { font-size: 13px; color: var(--muted); }
+.send { width: 52px; height: 52px; border-radius: 50%; border: 0; background: var(--ink); color: var(--app-bg); display: grid; place-items: center; transition: transform .15s, opacity .2s; }
+.send svg { width: 22px; height: 22px; }
+.send:disabled { opacity: .18; cursor: default; }
+.send:not(:disabled):active { transform: scale(.94); }
+
+.lib .app-head { padding-top: 4px; }
+.lib-top { display: flex; align-items: center; justify-content: space-between; padding: 6px 20px 2px; }
+.back-cap { border: 0; background: transparent; color: var(--muted); font-size: 14px; padding: 4px 0; display: flex; align-items: center; gap: 4px; }
+.fab { position: absolute; z-index: 5; right: 20px; bottom: 34px; width: 56px; height: 56px; border-radius: 50%; border: 0; background: var(--ink); color: var(--app-bg); display: grid; place-items: center; box-shadow: 0 12px 24px -10px rgba(0,0,0,.8); }
+.fab svg { width: 22px; height: 22px; }
+.lib .list { padding-bottom: 120px; }
 
 /* ---------- card layout variants ---------- */
 .list.compact { gap: 8px; }
@@ -280,7 +327,7 @@ button { cursor: pointer; }
   display: grid; grid-template-columns: 84px 1fr; gap: 12px; align-items: center; padding: 8px;
   background: var(--card); border: 1px solid var(--line); border-radius: 14px; text-decoration: none; color: inherit;
 }
-.ritem .rnote { font-size: 12px; color: var(--sticky); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ritem .rnote { font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .list.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px 12px; align-content: start; }
 .list.grid .empty { grid-column: 1 / -1; }
 .gtile { display: flex; flex-direction: column; gap: 6px; min-width: 0; text-decoration: none; color: inherit; }
@@ -311,7 +358,7 @@ button { cursor: pointer; }
 .pick, .detail { display: flex; flex-direction: column; gap: 12px; }
 .best { position: relative; display: grid; grid-template-columns: 112px 1fr; gap: 12px; align-items: start; padding: 12px; margin-top: 8px;
   background: var(--card); border: 2px solid #FFFFFF; border-radius: 18px; }
-.best.note-only { border-color: var(--sticky); }
+.best.note-only { border-color: var(--line); }
 .tag-best { position: absolute; top: -10px; left: 14px; background: #FFFFFF; color: #000; font: 600 10px/1 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; padding: 4px 7px; border-radius: 6px; }
 .cand-pv.big { width: 112px; }
 .cand.alt { grid-template-columns: 84px 1fr; padding: 8px; }
@@ -321,7 +368,7 @@ button { cursor: pointer; }
 .inp:focus { border-color: var(--muted); }
 .opt { text-transform: none; letter-spacing: 0; opacity: .7; }
 .chips.wrap { flex-wrap: wrap; overflow: visible; }
-.chip .auto { margin-left: 6px; font: 500 9.5px/1 var(--font-mono); text-transform: uppercase; letter-spacing: .06em; padding: 2px 4px; border-radius: 4px; background: var(--sticky); color: var(--sticky-ink); }
+.chip .auto { margin-left: 6px; font: 500 9.5px/1 var(--font-mono); text-transform: uppercase; letter-spacing: .06em; padding: 2px 4px; border-radius: 4px; background: rgba(255,255,255,.12); color: var(--ink); }
 .sticky-actions { position: sticky; bottom: -40px; background: var(--card); padding: 10px 0 0; margin-top: 4px; }
 
 /* ---------- detail ---------- */
@@ -357,6 +404,7 @@ button { cursor: pointer; }
 .status-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--muted); margin-right: 6px; vertical-align: middle; }
 .status-dot.ok { background: var(--ok); }
 .linkbtn { background: none; border: 0; padding: 0; color: var(--accent); text-align: left; font-size: 12.5px; }
+.flip-inner { will-change: transform; }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 </style>
 </head>
@@ -376,29 +424,40 @@ button { cursor: pointer; }
             <svg width="27" height="13" viewBox="0 0 27 13"><rect x=".5" y=".5" width="23" height="12" rx="3.8" fill="none" stroke="currentColor" opacity=".4"/><rect x="2" y="2" width="20" height="9" rx="2.5"/><path d="M25 4.5v4c.8-.3 1.4-1.1 1.4-2s-.6-1.7-1.4-2Z" opacity=".45"/></svg>
           </span>
         </div>
-        <section class="quick" aria-label="Add something">
-          <h1>What'd you just hear about?</h1>
-          <div class="qbox">
-            <textarea id="qText" rows="2" placeholder="dial kit, the animation tuning thing"></textarea>
-            <div class="qrow">
-              <input id="qFrom" placeholder="Who told you? (optional)">
-              <button class="qbtn" id="qFind" disabled>Find it</button>
-            </div>
+        <div class="views">
+        <section class="view cap" aria-label="Add something">
+          <div class="cap-top">
+            <span class="avatar" aria-hidden="true">C</span>
+            <button class="saves-btn" id="toSaves"><span class="stack" id="stack"></span><span id="savesCount"></span></button>
+          </div>
+          <div class="cap-body">
+            <div class="cap-date" id="capDate"></div>
+            <h1 class="cap-q">What'd you find today?</h1>
+            <textarea id="qText" rows="3" placeholder="A tool, a link, a name, half a name…" aria-label="What you found"></textarea>
+            <label class="cap-from"><span>From</span><input id="qFrom" placeholder="someone? optional"></label>
+          </div>
+          <div class="cap-foot">
+            <span class="cap-hint" id="capHint">Type it how you'd say it. We'll find it.</span>
+            <button class="send" id="qFind" disabled aria-label="Find it"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
           </div>
         </section>
-        <header class="app-head">
-          <div>
-            <h1 id="appTitle">Everything you've heard about</h1>
-            <div class="sub" id="countLine"></div>
-          </div>
-          <div class="chips" id="filters" role="group" aria-label="Filter"></div>
-        </header>
-        <main class="list" id="list"></main>
 
-        <button class="capture-bar" id="openCapture">
-          <span class="plus" aria-hidden="true">+</span>
-          <span><span class="t">Heard about something?</span><br><span class="s">Jot it down. We'll find the link.</span></span>
-        </button>
+        <section class="view lib" aria-label="Your saves">
+          <div class="lib-top">
+            <button class="back-cap" id="backCap"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>Add</button>
+          </div>
+          <header class="app-head">
+            <div>
+              <h1 id="appTitle">Your saves</h1>
+              <div class="sub" id="countLine"></div>
+            </div>
+            <div class="chips" id="filters" role="group" aria-label="Filter"></div>
+          </header>
+          <main class="list" id="list"></main>
+          <button class="fab" id="openCapture" aria-label="Add something"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+        </section>
+        <div class="pager" aria-hidden="true"><i></i><i></i></div>
+        </div>
 
         <div class="scrim" id="scrim" hidden></div>
         <section class="sheet" id="sheet" aria-label="Capture" hidden>
@@ -482,7 +541,7 @@ button { cursor: pointer; }
   let filter = "All";
   let mode = "test";
   const VKEY = "svsd-variants";
-  const V = Object.assign({ open: "capture", cards: "framed", forReq: "optional", alts: "collapsed" }, (() => { try { return JSON.parse(localStorage.getItem(VKEY)) || {}; } catch (e) { return {}; } })());
+  const V = Object.assign({ open: "capture", info: "flip", cards: "framed", forReq: "optional", alts: "collapsed" }, (() => { try { return JSON.parse(localStorage.getItem(VKEY)) || {}; } catch (e) { return {}; } })());
   let term = "Stash";
 
   function load() {
@@ -562,19 +621,71 @@ button { cursor: pointer; }
   function originLine(i) {
     return [i.from ? `${esc(viaLabel(i.via))} · ${esc(i.from)}` : esc(viaLabel(i.via)), fmtDate(i.savedAt)].join(" · ");
   }
+  const FLIP_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15.5-6.2L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15.5 6.2L3 16"/><path d="M3 21v-5h5"/></svg>`;
+  function backHTML(i) {
+    return `<div class="face back">
+        <span class="b-label">What it's for</span>
+        <span class="b-for">${esc(i.forWhat || i.blurb || "Nothing yet. Tap to add what it's for.")}</span>
+        <span class="b-row">${pill(i)} <span>${originLine(i)}</span></span>
+        ${i.take ? `<span class="b-take">“${esc(i.take)}”</span>` : ""}
+        <span class="b-hint">Swipe to flip back · tap for details</span>
+      </div>`;
+  }
   function itemHTML(i, fresh) {
     const isVid = i.url && (i.kind === "video" || isYouTube(i.url)) && !i.thumb && (!i.image || /ytimg/.test(i.image));
     const open = i.url ? `href="${esc(i.url)}" target="_blank" rel="noopener"` : "";
+    const who = i.from ? "From " + esc(i.from) : "For";
+    const info = V.info === "flip" ? ""
+      : V.info === "bottom" ? (i.forWhat ? `<div class="caption"><small>${who}</small><span>${esc(i.forWhat)}</span></div>` : "")
+      : (i.forWhat ? `<div class="pin"><small>${who}</small>${esc(i.forWhat)}</div>` : "");
     return `<article class="pcard${fresh ? " fresh" : ""}" data-item="${esc(i.id)}">
-      ${i.forWhat ? `<div class="pin"><small>${i.from ? "From " + esc(i.from) : "For"}</small>${esc(i.forWhat)}</div>` : ""}
-      <div class="fwrap"><div class="frame${isVid ? " is-video" : ""}" role="button" tabindex="0" aria-label="${esc(i.title)}">${previewHTML(i)}</div>
-      <button class="cover-btn" data-cover="${esc(i.id)}">${i.thumb ? "Change cover" : "Add cover"}</button></div>
-      ${i.url
-        ? `<div class="foot"><span class="fav">${favHTML(i)}</span><a class="url" ${open}>${esc(i.url)}</a></div>`
-        : `<div class="foot"><span class="fav"><span class="letter" style="--fav-bg:var(--sticky);--fav-ink:var(--sticky-ink)">✎</span></span><span class="url" style="text-decoration:none">No link yet</span></div>`}
+      <div class="shell info-${V.info}">
+        <div class="flip${isVid ? " is-video" : ""}">
+          <div class="flip-inner">
+            <div class="face front">${previewHTML(i)}${info}
+              <button class="cover-btn" data-cover="${esc(i.id)}">${i.thumb ? "Change cover" : "Add cover"}</button>
+            </div>
+            ${V.info === "flip" ? backHTML(i) : ""}
+          </div>
+          ${V.info === "flip" ? `<button class="flip-btn" data-flip aria-label="Flip card">${FLIP_ICON}</button>` : ""}
+        </div>
+        ${i.url
+          ? `<div class="foot"><span class="fav">${favHTML(i)}</span><a class="url" ${open}>${esc(i.url)}</a></div>`
+          : `<div class="foot"><span class="fav"><span class="letter" style="--fav-bg:#2A2A31;--fav-ink:var(--ink)">✎</span></span><span class="url" style="text-decoration:none">No link yet</span></div>`}
+      </div>
       <div class="under"><b>${esc(i.title)}</b> ${pill(i)} <span>${originLine(i)}</span>${i.example ? ` <span class="example-tag">example</span>` : ""}</div>
     </article>`;
   }
+
+  // Swipe a card sideways to flip it. The card follows the finger, then settles to whichever side is closer.
+  let swipe = null, swallowClick = false;
+  $("list").addEventListener("pointerdown", (e) => {
+    const f = e.target.closest(".flip"); if (!f || !f.querySelector(".back") || e.target.closest("[data-cover]")) return;
+    swipe = { f, x: e.clientX, y: e.clientY, base: f.classList.contains("flipped") ? 180 : 0, active: false, id: e.pointerId };
+  });
+  addEventListener("pointermove", (e) => {
+    if (!swipe || e.pointerId !== swipe.id) return;
+    const dx = e.clientX - swipe.x, dy = e.clientY - swipe.y;
+    if (!swipe.active) {
+      if (Math.abs(dx) < 8 || Math.abs(dx) < Math.abs(dy)) { if (Math.abs(dy) > 12) swipe = null; return; }
+      swipe.active = true; swipe.f.setPointerCapture?.(e.pointerId);
+    }
+    const inner = swipe.f.querySelector(".flip-inner");
+    inner.style.transition = "none";
+    inner.style.transform = `rotateY(${swipe.base + Math.max(-180, Math.min(180, dx * 0.9))}deg)`;
+  });
+  addEventListener("pointerup", (e) => {
+    if (!swipe || e.pointerId !== swipe.id) return;
+    const { f, active, x } = swipe; swipe = null;
+    if (!active) return;
+    swallowClick = true; setTimeout(() => (swallowClick = false), 50);
+    const inner = f.querySelector(".flip-inner");
+    inner.style.transition = ""; inner.style.transform = "";
+    if (Math.abs(e.clientX - x) > 45) f.classList.toggle("flipped");
+  });
+  addEventListener("pointercancel", () => {
+    if (!swipe) return; const inner = swipe.f.querySelector(".flip-inner"); inner.style.transition = ""; inner.style.transform = ""; swipe = null;
+  });
 
   // Attach a real cover: the viewer picks a screenshot or thumbnail; we downscale it so it fits in browser storage.
   const coverInput = Object.assign(document.createElement("input"), { type: "file", accept: "image/*", id: "coverInput", hidden: true });
@@ -630,6 +741,9 @@ button { cursor: pointer; }
     freshId = null;
   }
   $("list").addEventListener("click", (e) => {
+    if (swallowClick) return;
+    const fb = e.target.closest("[data-flip]");
+    if (fb) { fb.closest(".flip").classList.toggle("flipped"); return; }
     if (e.target.closest("a, [data-cover]")) return;
     const card = e.target.closest("[data-item]"); if (card) openDetail(card.dataset.item);
   });
@@ -639,7 +753,7 @@ button { cursor: pointer; }
   });
   const plural = (t) => (t.endsWith("sh") ? "es" : t === "Shelf" ? "" : "s");
   const pluralWord = (t) => t === "Shelf" ? "shelves" : t.toLowerCase() + plural(t);
-  function renderHome() { renderFilters(); renderList(); }
+  function renderHome() { renderFilters(); renderList(); renderCapture(); }
   $("filters").addEventListener("click", (e) => {
     const b = e.target.closest("[data-f]"); if (!b) return;
     filter = b.dataset.f; renderHome();
@@ -665,7 +779,7 @@ button { cursor: pointer; }
     $("scrim").classList.remove("on"); $("sheet").classList.remove("on");
     setTimeout(() => { $("scrim").hidden = true; $("sheet").hidden = true; }, 320);
   }
-  $("openCapture").addEventListener("click", openSheet);
+  $("openCapture").addEventListener("click", () => showView("cap"));
   $("scrim").addEventListener("click", () => { closeSheet(); if (draft?.detail) renderHome(); });
 
   function stepCompose() {
@@ -847,7 +961,10 @@ button { cursor: pointer; }
     const wasInline = draft.inline;
     closeSheet(); renderHome();
     toast(`Saved to ${item.cols.join(" + ")}`);
-    if (wasInline) { $("qText").value = ""; $("qFrom").value = ""; syncQuick(); setTimeout(() => $("qText").focus(), 340); }
+    if (wasInline) {
+      $("qText").value = ""; $("qFrom").value = ""; syncQuick(); setTimeout(() => $("qText").focus(), 340);
+      const sb = $("toSaves"); sb.classList.remove("bump"); void sb.offsetWidth; sb.classList.add("bump");
+    }
   }
 
   // ---------- item detail: what it is, where it came from, did you try it ----------
@@ -910,16 +1027,70 @@ button { cursor: pointer; }
       i.cols = next; commitEdit(); keepScroll(() => renderDetail(i));
     };
     $("dArchive").onclick = () => {
-      i.archived = !i.archived; commitEdit(); closeSheet();
-      toast(i.archived ? `Archived ${i.title}` : `Restored ${i.title}`);
+      closeSheet();
+      if (i.archived) { i.archived = false; commitEdit(); toast(`Restored ${i.title}`); return; }
+      flyAway(i);
     };
     $("dDone").onclick = () => { commitEdit(); closeSheet(); };
   }
 
   let tt;
-  function toast(msg) {
-    const t = $("toast"); t.textContent = msg; t.classList.add("on");
-    clearTimeout(tt); tt = setTimeout(() => t.classList.remove("on"), 1800);
+  function toast(msg, action) {
+    const t = $("toast");
+    t.innerHTML = esc(msg) + (action ? ` <button class="toast-act">${esc(action.label)}</button>` : "");
+    t.classList.toggle("has-act", !!action);
+    if (action) t.querySelector(".toast-act").onclick = () => { t.classList.remove("on"); action.run(); };
+    t.classList.add("on");
+    clearTimeout(tt); tt = setTimeout(() => t.classList.remove("on"), action ? 4000 : 1800);
+  }
+
+  // ---------- archive: the card launches up and off the screen ----------
+  const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  function positions() {
+    const m = new Map();
+    $("list").querySelectorAll("[data-item]").forEach((el) => m.set(el.dataset.item, el.getBoundingClientRect().top));
+    return m;
+  }
+  // Slide the remaining cards from where they were to where they are now (FLIP).
+  function settle(before) {
+    $("list").querySelectorAll("[data-item]").forEach((el, n) => {
+      const was = before.get(el.dataset.item); if (was === undefined) return;
+      const dy = was - el.getBoundingClientRect().top; if (!dy) return;
+      el.animate([{ transform: `translateY(${dy}px)` }, { transform: "translateY(0)" }],
+        { duration: 520, delay: n * 30, easing: "cubic-bezier(.2,.9,.25,1.05)" });
+    });
+  }
+  function finishArchive(i) {
+    const before = positions();
+    i.archived = true; save(); renderHome(); settle(before);
+    toast(`Archived ${i.title}`, { label: "Undo", run: () => {
+      const b2 = positions(); i.archived = false; freshId = i.id; save(); renderHome(); settle(b2);
+    } });
+  }
+  function flyAway(i) {
+    const el = $("list").querySelector(`[data-item="${CSS.escape(i.id)}"]`);
+    if (!el || reduceMotion) { setTimeout(() => finishArchive(i), 280); return; }
+    el.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    setTimeout(() => {
+      const screen = $("screen").getBoundingClientRect(), r = el.getBoundingClientRect();
+      const k = screen.height / $("screen").offsetHeight || 1;             // device is scaled to fit the window
+      const lift = (r.bottom - screen.top) / k + 80;                     // far enough to clear the top of the phone
+      const tilt = Math.random() < .5 ? -9 : 9;
+      // Fly a copy on a layer above the list, so it clears the header and leaves through the top of the phone.
+      const ghost = el.cloneNode(true);
+      Object.assign(ghost.style, { position: "absolute", zIndex: 25, margin: 0, pointerEvents: "none",
+        left: (r.left - screen.left) / k + "px", top: (r.top - screen.top) / k + "px", width: r.width / k + "px" });
+      ghost.classList.remove("fresh");
+      $("screen").appendChild(ghost);
+      el.style.visibility = "hidden";
+      const a = ghost.animate([
+        { transform: "translateY(0) rotate(0) scale(1)", opacity: 1, offset: 0 },
+        { transform: "translateY(10px) rotate(0) scale(.96)", opacity: 1, offset: .18, easing: "cubic-bezier(.3,0,.2,1)" },
+        { transform: `translateY(-30px) rotate(${tilt * .3}deg) scale(.98)`, opacity: 1, offset: .38, easing: "cubic-bezier(.55,0,.8,.2)" },
+        { transform: `translateY(-${lift}px) rotate(${tilt}deg) scale(.82)`, opacity: 0, offset: 1 },
+      ], { duration: 820, fill: "forwards" });
+      a.onfinish = () => { ghost.remove(); finishArchive(i); };
+    }, 340);
   }
 
   // ---------- search: test mode ----------
@@ -996,7 +1167,11 @@ button { cursor: pointer; }
   $("clearBtn").onclick = () => { state = { items: [], cols: DEFAULT_COLS.slice() }; save(); filter = "All"; renderHome(); toast("Cleared"); };
 
   // ---------- quick capture (capture-first home) ----------
-  function syncQuick() { $("qFind").disabled = !$("qText").value.trim(); }
+  function syncQuick() {
+    const on = !!$("qText").value.trim();
+    $("qFind").disabled = !on;
+    $("capHint").textContent = on ? "Return to find it" : "Type it how you'd say it. We'll find it.";
+  }
   function quickFind() {
     const text = $("qText").value.trim(); if (!text) return;
     openSheet({ text, from: $("qFrom").value });
@@ -1008,7 +1183,8 @@ button { cursor: pointer; }
 
   // ---------- variants sidebar ----------
   const VARIANTS = [
-    { key: "open", label: "When the app opens", opts: [["capture", "Ready to add"], ["library", "Your saves"]] },
+    { key: "open", label: "When the app opens", opts: [["capture", "Add screen"], ["library", "Your saves"]] },
+    { key: "info", label: "Card info", opts: [["flip", "On the back"], ["bottom", "Bottom caption"], ["pin", "Corner tag"]] },
     { key: "cards", label: "Saved items", opts: [["framed", "Framed"], ["compact", "Rows"], ["grid", "Grid"]] },
     { key: "forReq", label: "What it's for", opts: [["optional", "Optional"], ["required", "Required"]] },
     { key: "alts", label: "Other matches", opts: [["collapsed", "Behind “Not it?”"], ["shown", "Always shown"]] },
@@ -1022,12 +1198,65 @@ button { cursor: pointer; }
         </div>
       </div>`).join("");
   }
+  function showView(v) {
+    $("screen").dataset.view = v;
+    if (v === "cap") setTimeout(() => $("qText").focus(), 380);
+  }
+  $("toSaves").onclick = () => showView("lib");
+
+  // Horizontal swipe between Add and Saves. Follows the finger; settles past halfway or on a quick flick.
+  // Swipes that start on a flippable card flip the card instead, and text fields keep their own dragging.
+  let page = null;
+  const views = document.querySelector(".views");
+  views.addEventListener("pointerdown", (e) => {
+    if (e.target.closest("textarea, input, .chips")) return;
+    const fl = e.target.closest(".flip"); if (fl && fl.querySelector(".back")) return;
+    if ($("sheet").classList.contains("on")) return;
+    page = { x: e.clientX, y: e.clientY, t: performance.now(), from: $("screen").dataset.view, active: false, id: e.pointerId };
+  });
+  addEventListener("pointermove", (e) => {
+    if (!page || e.pointerId !== page.id) return;
+    const dx = e.clientX - page.x, dy = e.clientY - page.y;
+    if (!page.active) {
+      if (Math.abs(dx) < 10 || Math.abs(dx) < Math.abs(dy) * 1.2) { if (Math.abs(dy) > 14) page = null; return; }
+      page.active = true; views.classList.add("dragging");
+    }
+    const W = views.getBoundingClientRect().width;
+    let p = page.from === "cap" ? -dx / W : 1 - dx / W;          // 0 = Add, 1 = Saves
+    p = Math.max(0, Math.min(1, p)); page.p = p; page.dx = dx;
+    document.querySelector(".cap").style.transform = `translateX(${-28 * p}%)`;
+    document.querySelector(".cap").style.opacity = 1 - .75 * p;
+    document.querySelector(".lib").style.transform = `translateX(${(1 - p) * 100}%)`;
+  });
+  function endPage(e) {
+    if (!page || (e && e.pointerId !== page.id)) return;
+    const { active, p = page.from === "lib" ? 1 : 0, dx = 0, t, from } = page; page = null;
+    if (!active) return;
+    swallowClick = true; setTimeout(() => (swallowClick = false), 60);
+    views.classList.remove("dragging");
+    ["cap", "lib"].forEach((c) => { const el = document.querySelector("." + c); el.style.transform = ""; el.style.opacity = ""; });
+    const flick = Math.abs(dx) / Math.max(1, performance.now() - t) > .5;
+    const to = flick ? (dx < 0 ? "lib" : "cap") : (p > .5 ? "lib" : "cap");
+    if (to !== from) showView(to);
+  }
+  addEventListener("pointerup", endPage);
+  addEventListener("pointercancel", endPage);
+  $("backCap").onclick = () => showView("cap");
+  function renderCapture() {
+    $("capDate").textContent = new Date().toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" });
+    const items = live();
+    $("savesCount").textContent = `${items.length} saved`;
+    $("stack").innerHTML = items.slice(0, 3).map((i) => {
+      const yt = i.url && isYouTube(i.url);
+      const b = yt ? "#FF0033" : /^#[0-9a-f]{6}$/i.test(i.brand || "") ? i.brand : COVERS[hash(i.title) % COVERS.length];
+      return `<i style="background:${b};color:${inkOn(b)}">${esc((i.title || "?")[0].toUpperCase())}</i>`;
+    }).join("");
+  }
   function applyVariants(focus) {
-    $("screen").dataset.open = V.open;
     $("list").className = "list " + V.cards;
     renderVariants(); renderHome();
     try { localStorage.setItem(VKEY, JSON.stringify(V)); } catch (e) {}
-    if (focus && V.open === "capture") $("qText").focus();
+    if (focus) showView(V.open === "library" ? "lib" : "cap");
   }
   $("variantGroups").addEventListener("click", (e) => {
     const b = e.target.closest("[data-vk]"); if (!b) return;

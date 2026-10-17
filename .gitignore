@@ -1,3 +1,5 @@
 .env
 node_modules/
 .DS_Store
+# Licensed fonts (Dinamo ABC Areal): do not commit to the public repo
+public/fonts/
