@@ -89,7 +89,8 @@ async function previewFor(rawUrl) {
 }
 
 // ---------- search with Claude + web search ----------
-async function search(q, from) {
+async function search(q, from, stashes = []) {
+  const stashList = (Array.isArray(stashes) ? stashes : []).map(String).slice(0, 30);
   const prompt = `A designer jotted down a note about something a friend recommended. Use web search to find what they most likely mean, then return up to 3 candidate links, best match first.
 
 Note: """${String(q).slice(0, 500)}"""
@@ -101,9 +102,10 @@ Rules:
 - "kind" is one of: tool, site, video, article.
 - "blurb" is one plain sentence (max 18 words) on what it is or does.
 - "brand" is the product's main brand color as #RRGGBB if obvious, else "".
+- "stash" is the best-fitting group for it from this list: ${JSON.stringify(stashList)}. If none fit, suggest a new 1-2 word name.
 
 Finish with only a JSON array, no other text, like:
-[{"title":"Agentation","url":"https://github.com/benjitaylor/agentation","kind":"tool","blurb":"Comment on UI elements and send the batch to your coding agent.","brand":"#0E1116"}]`;
+[{"title":"Agentation","url":"https://github.com/benjitaylor/agentation","kind":"tool","blurb":"Comment on UI elements and send the batch to your coding agent.","brand":"#0E1116","stash":"Design tools"}]`;
 
   const r = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
@@ -141,6 +143,7 @@ Finish with only a JSON array, no other text, like:
       kind: ["tool", "site", "video", "article"].includes(x.kind) ? x.kind : "site",
       blurb: String(x.blurb || "").slice(0, 160),
       brand: /^#[0-9a-f]{6}$/i.test(x.brand || "") ? x.brand : "",
+      stash: typeof x.stash === "string" ? x.stash.slice(0, 24) : "",
       verified: [...seen].some((s) => s === x.url || hostOf(s) === hostOf(x.url)),
     }));
 
@@ -160,9 +163,9 @@ http.createServer(async (req, res) => {
 
     if (url.pathname === "/api/search" && req.method === "POST") {
       if (!API_KEY) return send(res, 400, { error: "No API key yet. Add ANTHROPIC_API_KEY to .env and restart the server." });
-      const { q, from } = await readBody(req);
+      const { q, from, stashes } = await readBody(req);
       if (!q || !String(q).trim()) return send(res, 400, { error: "Type what you heard about first." });
-      return send(res, 200, { candidates: await search(q, from) });
+      return send(res, 200, { candidates: await search(q, from, stashes) });
     }
 
     // static files
