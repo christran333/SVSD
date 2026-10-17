@@ -24,6 +24,8 @@ const PORT = Number(process.env.PORT) || 3000;
 const API_KEY = process.env.ANTHROPIC_API_KEY || "";
 const MODEL = process.env.CLAUDE_MODEL || "claude-sonnet-5-5";
 const PUBLIC = path.join(__dirname, "public");
+// Bump together with APP_SERVER_VERSION in public/index.html whenever the API changes.
+const SERVER_VERSION = 3;
 
 // ---------- helpers ----------
 const send = (res, code, body, type = "application/json") => {
@@ -94,31 +96,39 @@ async function search(q, from, stashes = [], image = "") {
   const img = /^data:(image\/(?:jpeg|png|webp|gif));base64,(.+)$/.exec(String(image || ""));
   const intro = img
     ? `A designer snapped a photo or screenshot of something they want to remember: a tool, app, site, video or creator they saw (on a friend's screen, a tweet, a slide, a poster). First read the image: product names, logos, URLs, handles. Then use web search to find the actual thing and return up to 3 candidate links, best match first. If the image shows several different tools, return each one.`
-    : `A designer jotted down a note about something a friend recommended. Use web search to find what they most likely mean, then return up to 3 candidate links, best match first.`;
+    : `A designer jotted down a quick note about something someone recommended: usually a design or dev tool, plugin, component, AI app, website, video or creator. Find exactly what they mean and return up to 3 candidate links, best match first.`;
   const prompt = `${intro}
 
 ${q ? `Their note: """${String(q).slice(0, 500)}"""` : ""}
 ${from ? `Who told them: """${String(from).slice(0, 200)}"""` : ""}
 
+How to search well:
+- These are often niche or brand new: indie tools announced on X, GitHub repos, Framer/Figma plugins, AI apps, personal projects. Don't settle for a famous product that merely shares a word.
+- Notes are written the way people talk: misspelled, spaced oddly, phonetic, half-remembered ("dial kit" = DialKit, "agentation" = Agentation). Search spelling variants: joined words, with ".com", ".dev", "app", plus "github" or "x.com".
+- A person's name is a strong clue: it's usually the creator. Search their name with the tool words, and check their site, X and GitHub for the project.
+- Use the "who told them" and any descriptive words ("animation tuning", "for vibe coding") to pick between same-named things.
+- Run several searches before deciding. Verify the name on the page actually matches.
+
 Rules:
-- Every URL must come from your search results. Prefer the official homepage, GitHub repo, or the canonical page.
+- Every URL must come from your search results. Prefer the official homepage, then the GitHub repo, then the creator's announcement post. Never return a search-engine results page.
 - If the note could mean several different things, return the different interpretations.
 - "kind" is one of: tool, site, video, article.
 - "blurb" is one plain sentence (max 18 words) on what it is or does.
 - If the note or image shows a piece of work someone made (an animation, a website, an illustration, a video, a 3D scene) rather than a tool or product they could use, put this FIRST: {"kind":"work","title":"<short name for the piece>","url":"<its source link if you found one, else empty>","blurb":"<what it is>"}. Then list any tools you can already tell were used, if any.
 - "brand" is the product's main brand color as #RRGGBB if obvious, else "".
 - "stash" is the best-fitting group for it from this list: ${JSON.stringify(stashList)}. If none fit, suggest a new 1-2 word name.
+- "confidence" is "high" only if the name and details clearly match the note, "medium" if likely, "low" if it's a guess. Order results by confidence.
 
 Finish with only a JSON array, no other text, like:
-[{"title":"Agentation","url":"https://github.com/benjitaylor/agentation","kind":"tool","blurb":"Comment on UI elements and send the batch to your coding agent.","brand":"#0E1116","stash":"Design tools"}]`;
+[{"title":"Agentation","url":"https://github.com/benjitaylor/agentation","kind":"tool","blurb":"Comment on UI elements and send the batch to your coding agent.","brand":"#0E1116","stash":"Design tools","confidence":"high"}]`;
 
   const r = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: { "x-api-key": API_KEY, "anthropic-version": "2023-06-01", "content-type": "application/json" },
     body: JSON.stringify({
       model: MODEL,
-      max_tokens: 1500,
-      tools: [{ type: "web_search_20250305", name: "web_search", max_uses: 3 }],
+      max_tokens: 2500,
+      tools: [{ type: "web_search_20250305", name: "web_search", max_uses: 5 }],
       messages: [{ role: "user", content: img
         ? [{ type: "image", source: { type: "base64", media_type: img[1], data: img[2] } }, { type: "text", text: prompt }]
         : prompt }],
@@ -143,6 +153,7 @@ Finish with only a JSON array, no other text, like:
 
   const cands = (Array.isArray(list) ? list : [])
     .filter((x) => x && typeof x.title === "string" && (x.kind === "work" || (typeof x.url === "string" && /^https?:\/\//.test(x.url))))
+    .filter((x) => !/(google|bing|duckduckgo)\.[a-z.]+\/search/i.test(x.url || ""))
     .slice(0, 4)
     .map((x) => ({
       title: x.title.slice(0, 80),
@@ -151,6 +162,7 @@ Finish with only a JSON array, no other text, like:
       blurb: String(x.blurb || "").slice(0, 160),
       brand: /^#[0-9a-f]{6}$/i.test(x.brand || "") ? x.brand : "",
       stash: typeof x.stash === "string" ? x.stash.slice(0, 24) : "",
+      confidence: ["high", "medium", "low"].includes(x.confidence) ? x.confidence : "medium",
       verified: [...seen].some((s) => s === x.url || hostOf(s) === hostOf(x.url)),
     }));
 
@@ -209,7 +221,7 @@ const TYPES = { ".html": "text/html; charset=utf-8", ".js": "text/javascript", "
 http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host}`);
   try {
-    if (url.pathname === "/api/status") return send(res, 200, { live: Boolean(API_KEY), model: MODEL });
+    if (url.pathname === "/api/status") return send(res, 200, { live: Boolean(API_KEY), model: MODEL, version: SERVER_VERSION });
 
     if (url.pathname === "/api/preview") return send(res, 200, await previewFor(url.searchParams.get("url")));
 
@@ -234,6 +246,13 @@ http.createServer(async (req, res) => {
     console.error(e);
     return send(res, e.status === 401 ? 401 : 500, { error: e.status === 401 ? "The API key was rejected. Check ANTHROPIC_API_KEY in .env." : e.message || "Something went wrong." });
   }
+}).on("error", (e) => {
+  if (e.code === "EADDRINUSE") {
+    console.log(`\n  Port ${PORT} is already in use, probably an older copy of this server still running.`);
+    console.log(`  Stop it and start fresh with:\n\n    lsof -ti :${PORT} | xargs kill; npm start\n`);
+    process.exit(1);
+  }
+  throw e;
 }).listen(PORT, () => {
   console.log(`\n  SVSD toolkit running at http://localhost:${PORT}`);
   // List every network address, Wi-Fi (en0) first. VPNs and virtual adapters show up too, so the first one isn't always right.
