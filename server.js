@@ -25,7 +25,7 @@ const API_KEY = process.env.ANTHROPIC_API_KEY || "";
 const MODEL = process.env.CLAUDE_MODEL || "claude-sonnet-5-5";
 const PUBLIC = path.join(__dirname, "public");
 // Bump together with APP_SERVER_VERSION in public/index.html whenever the API changes.
-const SERVER_VERSION = 3;
+const SERVER_VERSION = 4;
 
 // ---------- helpers ----------
 const send = (res, code, body, type = "application/json") => {
@@ -103,6 +103,8 @@ ${q ? `Their note: """${String(q).slice(0, 500)}"""` : ""}
 ${from ? `Who told them: """${String(from).slice(0, 200)}"""` : ""}
 
 How to search well:
+- Notes may be spoken out loud and transcribed, full of filler ("hey so my friend was talking about..."). Pull out the actual clues and ignore the rest.
+- If the note DESCRIBES what the thing does instead of naming it ("a tool that makes a bunch of variants of a design"), search by that description and return 3 DIFFERENT real products that fit, the most likely first, each with confidence "medium" or "low" unless one clearly matches every detail.
 - These are often niche or brand new: indie tools announced on X, GitHub repos, Framer/Figma plugins, AI apps, personal projects. Don't settle for a famous product that merely shares a word.
 - Notes are written the way people talk: misspelled, spaced oddly, phonetic, half-remembered ("dial kit" = DialKit, "agentation" = Agentation). Search spelling variants: joined words, with ".com", ".dev", "app", plus "github" or "x.com".
 - A person's name is a strong clue: it's usually the creator. Search their name with the tool words, and check their site, X and GitHub for the project.
@@ -117,10 +119,11 @@ Rules:
 - If the note or image shows a piece of work someone made (an animation, a website, an illustration, a video, a 3D scene) rather than a tool or product they could use, put this FIRST: {"kind":"work","title":"<short name for the piece>","url":"<its source link if you found one, else empty>","blurb":"<what it is>"}. Then list any tools you can already tell were used, if any.
 - "brand" is the product's main brand color as #RRGGBB if obvious, else "".
 - "stash" is the best-fitting group for it from this list: ${JSON.stringify(stashList)}. If none fit, suggest a new 1-2 word name.
+- "why" is one short line on why it fits their note, pointing at the matching detail (max 14 words).
 - "confidence" is "high" only if the name and details clearly match the note, "medium" if likely, "low" if it's a guess. Order results by confidence.
 
 Finish with only a JSON array, no other text, like:
-[{"title":"Agentation","url":"https://github.com/benjitaylor/agentation","kind":"tool","blurb":"Comment on UI elements and send the batch to your coding agent.","brand":"#0E1116","stash":"Design tools","confidence":"high"}]`;
+[{"title":"Agentation","url":"https://github.com/benjitaylor/agentation","kind":"tool","blurb":"Comment on UI elements and send the batch to your coding agent.","brand":"#0E1116","stash":"Design tools","confidence":"high","why":"Matches the name and the 'comment on the UI' detail."}]`;
 
   const r = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
@@ -163,6 +166,7 @@ Finish with only a JSON array, no other text, like:
       brand: /^#[0-9a-f]{6}$/i.test(x.brand || "") ? x.brand : "",
       stash: typeof x.stash === "string" ? x.stash.slice(0, 24) : "",
       confidence: ["high", "medium", "low"].includes(x.confidence) ? x.confidence : "medium",
+      why: String(x.why || "").slice(0, 140),
       verified: [...seen].some((s) => s === x.url || hostOf(s) === hostOf(x.url)),
     }));
 

@@ -397,6 +397,16 @@ button { cursor: pointer; }
 .chip .auto { margin-left: 6px; font: 500 9.5px/1 var(--font-label); text-transform: uppercase; letter-spacing: .06em; padding: 2px 4px; border-radius: 4px; background: rgba(255,255,255,.12); color: var(--ink); }
 .sticky-actions { position: sticky; bottom: -40px; background: var(--card); padding: 10px 0 0; margin-top: 4px; }
 
+/* ---------- voice ---------- */
+.mic { position: relative; }
+.mic .ring { position: absolute; inset: -1px; border-radius: 50%; border: 2px solid var(--accent); opacity: 0; pointer-events: none; }
+.cap.listening .mic { background: var(--accent); color: #0A0A0B; border-color: var(--accent); }
+.cap.listening .mic .ring { animation: mic-ring 1.3s ease-out infinite; }
+.cap.listening .cap-hint { color: var(--accent); }
+.cap.listening textarea { caret-color: transparent; }
+@keyframes mic-ring { from { opacity: .8; transform: scale(1); } to { opacity: 0; transform: scale(1.55); } }
+.cand .why, .best .why { font-size: 12px; color: var(--accent); opacity: .9; }
+
 /* ---------- intent ---------- */
 .intent { display: flex; gap: 6px; animation: dz .25s ease-out; }
 .intent button { border: 1px solid var(--line); background: transparent; color: var(--muted); border-radius: 999px; padding: 7px 12px; font-size: 13px; font-weight: 500; }
@@ -578,6 +588,7 @@ button { cursor: pointer; }
             <label class="cap-from"><span>From</span><input id="qFrom" placeholder="someone? optional"></label>
           </div>
           <div class="cap-foot">
+            <button class="cam mic" id="micBtn" aria-label="Say it out loud"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg><span class="ring"></span></button>
             <button class="cam" id="camBtn" aria-label="Add a photo or screenshot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h1.6l1.4-2h5l1.4 2h1.6A2.5 2.5 0 0 1 20 8.5v8A2.5 2.5 0 0 1 17.5 19h-11A2.5 2.5 0 0 1 4 16.5z"/><circle cx="12" cy="12.5" r="3.4"/></svg></button>
             <input type="file" id="photoIn" accept="image/*" hidden>
             <span class="cap-hint" id="capHint">Type it, snap it, or paste a screenshot.</span>
@@ -1032,7 +1043,8 @@ button { cursor: pointer; }
     const c = draft.cands, x = selected();
     if (draft.forWhat === undefined) { draft.via = draft.via || (draft.from ? "person" : ""); resetDraftFields(); }
     const others = c.map((y, i) => [y, i]).filter(([, i]) => i !== draft.pick);
-    const showAlts = V.alts === "shown" || draft.altsOpen;
+    const unsure = x && x.confidence && x.confidence !== "high" && c.length > 1;
+    const showAlts = V.alts === "shown" || draft.altsOpen || unsure;
     const need = V.forReq === "required";
     const canSave = !need || (draft.forWhat || "").trim();
     const row = (y, i) => `
@@ -1041,6 +1053,7 @@ button { cursor: pointer; }
         <span class="item-body">
           <span class="item-top"><span class="item-title">${y ? esc(y.title) : "Keep it as a note"}</span>${y ? `<span class="kind">${esc(y.kind)}</span>` : ""}</span>
           <span class="domain">${y ? esc(domainOf(y.url)) + (mode === "live" && y.verified === false ? " · unverified" : "") : "Attach the link later"}</span>
+          ${y && y.why ? `<span class="why">${esc(y.why)}</span>` : ""}
         </span>
       </button>`;
     $("sheetBody").innerHTML = `
@@ -1048,12 +1061,13 @@ button { cursor: pointer; }
         ${draft.error ? `<p class="hint">${esc(draft.error)}</p>` : ""}
         ${x ? `
         <div class="best">
-          ${draft.pick === 0 ? `<span class="tag-best${x.confidence === "low" ? " unsure" : ""}">${x.confidence === "low" ? "Closest match" : "Best match"}</span>` : ""}
+          ${draft.pick === 0 ? `<span class="tag-best${x.confidence && x.confidence !== "high" ? " unsure" : ""}">${{ low: "Closest match", medium: "Most likely" }[x.confidence] || "Best match"}</span>` : ""}
           <span class="cand-pv big">${previewHTML(x)}</span>
           <span class="item-body">
             <span class="item-title" style="white-space:normal">${esc(x.title)}</span>
             <span class="domain">${esc(domainOf(x.url))}${mode === "live" && x.verified === false ? " · unverified" : ""}</span>
             <span class="blurb">${esc(x.blurb)}</span>
+            ${x.why ? `<span class="why">${esc(x.why)}</span>` : ""}
           </span>
         </div>` : `
         <div class="best note-only">
@@ -1062,7 +1076,7 @@ button { cursor: pointer; }
         </div>`}
         ${c.length || x ? `
         <div class="alts">
-          ${V.alts === "shown" ? `<div class="section-label">Other matches</div>` : `<button class="linkish" id="altsToggle">${showAlts ? "Hide other matches" : "Not it? See other matches"}</button>`}
+          ${unsure ? `<div class="section-label">Could also be</div>` : V.alts === "shown" ? `<div class="section-label">Other matches</div>` : `<button class="linkish" id="altsToggle">${showAlts ? "Hide other matches" : "Not it? See other matches"}</button>`}
           ${showAlts ? `<div class="cands">${others.map(([y, i]) => row(y, i)).join("")}${x ? row(null, -1) : ""}</div>` : ""}
         </div>` : ""}
 
@@ -1446,6 +1460,13 @@ button { cursor: pointer; }
           res(KNOWN.slice(0, 3).map((x) => ({ ...x.r, blurb: "Test result. Live mode reads the photo. " + x.r.blurb }))); return;
         }
         const hits = KNOWN.filter((x) => x.k.some((k) => ql.includes(k))).map((x) => x.r);
+        if (!hits.length && /variant|variation|versions of a design|generate.*design|design.*generat/.test(ql)) {
+          res([
+            { title: "Variant", url: "https://www.google.com/search?q=variant+ai+design+tool", kind: "tool", confidence: "medium", why: "Test result: “endless designs” matches a bunch of variants.", blurb: "AI tool that generates endless variations of a design." },
+            { title: "Galileo AI", url: "https://www.google.com/search?q=galileo+ai", kind: "tool", confidence: "low", why: "Test result: generates UI options from a prompt.", blurb: "Generates UI designs from text prompts." },
+            { title: "Magician for Figma", url: "https://www.google.com/search?q=magician+figma", kind: "tool", confidence: "low", why: "Test result: Figma plugin that spins out design ideas.", blurb: "AI plugin for Figma with design generation." },
+          ]); return;
+        }
         if (!hits.length && /animation|effect|scroll|website|site|poster|3d|shader|made|transition|landing/.test(ql)) {   // test mode: read it as a piece of work
           res([{ kind: "work", title: titleCase(q.trim().slice(0, 40)), url: "", blurb: "Test result: read as something someone made." }]); return;
         }
@@ -1542,6 +1563,42 @@ button { cursor: pointer; }
     const f = [...(e.clipboardData?.files || [])].find((x) => /^image\//.test(x.type));
     if (f) { e.preventDefault(); attachPhoto(f); }
   });
+  // ---------- voice: say it like you'd tell a friend ----------
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  let rec = null, listening = false, voiceBase = "", heardSomething = false;
+  if (!SR) $("micBtn").hidden = true;
+  function voiceUI(on) {
+    listening = on;
+    document.querySelector(".cap").classList.toggle("listening", on);
+    $("micBtn").setAttribute("aria-label", on ? "Stop listening" : "Say it out loud");
+    if (on) { $("capHint").textContent = "Listening… tap to finish"; $("qText").placeholder = "“My friend was talking about this tool that…”"; }
+    else { $("qText").placeholder = "A tool, a link, a name, half a name…"; syncQuick(); }
+  }
+  function startVoice() {
+    try { rec = new SR(); } catch (e) { toast("Voice isn't available in this browser"); return; }
+    rec.lang = navigator.language || "en-US"; rec.interimResults = true; rec.continuous = true;
+    voiceBase = $("qText").value.trim(); heardSomething = false;
+    rec.onresult = (e) => {
+      let said = ""; for (const r of e.results) said += r[0].transcript;
+      heardSomething = !!said.trim();
+      $("qText").value = [voiceBase, said.trim()].filter(Boolean).join(" ");
+      const on = !!$("qText").value.trim(); $("qFind").disabled = !on; $("intent").hidden = !on;
+    };
+    rec.onerror = (e) => {
+      const was = listening; voiceUI(false); rec = null;
+      if (!was) return;
+      if (e.error === "not-allowed" || e.error === "service-not-allowed") toast("Mic is blocked. Allow microphone access for this site.");
+      else if (e.error === "no-speech") toast("Didn't catch anything. Try again.");
+      else if (e.error !== "aborted") toast("Voice stopped. Try again.");
+    };
+    rec.onend = () => {
+      const was = listening; voiceUI(false); rec = null;
+      if (was && heardSomething) setTimeout(quickFind, 450);      // finished talking: go find it
+    };
+    rec.start(); voiceUI(true);
+  }
+  $("micBtn").onclick = () => { if (listening) rec?.stop(); else startVoice(); };
+
   let capIntent = "tool";
   $("intent").onclick = (e) => {
     const b = e.target.closest("[data-intent]"); if (!b) return;
@@ -1553,6 +1610,7 @@ button { cursor: pointer; }
     $("intent").hidden = !on;
     if (!on) { capIntent = "tool"; $("intent").querySelectorAll("[data-intent]").forEach((x) => x.setAttribute("aria-checked", x.dataset.intent === "tool")); }
     $("qFind").disabled = !on;
+    if (listening) return;
     $("capHint").textContent = on ? (capPhoto && !$("qText").value.trim() ? "Add a note, or just send it" : "Return to find it") : "Type it, snap it, or paste a screenshot.";
   }
   function quickFind() {
@@ -1771,7 +1829,7 @@ button { cursor: pointer; }
 
   applyVariants(true);
   setMode("test");
-  const APP_SERVER_VERSION = 3;   // must match SERVER_VERSION in server.js
+  const APP_SERVER_VERSION = 4;   // must match SERVER_VERSION in server.js
   fetch("/api/status").then((r) => r.json()).then((st) => {
     serverStatus = { reachable: true, live: !!st.live, model: st.model || "" };
     if ((st.version || 0) < APP_SERVER_VERSION) {
