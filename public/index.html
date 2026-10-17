@@ -575,7 +575,7 @@ button { cursor: pointer; }
           <div class="cap-body">
             <div class="cap-date" id="capDate"></div>
             <h1 class="cap-q">What'd you find today?</h1>
-            <textarea id="qText" rows="3" placeholder="A tool, a link, a name, half a name…" aria-label="What you found"></textarea>
+            <textarea id="qText" rows="3" placeholder="A tool, a link, a name, or just the idea of one…" aria-label="What you found"></textarea>
             <div class="cap-photo" id="capPhoto" hidden>
               <img id="capPhotoImg" alt="Your photo">
               <button class="cap-photo-x" id="capPhotoX" aria-label="Remove photo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
@@ -1572,7 +1572,7 @@ button { cursor: pointer; }
     document.querySelector(".cap").classList.toggle("listening", on);
     $("micBtn").setAttribute("aria-label", on ? "Stop listening" : "Say it out loud");
     if (on) { $("capHint").textContent = "Listening… tap to finish"; $("qText").placeholder = "“My friend was talking about this tool that…”"; }
-    else { $("qText").placeholder = "A tool, a link, a name, half a name…"; syncQuick(); }
+    else { $("qText").placeholder = "A tool, a link, a name, or just the idea of one…"; syncQuick(); }
   }
   function startVoice() {
     try { rec = new SR(); } catch (e) { toast("Voice isn't available in this browser"); return; }
@@ -1834,7 +1834,7 @@ button { cursor: pointer; }
     serverStatus = { reachable: true, live: !!st.live, model: st.model || "" };
     if ((st.version || 0) < APP_SERVER_VERSION) {
       const w = document.createElement("div"); w.className = "stale";
-      w.innerHTML = "<b>Restart the server.</b> It's running older code than this page, so search and photos may fail. In Terminal: Ctrl+C, then <code>npm start</code>.";
+      w.innerHTML = "<b>Restart the server.</b> It's running older code than this page, so search and photos may fail. In Terminal: Ctrl+C, then <code>npm start</code>. After that it restarts itself when the code changes.";
       document.querySelector(".panel").prepend(w);
       toast("Restart the server: Ctrl+C, then npm start");
     }

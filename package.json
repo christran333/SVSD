@@ -4,7 +4,7 @@
   "private": true,
   "description": "SVSD contest prototype: save tools, links and videos you hear about, find the right link with Claude.",
   "scripts": {
-    "start": "node server.js",
+    "start": "node --watch server.js",
     "phone": "npx -y cloudflared tunnel --url http://localhost:3000"
   },
   "engines": {
