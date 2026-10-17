@@ -28,7 +28,7 @@ body { margin: 0; } [hidden] { display: none !important; } img { max-width: 100%
   --line: #26262C;
   --ink: #F2F2F4;
   --muted: #8B8B95;
-  --accent: #C8FF5A;
+  --accent: #F2F2F4;
   --accent-ink: #111111;
   --sticky: #1C1C21;
   --sticky-ink: #F2F2F4;
@@ -269,6 +269,18 @@ button { cursor: pointer; }
 @keyframes sh { to { background-position: -200% 0; } }
 .section-label { font-family: var(--font-label); font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
 .chip.new { border-style: dashed; }
+.chip-input { padding: 0; display: inline-flex; align-items: center; border-color: var(--accent); }
+.chip-input input { width: 120px; background: transparent; border: 0; outline: none; padding: 6px 12px; font-size: 16px; line-height: 1.2; color: var(--ink); }
+.chip-input input::placeholder { color: #4A4A52; }
+/* rename / delete drawer sheet */
+.chip .ed { display: inline-block; vertical-align: -1px; margin-left: 6px; width: 11px; height: 11px; opacity: .55; }
+.dsheet { display: flex; flex-direction: column; gap: 14px; }
+.dsheet input { width: 100%; background: var(--app-bg); border: 1px solid var(--line); border-radius: 4px; padding: 12px 14px; font-size: 16px; outline: none; }
+.dsheet input:focus { border-color: var(--accent); }
+.dsheet select { width: 100%; background: var(--app-bg); border: 1px solid var(--line); border-radius: 4px; padding: 12px 14px; font-size: 16px; }
+.btn.danger { background: transparent; border: 1px solid #5B2B2B; color: #FF7A7A; }
+.btn.danger.solid { background: #FF7A7A; color: #1a0a0a; border-color: #FF7A7A; flex: 1; }
+.dsheet hr { border: 0; border-top: 1px solid var(--line); margin: 2px 0; width: 100%; }
 .new-col { display: flex; gap: 6px; }
 .new-col input { flex: 1; border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; background: var(--app-bg); }
 
@@ -296,6 +308,20 @@ button { cursor: pointer; }
 #screen[data-view="cap"] .pager i:first-child, #screen[data-view="lib"] .pager i:last-child { width: 16px; background: var(--ink); }
 
 .cap { padding: 8px 24px 34px; }
+/* first-screen constellation: drifting square points, softly linked */
+.cap-bg { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; display: block; }
+.cap > *:not(.cap-bg) { position: relative; z-index: 1; }
+.lib > *:not(.cap-bg):not(.fab) { position: relative; z-index: 1; }
+.lib .list { background-color: transparent; }
+/* toolkit header matches the first page: mono label over a big tight headline */
+/* toolkit cards: same 1px outline + dark translucent fill as the input box, so the constellation shows through */
+.lib .shell { border: 1px solid var(--line); background: transparent; }
+.lib .foot { background: rgba(10,10,11,.6); }
+.lib .ritem { background: rgba(10,10,11,.6); }
+.lib .gpv { border: 1px solid var(--line); }
+.lib .app-head h1 { font-weight: 600; font-size: 34px; letter-spacing: -0.035em; line-height: 1.02; }
+.lib .head-row > div:first-child { display: flex; flex-direction: column; }
+.lib .app-head .sub { order: -1; font: 500 12px/1 var(--font-label); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
 .cap-top { display: flex; align-items: center; justify-content: space-between; }
 .avatar { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; font: 600 13px/1 var(--font-body); background: #232328; color: var(--ink); }
 .saves-btn { display: flex; align-items: center; gap: 8px; border: 1px solid var(--line); background: transparent; border-radius: 999px; padding: 4px 12px 4px 5px; font-size: 13px; font-weight: 500; color: var(--ink); }
@@ -309,9 +335,10 @@ button { cursor: pointer; }
 .cap-date { font: 500 12px/1 var(--font-label); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
 .cap-q { margin: 0; font-family: var(--font-display); font-weight: 600; font-size: 34px; line-height: 1.02; letter-spacing: -0.035em; text-wrap: balance; }
 .cap textarea {
-  width: 100%; background: transparent; border: 0; outline: none; resize: none; padding: 0; margin-top: 6px;
+  width: 100%; background: rgba(10,10,11,.6); border: 1px solid var(--line); border-radius: 4px; outline: none; resize: none; padding: 14px 16px; margin-top: 6px; transition: border-color .2s;
   color: var(--ink); caret-color: var(--accent); font-family: var(--font-body); font-size: 22px; font-weight: 500; line-height: 1.3; letter-spacing: -0.01em;
 }
+.cap textarea:focus { border-color: var(--accent); }
 .cap textarea::placeholder { color: #4A4A52; }
 .cap-from { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 14px; }
 .cap-from input { flex: 1; min-width: 0; background: transparent; border: 0; outline: none; color: var(--ink); font-size: 14px; padding: 0; }
@@ -437,7 +464,7 @@ button { cursor: pointer; }
 /* ---------- finder: the loading animation while it searches ---------- */
 #device {
   --ld-spread: 12px; --ld-tilt: 3deg; --ld-float: 6px; --ld-float-speed: 2.4s; --ld-stagger: .18s;
-  --ld-sheen-speed: 1.4s; --ld-sheen: .14; --ld-glow: #C8FF5A; --ld-glow-size: 0px; --ld-radius: 14px; --ld-scale-step: .05;
+  --ld-sheen-speed: 1.4s; --ld-sheen: .14; --ld-glow: #C8FF5A; --ld-glow-size: 0px; --ld-radius: 4px; --ld-scale-step: .05;
 }
 .finder { position: relative; height: 196px; margin: 6px 0 2px; }
 .finder .ghost {
@@ -533,6 +560,78 @@ button { cursor: pointer; }
 .linkbtn { background: none; border: 0; padding: 0; color: var(--accent); text-align: left; font-size: 12.5px; }
 .flip-inner { will-change: transform; }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+/* ---------- one corner radius (brutalist workshop): pills, chips, buttons, inputs and cards all match ---------- */
+#device { --r: 4px; --r-xs: 2px; --ld-radius: var(--r); }
+#device :is(.chip, .st, .saves-btn, .intent button, .btn, .inp, .shell, .d-frame, .cand, .best, .ritem, .gpv, .cand-pv, .cand-pv.big,
+  .made-row .cand-pv, .caption, .pin, .cover-btn, .tag-best, .toast, .made-btn, .made-btn .spark, .made-row, .made-add, .origin,
+  .not-tool, .cap-photo, .cap-photo-tag, .reading, .finder .ghost, .finder .ghost i, .made-detect, .new-col input, .dropzone,
+  .detail .seg, .gst .st, .refine .btn, .open-btn) { border-radius: var(--r); }
+#device :is(.stack i, .fav .letter, .chip .auto) { border-radius: var(--r-xs); }
+#device .sheet { border-radius: 10px 10px 0 0; }
+#device .gst .st { border-radius: var(--r-xs); }
+#device .st-want { border-style: solid; }
+
+/* Filter row: runs to the screen edge and fades out, so a chip past the edge reads as "scroll for more", not clipped */
+#device .app-head #filters {
+  margin: 0 -20px; padding: 0 20px 2px; scroll-padding-inline: 20px; scroll-snap-type: x proximity;
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 14px, #000 calc(100% - 40px), transparent 100%);
+          mask-image: linear-gradient(to right, transparent 0, #000 14px, #000 calc(100% - 40px), transparent 100%);
+}
+#device .app-head #filters .chip { scroll-snap-align: start; }
+#device .app-head #filters::after { content: ""; flex: none; width: 12px; }   /* room so the last chip clears the fade */
+
+/* Card title: on every framed card, over a gradient so white text reads on any image (white screenshots included) */
+.shell .ttl {
+  position: absolute; z-index: 1; left: 0; right: 0; bottom: 0; height: 62%; pointer-events: none;
+  display: flex; align-items: flex-end; padding: 0 10px 6px 16px;
+  background: linear-gradient(to top, rgba(8,8,10,.86) 0%, rgba(8,8,10,.55) 38%, rgba(8,8,10,0) 100%);
+}
+.shell .ttl span { color: #fff; font-family: var(--font-display); font-weight: 700; font-size: 24px; line-height: 1.05; letter-spacing: -0.025em;
+  text-shadow: 0 1px 12px rgba(0,0,0,.35); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.shell .pv-word, .shell .pv-sub { display: none; }              /* the overlay is the title now; no duplicate */
+.shell.info-bottom .ttl { padding-bottom: 60px; height: 80%; }  /* sits above the bottom caption variant */
+.shell .caption { z-index: 2; }
+.list:not(.compact):not(.grid) { gap: 16px; }
+
+
+.detail textarea.inp { resize: none; overflow: hidden; min-height: 64px; }
+.pcard .shell { transition: border-color .2s; }
+/* Cards / rows switch in the toolkit header */
+.head-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
+.view-tog { display: flex; border: 1px solid var(--line); border-radius: var(--r, 4px); overflow: hidden; flex: none; margin-bottom: 2px; }
+.view-tog button { width: 36px; height: 32px; display: grid; place-items: center; border: 0; background: transparent; color: var(--muted); padding: 0; }
+.view-tog button + button { border-left: 1px solid var(--line); }
+.view-tog button svg { width: 17px; height: 17px; }
+.view-tog button[aria-pressed="true"] { background: var(--ink); color: var(--card); }
+/* Add screen: hint + mic + camera sit right under the input, send button alone in the corner */
+.cap-tools { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+.cap-tools .cap-hint { flex: 1; min-width: 0; line-height: 1.3; }
+.cap-tools .cam { width: 48px; height: 48px; }
+.cap-tools .cam svg { width: 21px; height: 21px; }
+.cap-foot { justify-content: flex-end; }
+#device .cap-date { font-family: var(--font-body); font-weight: 600; font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+/* Status tag on the card face, same tag as the rows view */
+.shell .ttl { justify-content: space-between; gap: 12px; align-items: last baseline; }
+.shell .ttl > span:first-child { flex: 1; min-width: 0; }
+.shell .ttl span.st { flex: none; display: inline-block; margin-bottom: 0; position: relative; top: -4px; border: 1px solid transparent; padding: 3px 9px; font: 600 11.5px/1.3 var(--font-body); letter-spacing: 0; text-shadow: none; -webkit-line-clamp: unset; overflow: visible; }
+.shell .ttl span.st-want { color: #D6D6DC; border-color: rgba(255,255,255,.45); }
+.shell .ttl span.st-tried { color: var(--ink); }
+.shell .ttl span.st-using { color: var(--ok); background: rgba(12,40,24,.8); backdrop-filter: blur(6px); }
+.shell .ttl span.st-nope { color: #FF8A8A; background: rgba(48,14,14,.8); backdrop-filter: blur(6px); }
+.shell .ttl .st-want { background: rgba(10,10,12,.55); color: #D6D6DC; border-color: rgba(255,255,255,.45); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+.shell .ttl .st-tried { background: rgba(42,42,49,.85); backdrop-filter: blur(6px); }
+/* Details drop down inside the card frame when you tap it */
+.drop { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .34s cubic-bezier(.2,.8,.2,1); background: var(--card); }
+.pcard.open .drop { grid-template-rows: 1fr; }
+.drop-in { min-height: 0; overflow: hidden; padding: 0 16px; opacity: 0; transform: translateY(-6px); transition: opacity .2s, transform .34s cubic-bezier(.2,.8,.2,1), padding .34s cubic-bezier(.2,.8,.2,1); }
+.pcard.open .drop-in { padding: 14px 16px 16px; opacity: 1; transform: none; transition-delay: 0s, 0s, 0s; border-top: 1px solid var(--line); }
+.drop-row { display: grid; grid-template-columns: 64px 1fr; gap: 10px; padding: 7px 0; font-size: 13px; line-height: 1.35; color: var(--ink); border-bottom: 1px dashed var(--line); }
+.drop-row:last-child { border-bottom: 0; padding-bottom: 0; }
+.drop-row em { display: block; margin-top: 3px; font-style: normal; color: var(--muted); font-size: 12px; }
+.drop-row small { font: 500 9.5px/1.6 var(--font-label); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.pcard.open .shell { border-color: var(--ink); }
+.shell .foot { cursor: pointer; }
+@media (prefers-reduced-motion: reduce) { .drop, .drop-in { transition: none; } }
 /* On a real phone: no fake frame, no sidebar. The app is the page. */
 @media (max-width: 600px) {
   html, body { height: 100%; overflow: hidden; background: var(--app-bg); }
@@ -568,6 +667,7 @@ button { cursor: pointer; }
         </div>
         <div class="views">
         <section class="view cap" aria-label="Add something">
+          <canvas class="cap-bg" id="capBg" aria-hidden="true"></canvas>
           <div class="cap-top">
             <span class="avatar" aria-hidden="true">C</span>
             <button class="saves-btn" id="toSaves"><span class="stack" id="stack"></span><span id="savesCount"></span></button>
@@ -585,25 +685,34 @@ button { cursor: pointer; }
               <button role="radio" data-intent="tool" aria-checked="true">Find the tool</button>
               <button role="radio" data-intent="made" aria-checked="false">✦ How was it made?</button>
             </div>
-            <label class="cap-from"><span>From</span><input id="qFrom" placeholder="someone? optional"></label>
+            <label class="cap-from" hidden><span>From</span><input id="qFrom" placeholder="someone? optional"></label>
+            <div class="cap-tools">
+              <span class="cap-hint" id="capHint">Type it, snap it, or upload a screenshot.</span>
+              <button class="cam mic" id="micBtn" aria-label="Say it out loud"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg><span class="ring"></span></button>
+              <button class="cam" id="camBtn" aria-label="Add a photo or screenshot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h1.6l1.4-2h5l1.4 2h1.6A2.5 2.5 0 0 1 20 8.5v8A2.5 2.5 0 0 1 17.5 19h-11A2.5 2.5 0 0 1 4 16.5z"/><circle cx="12" cy="12.5" r="3.4"/></svg></button>
+              <input type="file" id="photoIn" accept="image/*" hidden>
+            </div>
           </div>
           <div class="cap-foot">
-            <button class="cam mic" id="micBtn" aria-label="Say it out loud"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg><span class="ring"></span></button>
-            <button class="cam" id="camBtn" aria-label="Add a photo or screenshot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h1.6l1.4-2h5l1.4 2h1.6A2.5 2.5 0 0 1 20 8.5v8A2.5 2.5 0 0 1 17.5 19h-11A2.5 2.5 0 0 1 4 16.5z"/><circle cx="12" cy="12.5" r="3.4"/></svg></button>
-            <input type="file" id="photoIn" accept="image/*" hidden>
-            <span class="cap-hint" id="capHint">Type it, snap it, or paste a screenshot.</span>
             <button class="send" id="qFind" disabled aria-label="Find it"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
           </div>
         </section>
 
-        <section class="view lib" aria-label="Your saves">
+        <section class="view lib" aria-label="Your toolkit">
+          <canvas class="cap-bg" id="libBg" aria-hidden="true"></canvas>
           <div class="lib-top">
             <button class="back-cap" id="backCap"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>Add</button>
           </div>
           <header class="app-head">
-            <div>
-              <h1 id="appTitle">Your saves</h1>
-              <div class="sub" id="countLine"></div>
+            <div class="head-row">
+              <div>
+                <h1 id="appTitle">Your toolkit</h1>
+                <div class="sub" id="countLine"></div>
+              </div>
+              <div class="view-tog" id="viewTog" role="group" aria-label="View">
+                <button data-view="framed" aria-label="Cards"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="11" rx="1"/><path d="M4 19h16"/></svg></button>
+                <button data-view="compact" aria-label="Rows"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4.5" width="5" height="5" rx="1"/><rect x="4" y="14.5" width="5" height="5" rx="1"/><path d="M12 7h8M12 17h8"/></svg></button>
+              </div>
             </div>
             <div class="chips" id="filters" role="group" aria-label="Filter"></div>
           </header>
@@ -644,13 +753,13 @@ button { cursor: pointer; }
     <div class="field">
       <label for="termSel"><span class="section-label">Name for a group</span></label>
       <select id="termSel">
-        <option value="Stash">Stash</option>
-        <option value="Shelf">Shelf</option>
-        <option value="Kit">Kit</option>
         <option value="Drawer">Drawer</option>
-        <option value="Pocket">Pocket</option>
+        <option value="Bin">Bin</option>
+        <option value="Rack">Rack</option>
+        <option value="Shelf">Shelf</option>
+        <option value="Box">Box</option>
       </select>
-      <div class="small">Placeholder copy while the team picks a name that isn't "board" or "channel".</div>
+      <div class="small">What a group of tools is called. Workshop words, not "board" or "channel".</div>
     </div>
     <div class="field">
       <span>Data</span>
@@ -698,7 +807,7 @@ button { cursor: pointer; }
   let mode = "test";
   const VKEY = "svsd-variants";
   const V = Object.assign({ open: "capture", label: "mono", info: "flip", cards: "framed", forReq: "optional", alts: "collapsed" }, (() => { try { return JSON.parse(localStorage.getItem(VKEY)) || {}; } catch (e) { return {}; } })());
-  let term = "Stash";
+  let term = "Drawer";
 
   function load() {
     try {
@@ -738,8 +847,26 @@ button { cursor: pointer; }
     const names = ["All", ...state.cols, ...(archived ? ["Archived"] : [])];
     if (!names.includes(filter)) filter = "All";
     $("filters").innerHTML = names.map((n) =>
-      `<button class="chip" aria-pressed="${n === filter}" data-f="${esc(n)}">${esc(n)}<span class="n">${n === "All" ? live().length : n === "Archived" ? archived : (counts[n] || 0)}</span></button>`
-    ).join("");
+      `<button class="chip" aria-pressed="${n === filter}" data-f="${esc(n)}">${esc(n)}<span class="n">${n === "All" ? live().length : n === "Archived" ? archived : (counts[n] || 0)}</span>${n === filter && state.cols.includes(n) ? PENCIL : ""}</button>`
+    ).join("") + (addingDrawer
+      ? `<span class="chip chip-input"><input id="newDrawer" maxlength="24" placeholder="${esc(term)} name" aria-label="New ${esc(term.toLowerCase())} name" autocomplete="off" enterkeyhint="done"></span>`
+      : `<button class="chip new" id="addDrawer" aria-label="Add a ${esc(term.toLowerCase())}">+ ${esc(term)}</button>`);
+    const inp = $("newDrawer");
+    if (inp) { inp.focus(); inp.scrollIntoView({ inline: "end", block: "nearest" }); }
+  }
+  const PENCIL = `<svg class="ed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4zM13.5 6.5l4 4"/></svg>`;
+  // add a drawer straight from the toolkit
+  let addingDrawer = false;
+  function closeDrawerInput() { if (!addingDrawer) return; addingDrawer = false; renderFilters(); }
+  function commitDrawer(raw) {
+    const n = (raw || "").replace(/\s+/g, " ").trim();
+    addingDrawer = false;
+    if (!n) { renderFilters(); return; }
+    const dupe = state.cols.find((c) => c.toLowerCase() === n.toLowerCase());
+    if (dupe) { filter = dupe; toast(`You already have “${dupe}”`); }
+    else { state.cols.push(n); filter = n; save(); toast(`Added ${n}`); }
+    renderHome();
+    const el = $("filters").querySelector('[aria-pressed="true"]'); if (el) el.scrollIntoView({ inline: "center", block: "nearest" });
   }
   // ---------- previews ----------
   // Curated cover colors for tools with no known brand color, picked by a hash of the name so a tool keeps its color.
@@ -779,6 +906,7 @@ button { cursor: pointer; }
   function originLine(i) {
     return [i.from ? `${esc(viaLabel(i.via))} · ${esc(i.from)}` : esc(viaLabel(i.via)), fmtDate(i.savedAt)].join(" · ");
   }
+  const EDIT_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg>`;
   const FLIP_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15.5-6.2L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15.5 6.2L3 16"/><path d="M3 21v-5h5"/></svg>`;
   function backHTML(i) {
     return `<div class="face back">
@@ -797,54 +925,42 @@ button { cursor: pointer; }
     const info = V.info === "flip" ? ""
       : V.info === "bottom" ? (i.forWhat ? `<div class="caption"><small>${who}</small><span>${esc(i.forWhat)}</span></div>` : "")
       : (i.forWhat ? `<div class="pin"><small>${who}</small>${esc(i.forWhat)}</div>` : "");
-    return `<article class="pcard${fresh ? " fresh" : ""}" data-item="${esc(i.id)}">
+    return `<article class="pcard is-${i.status}${fresh ? " fresh" : ""}${openId === i.id ? " open" : ""}" data-item="${esc(i.id)}">
       <div class="shell info-${V.info}">
         <div class="flip${isVid ? " is-video" : ""}">
           <div class="flip-inner">
-            <div class="face front">${previewHTML(i)}${info}
-              <button class="cover-btn" data-cover="${esc(i.id)}">${i.thumb ? "Change cover" : "Add cover"}</button>
+            <div class="face front">${previewHTML(i)}<div class="ttl"><span>${esc(i.title)}</span>${pill(i)}</div>${info}
             </div>
-            ${V.info === "flip" ? backHTML(i) : ""}
           </div>
-          ${V.info === "flip" ? `<button class="flip-btn" data-flip aria-label="Flip card">${FLIP_ICON}</button>` : ""}
+          <button class="flip-btn edit-btn" data-dmore aria-label="Edit ${esc(i.title)}">${EDIT_ICON}</button>
         </div>
         ${i.url
           ? `<div class="foot"><span class="fav">${favHTML(i)}</span><a class="url" ${open}>${esc(i.url)}</a></div>`
           : `<div class="foot"><span class="fav"><span class="letter" style="--fav-bg:#2A2A31;--fav-ink:var(--ink)">✎</span></span><span class="url" style="text-decoration:none">No link yet</span></div>`}
+        ${dropHTML(i)}
       </div>
-      <div class="under"><b>${esc(i.title)}</b> ${pill(i)} <span>${originLine(i)}</span>${i.example ? ` <span class="example-tag">example</span>` : ""}</div>
     </article>`;
   }
-
-  // Swipe a card sideways to flip it. The card follows the finger, then settles to whichever side is closer.
-  let swipe = null, swallowClick = false;
-  $("list").addEventListener("pointerdown", (e) => {
-    const f = e.target.closest(".flip"); if (!f || !f.querySelector(".back") || e.target.closest("[data-cover]")) return;
-    swipe = { f, x: e.clientX, y: e.clientY, base: f.classList.contains("flipped") ? 180 : 0, active: false, id: e.pointerId };
-  });
-  addEventListener("pointermove", (e) => {
-    if (!swipe || e.pointerId !== swipe.id) return;
-    const dx = e.clientX - swipe.x, dy = e.clientY - swipe.y;
-    if (!swipe.active) {
-      if (Math.abs(dx) < 8 || Math.abs(dx) < Math.abs(dy)) { if (Math.abs(dy) > 12) swipe = null; return; }
-      swipe.active = true; swipe.f.setPointerCapture?.(e.pointerId);
+  // Tap a card and its details drop down inside the same frame. One open at a time.
+  let openId = null;
+  function dropHTML(i) {
+    return `<div class="drop" aria-hidden="${openId !== i.id}"><div class="drop-in">
+        <div class="drop-row"><small>What</small><span>${esc(i.blurb || (i.url ? domainOf(i.url) : "A note"))}</span></div>
+        <div class="drop-row"><small>Found</small><span>${originLine(i)}${i.heard ? `<em>“${esc(i.heard)}”</em>` : ""}</span></div>
+        <div class="drop-row"><small>For</small><span>${esc(i.forWhat || "Nothing yet")}</span></div>
+      </div></div>`;
+  }
+  function toggleDrop(card) {
+    const was = card.classList.contains("open");
+    $("list").querySelectorAll(".pcard.open").forEach((c) => { c.classList.remove("open"); c.querySelector(".drop")?.setAttribute("aria-hidden", "true"); });
+    openId = was ? null : card.dataset.item;
+    if (!was) {
+      card.classList.add("open"); card.querySelector(".drop").setAttribute("aria-hidden", "false");
+      setTimeout(() => card.scrollIntoView({ block: "nearest", behavior: reduceMotion ? "auto" : "smooth" }), 200);
     }
-    const inner = swipe.f.querySelector(".flip-inner");
-    inner.style.transition = "none";
-    inner.style.transform = `rotateY(${swipe.base + Math.max(-180, Math.min(180, dx * 0.9))}deg)`;
-  });
-  addEventListener("pointerup", (e) => {
-    if (!swipe || e.pointerId !== swipe.id) return;
-    const { f, active, x } = swipe; swipe = null;
-    if (!active) return;
-    swallowClick = true; setTimeout(() => (swallowClick = false), 50);
-    const inner = f.querySelector(".flip-inner");
-    inner.style.transition = ""; inner.style.transform = "";
-    if (Math.abs(e.clientX - x) > 45) f.classList.toggle("flipped");
-  });
-  addEventListener("pointercancel", () => {
-    if (!swipe) return; const inner = swipe.f.querySelector(".flip-inner"); inner.style.transition = ""; inner.style.transform = ""; swipe = null;
-  });
+  }
+
+  let swallowClick = false;
 
   // Attach a real cover: the viewer picks a screenshot or thumbnail; we downscale it so it fits in browser storage.
   const coverInput = Object.assign(document.createElement("input"), { type: "file", accept: "image/*", id: "coverInput", hidden: true });
@@ -859,7 +975,7 @@ button { cursor: pointer; }
     try {
       const url = await downscale(f, 960);
       const it = state.items.find((x) => x.id === coverFor); if (!it) return;
-      it.thumb = url; save(); renderHome(); toast("Cover added");
+      it.thumb = url; save(); renderHome(); if (draft?.detail === it.id) keepScroll(() => renderDetail(it)); toast("Cover added");
     } catch (err) { toast("Couldn't read that image"); }
   });
   function downscale(file, maxW) {
@@ -885,7 +1001,7 @@ button { cursor: pointer; }
       </span></div>`;
   }
   function gridHTML(i, fresh) {
-    return `<div class="gtile${fresh ? " fresh" : ""}" data-item="${esc(i.id)}" role="button" tabindex="0">
+    return `<div class="gtile is-${i.status}${fresh ? " fresh" : ""}" data-item="${esc(i.id)}" role="button" tabindex="0">
       <span class="gpv">${previewHTML(i)}<span class="gst">${pill(i)}</span></span>
       <span class="gtitle">${esc(i.title)}</span>
       <span class="gdom">${esc(i.forWhat || (i.url ? domainOf(i.url) : "note"))}</span></div>`;
@@ -893,28 +1009,121 @@ button { cursor: pointer; }
   function renderList() {
     const items = filter === "Archived" ? state.items.filter((i) => i.archived)
       : live().filter((i) => filter === "All" || i.cols.includes(filter));
-    $("countLine").textContent = `${live().length} saved · ${state.cols.length} ${state.cols.length === 1 ? term.toLowerCase() : pluralWord(term)}`;
+    $("countLine").textContent = `${live().length} ${live().length === 1 ? "tool" : "tools"} · ${state.cols.length} ${state.cols.length === 1 ? term.toLowerCase() : pluralWord(term)}`;
+    if (openId && !items.some((i) => i.id === openId)) openId = null;
     $("list").innerHTML = items.length
       ? items.map((i) => (V.cards === "compact" ? compactHTML : V.cards === "grid" ? gridHTML : itemHTML)(i, i.id === freshId)).join("")
-      : `<div class="empty">Nothing in ${esc(filter)} yet.<br>Next time someone mentions something, add it here.</div>`;
+      : `<div class="empty">${filter === "All" ? "Your toolkit is empty." : `Nothing in ${esc(filter)} yet.`}<br>Hear about a tool? Throw it in.</div>`;
     freshId = null;
   }
   $("list").addEventListener("click", (e) => {
     if (swallowClick) return;
-    const fb = e.target.closest("[data-flip]");
-    if (fb) { fb.closest(".flip").classList.toggle("flipped"); return; }
     if (e.target.closest("a, [data-cover]")) return;
-    const card = e.target.closest("[data-item]"); if (card) openDetail(card.dataset.item);
+    const card = e.target.closest("[data-item]"); if (!card) return;
+    const it = state.items.find((x) => x.id === card.dataset.item);
+    if (e.target.closest("[data-dmore]")) { openDetail(it.id); return; }
+    if (e.target.closest(".drop")) return;
+    if (card.classList.contains("pcard")) toggleDrop(card); else openDetail(card.dataset.item);
   });
   $("list").addEventListener("keydown", (e) => {
     if (e.key !== "Enter") return;
     const card = e.target.closest("[data-item]"); if (card) openDetail(card.dataset.item);
   });
-  const plural = (t) => (t.endsWith("sh") ? "es" : t === "Shelf" ? "" : "s");
-  const pluralWord = (t) => t === "Shelf" ? "shelves" : t.toLowerCase() + plural(t);
+  const pluralWord = (t) => ({ Shelf: "shelves", Box: "boxes" })[t] || t.toLowerCase() + "s";
+  const groupLabel = (n) => n > 1 ? pluralWord(term).replace(/^./, (c) => c.toUpperCase()) : term;
+  $("filters").addEventListener("keydown", (e) => {
+    if (e.target.id !== "newDrawer") return;
+    if (e.key === "Enter") { e.preventDefault(); const v = e.target.value; e.target.onblur = null; commitDrawer(v); }
+    else if (e.key === "Escape") { e.target.onblur = null; closeDrawerInput(); }
+  });
+  $("filters").addEventListener("focusout", (e) => {
+    if (e.target.id !== "newDrawer" || !addingDrawer) return;
+    const v = e.target.value; if (v.trim()) commitDrawer(v); else closeDrawerInput();
+  });
+  // ---------- rename / delete a drawer ----------
+  let suppressChipClick = false, pressT = 0, pressXY = null;
+  $("filters").addEventListener("pointerdown", (e) => {
+    suppressChipClick = false;   // a stale flag (the sheet backdrop can swallow the click that would clear it)
+    const b = e.target.closest("[data-f]"); if (!b || !state.cols.includes(b.dataset.f)) return;
+    pressXY = [e.clientX, e.clientY];
+    pressT = setTimeout(() => { suppressChipClick = true; openDrawerSheet(b.dataset.f); }, 550);
+  });
+  const cancelPress = () => clearTimeout(pressT);
+  $("filters").addEventListener("pointerup", cancelPress);
+  $("filters").addEventListener("pointercancel", cancelPress);
+  $("filters").addEventListener("pointermove", (e) => { if (pressXY && Math.hypot(e.clientX - pressXY[0], e.clientY - pressXY[1]) > 8) cancelPress(); });
+
+  function openDrawerSheet(name) {
+    const only = state.items.filter((i) => i.cols.length === 1 && i.cols[0] === name).length;   // tools that live nowhere else
+    const total = state.items.filter((i) => i.cols.includes(name)).length;
+    const others = state.cols.filter((c) => c !== name);
+    $("sheetBody").innerHTML = `
+      <div class="dsheet">
+        <h2>Edit ${esc(term.toLowerCase())}</h2>
+        <div><div class="section-label" style="margin-bottom:6px">Name</div>
+          <input id="dName" maxlength="24" value="${esc(name)}" autocomplete="off" aria-label="${esc(term)} name" enterkeyhint="done"></div>
+        <div class="row"><button type="button" class="btn primary" id="dSave">Rename</button></div>
+        <div id="dDelWrap">
+          ${others.length
+            ? `<button type="button" class="btn danger" id="dDel" style="width:100%">Delete ${esc(term.toLowerCase())}</button>`
+            : `<p class="hint">Keep at least one ${esc(term.toLowerCase())}. Add another before deleting this one.</p>`}
+        </div>
+      </div>`;
+    $("scrim").hidden = false; $("sheet").hidden = false;
+    requestAnimationFrame(() => { $("scrim").classList.add("on"); $("sheet").classList.add("on"); });
+    const rename = () => {
+      const n = $("dName").value.replace(/\s+/g, " ").trim();
+      if (!n || n === name) { closeSheet(); return; }
+      if (state.cols.some((c) => c !== name && c.toLowerCase() === n.toLowerCase())) { toast(`You already have “${n}”`); return; }
+      state.cols = state.cols.map((c) => c === name ? n : c);
+      state.items.forEach((i) => { i.cols = i.cols.map((c) => c === name ? n : c); if (i.collection === name) i.collection = n; });
+      if (filter === name) filter = n;
+      save(); closeSheet(); renderHome(); toast(`Renamed to ${n}`);
+    };
+    $("dSave").onclick = rename;
+    $("dName").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); rename(); } });
+    $("dCancel").onclick = closeSheet;
+    if ($("dDel")) $("dDel").onclick = () => confirmDeleteDrawer(name);
+  }
+  // second screen of the sheet: its own confirm view, so Delete is the only thing to press
+  function confirmDeleteDrawer(name) {
+    const only = state.items.filter((i) => i.cols.length === 1 && i.cols[0] === name).length;
+    const total = state.items.filter((i) => i.cols.includes(name)).length;
+    const others = state.cols.filter((c) => c !== name);
+    $("sheetBody").innerHTML = `
+      <div class="dsheet">
+        <h2>Delete “${esc(name)}”?</h2>
+        <p class="hint" style="font-size:14px;color:var(--ink)">${only
+          ? `${only} ${only === 1 ? "tool lives" : "tools live"} only in this ${esc(term.toLowerCase())}. Move ${only === 1 ? "it" : "them"} to:`
+          : total ? `The ${total} ${total === 1 ? "tool" : "tools"} in it stay in their other ${esc(pluralWord(term))}.` : `It's empty, so nothing else changes.`}</p>
+        ${only ? `<select id="dMove" aria-label="Move tools to">${others.map((c) => `<option value="${esc(c)}">${esc(c)}</option>`).join("")}</select>` : ""}
+        <div class="row"><button type="button" class="btn ghost" id="dBack">Back</button><button type="button" class="btn danger solid" id="dConfirm">Delete ${esc(term.toLowerCase())}</button></div>
+      </div>`;
+    $("dBack").onclick = () => openDrawerSheet(name);
+    $("dConfirm").onclick = () => {
+      try {
+        const target = $("dMove") ? $("dMove").value : state.cols.find((c) => c !== name);
+        const undo = { cols: [...state.cols], items: state.items.map((i) => [i, [...i.cols]]), filter };
+        state.cols = state.cols.filter((c) => c !== name);
+        state.items.forEach((i) => {
+          if (!i.cols.includes(name)) return;
+          i.cols = i.cols.filter((c) => c !== name);
+          if (!i.cols.length) i.cols = [target || state.cols[0]];
+        });
+        if (filter === name) filter = "All";
+        save(); closeSheet(); renderHome();
+        toast(`Deleted ${name}`, { label: "Undo", run: () => {
+          state.cols = undo.cols; undo.items.forEach(([i, c]) => { i.cols = c; }); filter = undo.filter; save(); renderHome();
+        } });
+      } catch (err) { console.error(err); toast("Couldn't delete that. Try again."); }
+    };
+  }
   function renderHome() { renderFilters(); renderList(); renderCapture(); }
   $("filters").addEventListener("click", (e) => {
+    if (e.target.closest("#addDrawer")) { addingDrawer = true; renderFilters(); return; }
     const b = e.target.closest("[data-f]"); if (!b) return;
+    if (suppressChipClick) { suppressChipClick = false; return; }
+    if (b.dataset.f === filter && state.cols.includes(filter)) { openDrawerSheet(filter); return; }   // tap the open drawer again to edit it
     filter = b.dataset.f; renderHome();
   });
 
@@ -962,7 +1171,7 @@ button { cursor: pointer; }
   function closeSheet() {
     ctl?.abort();
     $("scrim").classList.remove("on"); $("sheet").classList.remove("on");
-    setTimeout(() => { $("scrim").hidden = true; $("sheet").hidden = true; }, 320);
+    setTimeout(() => { if ($("sheet").classList.contains("on")) return; $("scrim").hidden = true; $("sheet").hidden = true; }, 320);   // skip if it was reopened meanwhile
   }
   $("openCapture").addEventListener("click", () => showView("cap"));
   $("scrim").addEventListener("click", () => { closeSheet(); if (draft?.detail) renderHome(); });
@@ -1093,7 +1302,7 @@ button { cursor: pointer; }
         <div class="chips wrap" id="viaChips">${VIA_PICK.map(([v, l]) => `<button class="chip" aria-pressed="${draft.via === v}" data-via="${v}">${esc(l)}</button>`).join("")}</div>
         <input class="inp" id="fromWho" placeholder="Who? (optional)" value="${esc(draft.from || "")}">
 
-        <div class="section-label">${esc(term)}${draft.cols.length > 1 ? (term === "Shelf" ? "ves" : plural(term)) : ""}</div>
+        <div class="section-label">${esc(groupLabel(draft.cols.length))}</div>
         <div class="chips wrap" id="colChips">${state.cols.map((n) => `<button class="chip" aria-pressed="${draft.cols.includes(n)}" data-col="${esc(n)}">${esc(n)}${n === draft.autoCol && !draft.colsEdited ? `<span class="auto">auto</span>` : ""}</button>`).join("")}<button class="chip new" id="newColBtn">+ New</button></div>
         <div class="new-col" id="newColRow" hidden><input id="newColName" placeholder="${esc(term)} name"><button class="btn ghost" id="newColAdd">Add</button></div>
 
@@ -1174,7 +1383,7 @@ button { cursor: pointer; }
                <div class="made-row">
                  <span class="cand-pv">${previewHTML(t)}</span>
                  <span class="item-body"><span class="item-title">${esc(t.title)}</span><span class="blurb">${esc(t.role || t.blurb)}</span></span>
-                 ${savedUrl(t.url) ? `<span class="made-saved">Saved</span>` : `<button class="made-add" data-pk="${k}" aria-pressed="${draft.madePick.has(k)}">${draft.madePick.has(k) ? "✓ Adding" : "+ Add"}</button>`}
+                 ${savedUrl(t.url) ? `<span class="made-saved">In toolkit</span>` : `<button class="made-add" data-pk="${k}" aria-pressed="${draft.madePick.has(k)}">${draft.madePick.has(k) ? "✓ Adding" : "+ Add"}</button>`}
                </div>`).join("") || `<p class="hint">Couldn't find solid evidence of the tools used.</p>`}</div>`}
         <div class="section-label">${esc(term)}</div>
         <div class="chips wrap" id="madeCols">${state.cols.map((c) => `<button class="chip" aria-pressed="${draft.madeCols.includes(c)}" data-col="${esc(c)}">${esc(c)}</button>`).join("")}</div>
@@ -1215,7 +1424,7 @@ button { cursor: pointer; }
     freshId = id; filter = "All";
     const wasInline = draft.inline;
     closeSheet(); renderHome();
-    toast(tools.length ? `Saved ${inspo.title} + ${tools.length} tool${tools.length > 1 ? "s" : ""}` : `Saved ${inspo.title}`);
+    toast(tools.length ? `Into the toolkit · ${inspo.title} + ${tools.length} tool${tools.length > 1 ? "s" : ""}` : `Into the toolkit · ${inspo.title}`);
     if (wasInline) { $("qText").value = ""; $("qFrom").value = ""; clearPhoto(); syncQuick(); }
   }
   function keepScroll(fn) { const y = $("sheet").scrollTop; fn(); $("sheet").scrollTop = y; }
@@ -1244,7 +1453,7 @@ button { cursor: pointer; }
     freshId = item.id; filter = "All";
     const wasInline = draft.inline;
     closeSheet(); renderHome();
-    toast(`Saved to ${item.cols.join(" + ")}`);
+    toast(`Into the toolkit · ${item.cols.join(" + ")}`);
     if (wasInline) {
       $("qText").value = ""; $("qFrom").value = ""; clearPhoto(); syncQuick(); setTimeout(() => $("qText").focus(), 340);
       const sb = $("toSaves"); sb.classList.remove("bump"); void sb.offsetWidth; sb.classList.add("bump");
@@ -1268,7 +1477,7 @@ button { cursor: pointer; }
             <span class="item-title">${esc(t.title)}</span>
             <span class="blurb">${esc(t.role || t.blurb)}</span>
           </span>
-          ${savedUrl(t.url) ? `<span class="made-saved">Saved</span>` : `<button class="made-add" data-made="${n}">+ Save</button>`}
+          ${savedUrl(t.url) ? `<span class="made-saved">In toolkit</span>` : `<button class="made-add" data-made="${n}">+ Add</button>`}
         </div>`).join("") || `<p class="hint">Couldn't find solid evidence of the tools used.</p>`}</div>`;
   }
   function wireMade(i) {
@@ -1293,7 +1502,7 @@ button { cursor: pointer; }
         cols: [col], status: "want", take: "", savedAt: today(),
       });
       save(); renderHome(); keepScroll(() => { $("made").innerHTML = madeHTML(i); wireMade(i); });
-      toast(`Saved ${t.title} to ${col}`);
+      toast(`${t.title} → ${col}`);
     });
   }
   async function liveMade(i) {
@@ -1326,7 +1535,7 @@ button { cursor: pointer; }
     const takeHint = { want: "What do you want to try it for?", tried: "How'd it go?", using: "What do you use it for now?", nope: "Why not? Save future-you the time." }[i.status];
     $("sheetBody").innerHTML = `
       <div class="detail">
-        <div class="d-frame">${previewHTML(i)}</div>
+        <div class="d-frame">${previewHTML(i)}<button class="cover-btn d-cover" data-cover="${esc(i.id)}">${i.thumb ? "Change cover" : "Add cover"}</button></div>
         <div class="d-head">
           <div style="min-width:0">
             <h2>${esc(i.title)}</h2>
@@ -1352,9 +1561,9 @@ button { cursor: pointer; }
           ${i.seen ? `<img class="seen-img" src="${i.seen}" alt="The photo you snapped">` : ""}
         </div>
 
-        <div class="made" id="made">${madeHTML(i)}</div>
+        ${i.kind === "inspo" ? `<div class="made" id="made">${madeHTML(i)}</div>` : ""}
 
-        <div class="section-label">${esc(term)}${i.cols.length > 1 ? (term === "Shelf" ? "ves" : plural(term)) : ""}</div>
+        <div class="section-label">${esc(groupLabel(i.cols.length))}</div>
         <div class="chips wrap" id="dCols">${state.cols.map((n) => `<button class="chip" aria-pressed="${i.cols.includes(n)}" data-col="${esc(n)}">${esc(n)}</button>`).join("")}</div>
 
         <div class="row">
@@ -1367,8 +1576,11 @@ button { cursor: pointer; }
       const b = e.target.closest("[data-st]"); if (!b) return;
       i.status = b.dataset.st; commitEdit(); keepScroll(() => renderDetail(i));
     };
-    $("dFor").oninput = (e) => { i.forWhat = e.target.value; save(); };
-    $("dTake").oninput = (e) => { i.take = e.target.value; save(); };
+    // Text boxes grow with their text, so nothing gets cut off at the bottom.
+    const fit = (t) => { t.style.height = "auto"; t.style.height = t.scrollHeight + 2 + "px"; };
+    ["dFor", "dTake"].forEach((id) => requestAnimationFrame(() => fit($(id))));
+    $("dFor").oninput = (e) => { i.forWhat = e.target.value; fit(e.target); save(); };
+    $("dTake").oninput = (e) => { i.take = e.target.value; fit(e.target); save(); };
     $("dCols").onclick = (e) => {
       const b = e.target.closest("[data-col]"); if (!b) return;
       const n = b.dataset.col;
@@ -1611,7 +1823,7 @@ button { cursor: pointer; }
     if (!on) { capIntent = "tool"; $("intent").querySelectorAll("[data-intent]").forEach((x) => x.setAttribute("aria-checked", x.dataset.intent === "tool")); }
     $("qFind").disabled = !on;
     if (listening) return;
-    $("capHint").textContent = on ? (capPhoto && !$("qText").value.trim() ? "Add a note, or just send it" : "Return to find it") : "Type it, snap it, or paste a screenshot.";
+    $("capHint").textContent = on ? (capPhoto && !$("qText").value.trim() ? "Add a note, or just send it" : "Return to find it") : "Type it, snap it, or upload a screenshot.";
   }
   function quickFind() {
     const text = $("qText").value.trim(); if (!text && !capPhoto) return;
@@ -1624,10 +1836,10 @@ button { cursor: pointer; }
 
   // ---------- variants sidebar ----------
   const VARIANTS = [
-    { key: "open", label: "When the app opens", opts: [["capture", "Add screen"], ["library", "Your saves"]] },
-    { key: "info", label: "Card info", opts: [["flip", "On the back"], ["bottom", "Bottom caption"], ["pin", "Corner tag"]] },
+    { key: "open", label: "When the app opens", opts: [["capture", "Add screen"], ["library", "Your toolkit"]] },
+    { key: "info", label: "Card info", opts: [["flip", "Title only"], ["bottom", "Bottom caption"], ["pin", "Corner tag"]] },
     { key: "label", label: "Label font", opts: [["mono", "Mono"], ["caps", "Sans caps"], ["serif", "Serif italic"], ["cond", "Condensed"]] },
-    { key: "cards", label: "Saved items", opts: [["framed", "Framed"], ["compact", "Rows"], ["grid", "Grid"]] },
+    { key: "cards", label: "Toolkit layout", opts: [["framed", "Framed"], ["compact", "Rows"], ["grid", "Grid"]] },
     { key: "forReq", label: "What it's for", opts: [["optional", "Optional"], ["required", "Required"]] },
     { key: "alts", label: "Other matches", opts: [["collapsed", "Behind “Not it?”"], ["shown", "Always shown"]] },
   ];
@@ -1685,7 +1897,7 @@ button { cursor: pointer; }
   addEventListener("pointercancel", endPage);
 
   // Two-finger trackpad swipe: arrives as horizontal scrolling. Drives the same motion as a drag:
-  // over a flippable card it flips the card, anywhere else it moves between Add and Saves.
+  // it moves between Add and Saves.
   let wheel = null, wheelIdle = 0, wheelCooldown = 0;
   views.addEventListener("wheel", (e) => {
     if (Math.abs(e.deltaX) <= Math.abs(e.deltaY) || $("sheet").classList.contains("on")) return;
@@ -1693,17 +1905,12 @@ button { cursor: pointer; }
     e.preventDefault();
     if (performance.now() < wheelCooldown) return;               // ignore the trackpad's momentum tail
     if (!wheel) {
-      const fl = e.target.closest(".flip");
-      wheel = { dx: 0, t: performance.now(), card: fl && fl.querySelector(".back") ? fl : null, from: $("screen").dataset.view };
-      if (!wheel.card) views.classList.add("dragging");
+      wheel = { dx: 0, t: performance.now(), from: $("screen").dataset.view };
+      views.classList.add("dragging");
     }
     wheel.dx -= e.deltaX;
     const W = views.getBoundingClientRect().width;
-    if (wheel.card) {
-      const base = wheel.card.classList.contains("flipped") ? 180 : 0, inner = wheel.card.querySelector(".flip-inner");
-      inner.style.transition = "none";
-      inner.style.transform = `rotateY(${base + Math.max(-180, Math.min(180, wheel.dx * 0.9))}deg)`;
-    } else {
+    {
       let p = wheel.from === "cap" ? -wheel.dx / W : 1 - wheel.dx / W;
       p = Math.max(0, Math.min(1, p)); wheel.p = p;
       document.querySelector(".cap").style.transform = `translateX(${-28 * p}%)`;
@@ -1716,11 +1923,6 @@ button { cursor: pointer; }
   function endWheel() {
     const w = wheel; wheel = null; if (!w) return;
     wheelCooldown = performance.now() + 450;
-    if (w.card) {
-      const inner = w.card.querySelector(".flip-inner"); inner.style.transition = ""; inner.style.transform = "";
-      if (Math.abs(w.dx) > 45) w.card.classList.toggle("flipped");
-      return;
-    }
     views.classList.remove("dragging");
     ["cap", "lib"].forEach((c) => { const el = document.querySelector("." + c); el.style.transform = ""; el.style.opacity = ""; });
     const flick = Math.abs(w.dx) / Math.max(1, performance.now() - w.t) > .35 && Math.abs(w.dx) > 30;
@@ -1731,7 +1933,7 @@ button { cursor: pointer; }
   function renderCapture() {
     $("capDate").textContent = new Date().toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" });
     const items = live();
-    $("savesCount").textContent = `${items.length} saved`;
+    $("savesCount").textContent = `${items.length} ${items.length === 1 ? "tool" : "tools"}`;
     $("stack").innerHTML = items.slice(0, 3).map((i) => {
       const yt = i.url && isYouTube(i.url);
       const b = yt ? "#FF0033" : /^#[0-9a-f]{6}$/i.test(i.brand || "") ? i.brand : COVERS[hash(i.title) % COVERS.length];
@@ -1741,10 +1943,16 @@ button { cursor: pointer; }
   function applyVariants(focus) {
     $("device").dataset.label = V.label;
     $("list").className = "list " + V.cards;
+    $("viewTog").querySelectorAll("[data-view]").forEach((b) => b.setAttribute("aria-pressed", b.dataset.view === V.cards));
     renderVariants(); renderHome();
     try { localStorage.setItem(VKEY, JSON.stringify(V)); } catch (e) {}
     if (focus) showView(V.open === "library" ? "lib" : "cap");
   }
+  // Cards or rows, switched right on the toolkit page
+  $("viewTog").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-view]"); if (!b || V.cards === b.dataset.view) return;
+    V.cards = b.dataset.view; openId = null; applyVariants();
+  });
   $("variantGroups").addEventListener("click", (e) => {
     const b = e.target.closest("[data-vk]"); if (!b) return;
     V[b.dataset.vk] = b.dataset.vv; applyVariants(b.dataset.vk === "open");
@@ -1777,7 +1985,7 @@ button { cursor: pointer; }
       spread: [12, 0, 40, 1],
       tilt: [3, 0, 14, 0.5],
       depth: [0.05, 0, 0.15, 0.01],
-      radius: [14, 4, 28, 1],
+      radius: [4, 0, 28, 1],
       motion: {
         float: [6, 0, 24, 1],
         floatSpeed: [2.4, 0.6, 6, 0.1],
@@ -1789,7 +1997,7 @@ button { cursor: pointer; }
       status: { show: true, every: [1.8, 0.6, 4, 0.1] },
       copy: { type: "action", label: "Copy values" },
     }, {
-      persist: { key: "svsd-loader" },
+      persist: { key: "svsd-loader-v2" },
       onAction: (a) => {
         if (a === "preview") previewLoader();
         if (a === "copy") {
@@ -1850,6 +2058,73 @@ button { cursor: pointer; }
     const s = document.createElement("script"); s.src = "/vendor/agentation.js"; s.defer = true; document.body.appendChild(s);
     const l = document.createElement("link"); l.rel = "stylesheet"; l.href = "/vendor/dialkit/dialkit.css"; document.head.appendChild(l);
   }
+
+/* ---------- first-screen background: drifting squares, all neighbours softly connected ---------- */
+function constellation(cv, opt) {
+  if (!cv) return;
+  const ctx = cv.getContext("2d"), host = cv.parentElement;
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const LINK_ALPHA = opt.line, DENSITY = opt.density, DIM = opt.dim;   // keep LINK_ALPHA low: the lines should whisper
+  let W = 0, H = 0, dpr = 2, pts = [], order = [], raf = 0, last = 0;
+  const rnd = (a, b) => a + Math.random() * (b - a);
+  function make() {
+    const n = Math.round(W * H * DENSITY);
+    pts = Array.from({ length: n }, () => {
+      const big = Math.random() < 0.16;
+      return { x: rnd(0, W), y: rnd(0, H), vx: rnd(-.12, .12), vy: rnd(-.12, .12),
+               s: big ? rnd(4, 6) : rnd(2, 3.4), a: big ? rnd(.85, 1) : rnd(.4, .85),
+               ph: rnd(0, 6.28), sp: rnd(.4, 1.2) };
+    });
+    // greedy nearest-neighbour walk from the top-left point: one path through everything
+    const left = pts.map((_, i) => i).sort((i, j) => (pts[i].x + pts[i].y) - (pts[j].x + pts[j].y));
+    order = [left.shift()];
+    while (left.length) {
+      const c = pts[order[order.length - 1]]; let bi = 0, bd = 1e9;
+      left.forEach((j, k) => { const d = Math.hypot(c.x - pts[j].x, c.y - pts[j].y); if (d < bd) { bd = d; bi = k; } });
+      order.push(left.splice(bi, 1)[0]);
+    }
+  }
+  function size() {
+    W = host.clientWidth; H = host.clientHeight; if (!W || !H) return;
+    cv.width = W * dpr; cv.height = H * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    make(); draw(0);
+  }
+  function draw(t) {
+    ctx.clearRect(0, 0, W, H);
+    const al = pts.map(p => DIM * p.a * (0.8 + 0.2 * Math.sin(t * p.sp + p.ph)));
+    // one continuous line threaded through the squares in a fixed order, like a constellation
+    ctx.lineWidth = 1; ctx.lineJoin = "round";
+    for (let k = 1; k < order.length; k++) {
+      const a = pts[order[k - 1]], b = pts[order[k]], d = Math.hypot(a.x - b.x, a.y - b.y);
+      ctx.strokeStyle = `rgba(255,255,255,${LINK_ALPHA * Math.max(0.4, 1 - d / 420)})`;
+      ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+    }
+    for (let i = 0; i < pts.length; i++) {
+      const p = pts[i]; ctx.fillStyle = `rgba(255,255,255,${al[i]})`;
+      ctx.fillRect(p.x - p.s / 2, p.y - p.s / 2, p.s, p.s);
+    }
+  }
+  function tick(now) {
+    raf = requestAnimationFrame(tick);
+    const dt = Math.min(50, now - (last || now)); last = now;
+    for (const p of pts) {
+      p.x += p.vx * dt / 16; p.y += p.vy * dt / 16;
+      if (p.x < 0 || p.x > W) { p.vx *= -1; p.x = Math.max(0, Math.min(W, p.x)); }
+      if (p.y < 0 || p.y > H) { p.vy *= -1; p.y = Math.max(0, Math.min(H, p.y)); }
+    }
+    draw(now / 1000);
+  }
+  function run() { if (!raf && !reduce) { last = 0; raf = requestAnimationFrame(tick); } }
+  function stop() { cancelAnimationFrame(raf); raf = 0; }
+  const scr = document.getElementById("screen");
+  const sync = () => (document.hidden || (scr && (scr.dataset.view === "lib") !== opt.onLib)) ? stop() : run();
+  new ResizeObserver(size).observe(host);
+  document.addEventListener("visibilitychange", sync);
+  if (scr) new MutationObserver(sync).observe(scr, { attributes: true, attributeFilter: ["data-view"] });
+  size(); sync();
+}
+constellation(document.getElementById("capBg"), { line: 0.3, density: 1 / 7500, dim: 1, onLib: false });
+constellation(document.getElementById("libBg"), { line: 0.16, density: 1 / 11000, dim: 0.55, onLib: true });   // quieter: the cards sit on top of it
 </script>
 </body>
 </html>
