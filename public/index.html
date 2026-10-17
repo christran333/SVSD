@@ -103,6 +103,35 @@ button { cursor: pointer; }
   width: 139px; height: 5px; border-radius: 3px; background: var(--ink); opacity: .9; pointer-events: none;
 }
 
+/* ---------- laptop ---------- */
+.device[data-device="desktop"] {
+  width: 1240px; height: 820px; padding: 16px 16px 48px; border-radius: 24px 24px 14px 14px;
+  background: linear-gradient(135deg, #34343a, #101012 38%, #25252b);
+  box-shadow:
+    0 0 0 1.5px #47474e,
+    0 0 0 4px #17171a,
+    inset 0 0 0 1px #4a4a51,
+    0 42px 80px -24px rgba(0,0,0,.95);
+}
+.device[data-device="desktop"]::before {
+  content: ""; position: absolute; z-index: 2; left: 50%; bottom: 16px; width: 7px; height: 7px;
+  transform: translateX(-50%); border-radius: 50%; background: #09090a; box-shadow: inset 0 0 0 1px #424249;
+}
+.device[data-device="desktop"]::after {
+  content: ""; position: absolute; z-index: 1; left: -12px; right: -12px; width: auto; top: auto; bottom: -18px; height: 18px;
+  border-radius: 5px 5px 14px 14px; background: linear-gradient(#4a4a50, #2a2a2f 50%, #17171a);
+  box-shadow: 0 8px 14px -4px rgba(0,0,0,.8), inset 0 1px 0 #68686f, inset 0 -1px 0 #0d0d0f;
+}
+.device[data-device="desktop"] .screen {
+  width: 1208px; height: 756px; border-radius: 10px; background: var(--app-bg);
+}
+.device[data-device="desktop"] .island,
+.device[data-device="desktop"] .status,
+.device[data-device="desktop"] .home-ind { display: none; }
+.device[data-device="desktop"] .views { height: 100%; }
+.device[data-device="desktop"] .app-head { padding-top: 24px; }
+.device[data-device="desktop"] .cap { padding-left: 72px; padding-right: 72px; }
+
 .app-head { padding: 6px 20px 8px; display: flex; flex-direction: column; gap: 12px; }
 .app-head h1 { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: 30px; letter-spacing: -0.02em; line-height: 1.05; }
 .app-head .sub { color: var(--muted); font-size: 13px; }
@@ -542,6 +571,14 @@ button { cursor: pointer; }
 .panel h3 { margin: 0; font-family: var(--font-display); font-size: 18px; }
 .panel .lede { color: var(--muted); font-size: 12.5px; line-height: 1.45; margin: 4px 0 0; }
 .field { display: flex; flex-direction: column; gap: 6px; }
+.device-switch { display: flex; gap: 8px; }
+.device-switch button {
+  flex: 1; display: flex; align-items: center; justify-content: center; gap: 7px;
+  min-width: 0; border: 1px solid var(--panel-line); border-radius: 10px; padding: 9px 7px;
+  background: transparent; font-size: 12px;
+}
+.device-switch button svg { width: 16px; height: 16px; flex: none; }
+.device-switch button[aria-pressed="true"] { background: var(--ink); color: var(--panel); }
 .field > span { font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
 .seg { display: grid; grid-template-columns: repeat(var(--n, 2), 1fr); border: 1px solid var(--panel-line); border-radius: 10px; overflow: hidden; }
 .seg button { border: 0; background: transparent; padding: 8px 6px; font-weight: 500; font-size: 12.5px; line-height: 1.2; }
@@ -639,6 +676,7 @@ button { cursor: pointer; }
   .panel { display: none; }
   .stage, .device-fit { width: 100% !important; height: 100% !important; display: block; }
   .device { position: static; width: 100% !important; height: 100% !important; transform: none !important; padding: 0; border-radius: 0; background: var(--app-bg); box-shadow: none; }
+  .device[data-device="desktop"] { width: 100% !important; height: 100% !important; padding: 0; border-radius: 0; }
   .device::before, .device::after, .btn-action, .btn-camera, .island, .status, .home-ind { display: none !important; }
   .screen { width: 100%; height: 100dvh; border-radius: 0; padding-top: env(safe-area-inset-top, 0px); }
   .cap { padding-bottom: calc(18px + env(safe-area-inset-bottom, 0px)); }
@@ -699,7 +737,6 @@ button { cursor: pointer; }
         </section>
 
         <section class="view lib" aria-label="Your toolkit">
-          <canvas class="cap-bg" id="libBg" aria-hidden="true"></canvas>
           <div class="lib-top">
             <button class="back-cap" id="backCap"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>Add</button>
           </div>
@@ -738,6 +775,19 @@ button { cursor: pointer; }
     <div>
       <h3>Variants</h3>
       <p class="lede">Flip these to compare layouts live. When a combo feels right, copy your picks and paste them to Claude.</p>
+    </div>
+    <div class="field">
+      <span>Preview device</span>
+      <div class="device-switch" role="group" aria-label="Preview device">
+        <button id="phoneView" data-device-view="phone" aria-pressed="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="7" y="2.5" width="10" height="19" rx="2"/><path d="M10.5 5h3"/></svg>
+          <span>Phone</span>
+        </button>
+        <button id="desktopView" data-device-view="desktop" aria-pressed="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M8 20h8M12 16v4M5 20h14"/></svg>
+          <span>Laptop</span>
+        </button>
+      </div>
     </div>
     <div id="variantGroups" style="display:flex;flex-direction:column;gap:16px"></div>
     <button class="copy-btn" id="copyPicks">Copy picks</button>
@@ -1031,93 +1081,6 @@ button { cursor: pointer; }
   });
   const pluralWord = (t) => ({ Shelf: "shelves", Box: "boxes" })[t] || t.toLowerCase() + "s";
   const groupLabel = (n) => n > 1 ? pluralWord(term).replace(/^./, (c) => c.toUpperCase()) : term;
-  $("filters").addEventListener("keydown", (e) => {
-    if (e.target.id !== "newDrawer") return;
-    if (e.key === "Enter") { e.preventDefault(); const v = e.target.value; e.target.onblur = null; commitDrawer(v); }
-    else if (e.key === "Escape") { e.target.onblur = null; closeDrawerInput(); }
-  });
-  $("filters").addEventListener("focusout", (e) => {
-    if (e.target.id !== "newDrawer" || !addingDrawer) return;
-    const v = e.target.value; if (v.trim()) commitDrawer(v); else closeDrawerInput();
-  });
-  // ---------- rename / delete a drawer ----------
-  let suppressChipClick = false, pressT = 0, pressXY = null;
-  $("filters").addEventListener("pointerdown", (e) => {
-    suppressChipClick = false;   // a stale flag (the sheet backdrop can swallow the click that would clear it)
-    const b = e.target.closest("[data-f]"); if (!b || !state.cols.includes(b.dataset.f)) return;
-    pressXY = [e.clientX, e.clientY];
-    pressT = setTimeout(() => { suppressChipClick = true; openDrawerSheet(b.dataset.f); }, 550);
-  });
-  const cancelPress = () => clearTimeout(pressT);
-  $("filters").addEventListener("pointerup", cancelPress);
-  $("filters").addEventListener("pointercancel", cancelPress);
-  $("filters").addEventListener("pointermove", (e) => { if (pressXY && Math.hypot(e.clientX - pressXY[0], e.clientY - pressXY[1]) > 8) cancelPress(); });
-
-  function openDrawerSheet(name) {
-    const only = state.items.filter((i) => i.cols.length === 1 && i.cols[0] === name).length;   // tools that live nowhere else
-    const total = state.items.filter((i) => i.cols.includes(name)).length;
-    const others = state.cols.filter((c) => c !== name);
-    $("sheetBody").innerHTML = `
-      <div class="dsheet">
-        <h2>Edit ${esc(term.toLowerCase())}</h2>
-        <div><div class="section-label" style="margin-bottom:6px">Name</div>
-          <input id="dName" maxlength="24" value="${esc(name)}" autocomplete="off" aria-label="${esc(term)} name" enterkeyhint="done"></div>
-        <div class="row"><button type="button" class="btn primary" id="dSave">Rename</button></div>
-        <div id="dDelWrap">
-          ${others.length
-            ? `<button type="button" class="btn danger" id="dDel" style="width:100%">Delete ${esc(term.toLowerCase())}</button>`
-            : `<p class="hint">Keep at least one ${esc(term.toLowerCase())}. Add another before deleting this one.</p>`}
-        </div>
-      </div>`;
-    $("scrim").hidden = false; $("sheet").hidden = false;
-    requestAnimationFrame(() => { $("scrim").classList.add("on"); $("sheet").classList.add("on"); });
-    const rename = () => {
-      const n = $("dName").value.replace(/\s+/g, " ").trim();
-      if (!n || n === name) { closeSheet(); return; }
-      if (state.cols.some((c) => c !== name && c.toLowerCase() === n.toLowerCase())) { toast(`You already have “${n}”`); return; }
-      state.cols = state.cols.map((c) => c === name ? n : c);
-      state.items.forEach((i) => { i.cols = i.cols.map((c) => c === name ? n : c); if (i.collection === name) i.collection = n; });
-      if (filter === name) filter = n;
-      save(); closeSheet(); renderHome(); toast(`Renamed to ${n}`);
-    };
-    $("dSave").onclick = rename;
-    $("dName").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); rename(); } });
-    $("dCancel").onclick = closeSheet;
-    if ($("dDel")) $("dDel").onclick = () => confirmDeleteDrawer(name);
-  }
-  // second screen of the sheet: its own confirm view, so Delete is the only thing to press
-  function confirmDeleteDrawer(name) {
-    const only = state.items.filter((i) => i.cols.length === 1 && i.cols[0] === name).length;
-    const total = state.items.filter((i) => i.cols.includes(name)).length;
-    const others = state.cols.filter((c) => c !== name);
-    $("sheetBody").innerHTML = `
-      <div class="dsheet">
-        <h2>Delete “${esc(name)}”?</h2>
-        <p class="hint" style="font-size:14px;color:var(--ink)">${only
-          ? `${only} ${only === 1 ? "tool lives" : "tools live"} only in this ${esc(term.toLowerCase())}. Move ${only === 1 ? "it" : "them"} to:`
-          : total ? `The ${total} ${total === 1 ? "tool" : "tools"} in it stay in their other ${esc(pluralWord(term))}.` : `It's empty, so nothing else changes.`}</p>
-        ${only ? `<select id="dMove" aria-label="Move tools to">${others.map((c) => `<option value="${esc(c)}">${esc(c)}</option>`).join("")}</select>` : ""}
-        <div class="row"><button type="button" class="btn ghost" id="dBack">Back</button><button type="button" class="btn danger solid" id="dConfirm">Delete ${esc(term.toLowerCase())}</button></div>
-      </div>`;
-    $("dBack").onclick = () => openDrawerSheet(name);
-    $("dConfirm").onclick = () => {
-      try {
-        const target = $("dMove") ? $("dMove").value : state.cols.find((c) => c !== name);
-        const undo = { cols: [...state.cols], items: state.items.map((i) => [i, [...i.cols]]), filter };
-        state.cols = state.cols.filter((c) => c !== name);
-        state.items.forEach((i) => {
-          if (!i.cols.includes(name)) return;
-          i.cols = i.cols.filter((c) => c !== name);
-          if (!i.cols.length) i.cols = [target || state.cols[0]];
-        });
-        if (filter === name) filter = "All";
-        save(); closeSheet(); renderHome();
-        toast(`Deleted ${name}`, { label: "Undo", run: () => {
-          state.cols = undo.cols; undo.items.forEach(([i, c]) => { i.cols = c; }); filter = undo.filter; save(); renderHome();
-        } });
-      } catch (err) { console.error(err); toast("Couldn't delete that. Try again."); }
-    };
-  }
   function renderHome() { renderFilters(); renderList(); renderCapture(); }
   $("filters").addEventListener("click", (e) => {
     if (e.target.closest("#addDrawer")) { addingDrawer = true; renderFilters(); return; }
@@ -1962,10 +1925,22 @@ button { cursor: pointer; }
     navigator.clipboard.writeText(text).then(() => toast("Picks copied"), () => toast(text));
   };
 
-  // Fit the true-size device to the window
+  // Switch the stage between the phone and laptop frames.
+  function setDeviceView(view) {
+    const isDesktop = view === "desktop";
+    $("device").dataset.device = isDesktop ? "desktop" : "phone";
+    document.querySelectorAll("[data-device-view]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.deviceView === view)));
+    fitDevice();
+  }
+  $("phoneView").onclick = () => setDeviceView("phone");
+  $("desktopView").onclick = () => setDeviceView("desktop");
+  setDeviceView("phone");
+
+  // Fit the selected true-size device to the window
   function fitDevice() {
     if (matchMedia("(max-width: 600px)").matches) { $("device").style.transform = ""; $("deviceFit").style.width = $("deviceFit").style.height = ""; return; }
-    const W = 424, H = 896, pad = 48;
+    const desktop = $("device").dataset.device === "desktop";
+    const W = desktop ? 1240 : 424, H = desktop ? 860 : 896, pad = 48;
     const narrow = innerWidth <= 900;
     const availH = narrow ? Infinity : innerHeight - pad;
     const availW = $("deviceFit").parentElement.clientWidth;
