@@ -1352,7 +1352,7 @@ button { cursor: pointer; }
           ${i.seen ? `<img class="seen-img" src="${i.seen}" alt="The photo you snapped">` : ""}
         </div>
 
-        <div class="made" id="made">${madeHTML(i)}</div>
+        ${i.kind === "inspo" ? `<div class="made" id="made">${madeHTML(i)}</div>` : ""}
 
         <div class="section-label">${esc(term)}${i.cols.length > 1 ? (term === "Shelf" ? "ves" : plural(term)) : ""}</div>
         <div class="chips wrap" id="dCols">${state.cols.map((n) => `<button class="chip" aria-pressed="${i.cols.includes(n)}" data-col="${esc(n)}">${esc(n)}</button>`).join("")}</div>
