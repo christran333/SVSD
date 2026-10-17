@@ -393,6 +393,18 @@ button { cursor: pointer; }
 .chip .auto { margin-left: 6px; font: 500 9.5px/1 var(--font-mono); text-transform: uppercase; letter-spacing: .06em; padding: 2px 4px; border-radius: 4px; background: rgba(255,255,255,.12); color: var(--ink); }
 .sticky-actions { position: sticky; bottom: -40px; background: var(--card); padding: 10px 0 0; margin-top: 4px; }
 
+/* ---------- intent ---------- */
+.intent { display: flex; gap: 6px; animation: dz .25s ease-out; }
+.intent button { border: 1px solid var(--line); background: transparent; color: var(--muted); border-radius: 999px; padding: 7px 12px; font-size: 13px; font-weight: 500; }
+.intent button[aria-checked="true"] { background: var(--ink); color: var(--app-bg); border-color: var(--ink); }
+.made-detect { display: flex; gap: 10px; align-items: flex-start; padding: 12px; border-radius: 12px; background: rgba(200,255,90,.08); border: 1px solid rgba(200,255,90,.22); font-size: 13px; line-height: 1.4; }
+.made-detect .spark { color: var(--accent); }
+.reading.done::after { display: none; }
+.reading.done img { filter: none; }
+.made-row .made-add[aria-pressed="true"] { background: rgba(76,192,124,.18); color: var(--ok); }
+.not-tool { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; padding: 12px 14px; border-radius: 12px; border: 1px dashed var(--line); background: transparent; color: var(--ink); font-size: 13px; text-align: left; }
+.not-tool span:last-child { color: var(--muted); }
+
 /* ---------- drag and drop ---------- */
 .dropzone { position: absolute; z-index: 40; inset: 10px; border-radius: 28px; border: 2px dashed rgba(200,255,90,.7); background: rgba(10,10,11,.86); display: grid; place-items: center; text-align: center; pointer-events: none; animation: dz .2s ease-out; }
 .dropzone div { display: flex; flex-direction: column; align-items: center; gap: 6px; color: var(--ink); }
@@ -497,6 +509,10 @@ button { cursor: pointer; }
               <img id="capPhotoImg" alt="Your photo">
               <button class="cap-photo-x" id="capPhotoX" aria-label="Remove photo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
               <span class="cap-photo-tag">We'll read this and find what's in it</span>
+            </div>
+            <div class="intent" id="intent" role="radiogroup" aria-label="What should we do with it" hidden>
+              <button role="radio" data-intent="tool" aria-checked="true">Find the tool</button>
+              <button role="radio" data-intent="made" aria-checked="false">✦ How was it made?</button>
             </div>
             <label class="cap-from"><span>From</span><input id="qFrom" placeholder="someone? optional"></label>
           </div>
@@ -837,7 +853,7 @@ button { cursor: pointer; }
     if (preset) Object.assign(draft, preset, { inline: true });
     $("scrim").hidden = false; $("sheet").hidden = false;
     requestAnimationFrame(() => { $("scrim").classList.add("on"); $("sheet").classList.add("on"); });
-    preset ? runSearch() : stepCompose();
+    preset ? (draft.intent === "made" ? stepMadeCapture(null, false) : runSearch()) : stepCompose();
   }
   // Leaving the search/pick steps: inline captures go back to the home field, sheet captures go back to the note.
   function backToNote() {
@@ -890,7 +906,9 @@ button { cursor: pointer; }
     try {
       const cands = mode === "live" ? await liveSearch(draft.text, my.signal) : await testSearch(draft.text, my.signal);
       if (my.signal.aborted) return;
-      draft.cands = cands; draft.pick = cands.length ? 0 : -1;
+      const work = cands.find((x) => x.kind === "work");
+      draft.cands = cands.filter((x) => x.kind !== "work"); draft.pick = draft.cands.length ? 0 : -1;
+      if (work) { stepMadeCapture(work, true); return; }      // it read the input as something someone made
       stepPick();
     } catch (e) {
       if (my.signal.aborted || e?.code === "cancelled") return;
@@ -960,6 +978,8 @@ button { cursor: pointer; }
           ${showAlts ? `<div class="cands">${others.map(([y, i]) => row(y, i)).join("")}${x ? row(null, -1) : ""}</div>` : ""}
         </div>` : ""}
 
+        <button class="not-tool" id="notTool"><span>Not a tool? Figure out how it was made</span><span>→</span></button>
+
         <label class="section-label" for="forWhat">What's it for${need ? "" : " <span class='opt'>optional</span>"}</label>
         <textarea class="inp" id="forWhat" rows="2" placeholder="What it does, or what you saw it used for">${esc(draft.forWhat || "")}</textarea>
 
@@ -1005,6 +1025,84 @@ button { cursor: pointer; }
     };
     $("back").onclick = () => { draft.error = null; backToNote(); };
     $("saveBtn").onclick = commit;
+    $("notTool").onclick = () => stepMadeCapture(null, false);
+  }
+
+  // ---------- capture a piece of work: save it as inspo, break down how it was made ----------
+  function stepMadeCapture(work, auto) {
+    draft.mode = "made"; draft.work = work; draft.madeAuto = auto;
+    if (draft.madeTitle === undefined) draft.madeTitle = work?.title || draft.text.trim() || (draft.photo ? "Inspo from " + fmtDate(today()) : "Untitled inspo");
+    if (!draft.madeCols) { const c = state.cols.find((x) => /inspo/i.test(x)) || state.cols[0]; draft.madeCols = c ? [c] : []; }
+    draft.madePick = draft.madePick || new Set();
+    if (!draft.made) {
+      draft.made = { loading: true }; renderMadeCapture();
+      const subject = { title: draft.madeTitle, url: work?.url || "", blurb: work?.blurb || "", forWhat: draft.text.trim(), seen: draft.photo || "" };
+      const my = draft;
+      (mode === "live" ? liveMade(subject) : testMade(subject)).then((m) => { my.made = m; }, (e) => { my.made = { error: e?.message || "Couldn't piece it together." }; })
+        .then(() => { if (draft === my && draft.mode === "made") renderMadeCapture(); });
+      return;
+    }
+    renderMadeCapture();
+  }
+  function renderMadeCapture() {
+    const m = draft.made, n = draft.madePick.size;
+    $("sheetBody").innerHTML = `
+      <div class="pick">
+        ${draft.photo ? `<div class="reading${m.loading ? "" : " done"}"><img src="${draft.photo}" alt=""></div>` : ""}
+        ${draft.madeAuto ? `<div class="made-detect"><span class="spark">✦</span><span>This looks like something someone made, not a tool. Here's what went into it.</span></div>` : ""}
+        <label class="section-label" for="madeTitle">What is it</label>
+        <input class="inp" id="madeTitle" value="${esc(draft.madeTitle)}" placeholder="That scroll animation on Jordan's site">
+        <div class="section-label">How it was made</div>
+        ${m.loading ? `<p class="hint">Digging through posts, repos and credits…</p><div class="shimmer"></div><div class="shimmer"></div>`
+          : m.error ? `<p class="hint">${esc(m.error)} You can still save it and try again from the card.</p>`
+          : `${m.summary ? `<p class="made-sum">${esc(m.summary)}</p>` : ""}
+             <div class="made-list">${(m.tools || []).map((t, k) => `
+               <div class="made-row">
+                 <span class="cand-pv">${previewHTML(t)}</span>
+                 <span class="item-body"><span class="item-title">${esc(t.title)}</span><span class="blurb">${esc(t.role || t.blurb)}</span></span>
+                 ${savedUrl(t.url) ? `<span class="made-saved">Saved</span>` : `<button class="made-add" data-pk="${k}" aria-pressed="${draft.madePick.has(k)}">${draft.madePick.has(k) ? "✓ Adding" : "+ Add"}</button>`}
+               </div>`).join("") || `<p class="hint">Couldn't find solid evidence of the tools used.</p>`}</div>`}
+        <div class="section-label">${esc(term)}</div>
+        <div class="chips wrap" id="madeCols">${state.cols.map((c) => `<button class="chip" aria-pressed="${draft.madeCols.includes(c)}" data-col="${esc(c)}">${esc(c)}</button>`).join("")}</div>
+        <div class="row sticky-actions">
+          <button class="btn ghost" id="back">Back</button>
+          <button class="btn primary" id="saveMade">${n ? `Save + ${n} tool${n > 1 ? "s" : ""}` : "Save inspo"}</button>
+        </div>
+      </div>`;
+    $("madeTitle").oninput = (e) => { draft.madeTitle = e.target.value; };
+    $("sheetBody").querySelectorAll("[data-pk]").forEach((b) => b.onclick = () => {
+      const k = Number(b.dataset.pk); draft.madePick.has(k) ? draft.madePick.delete(k) : draft.madePick.add(k); keepScroll(renderMadeCapture);
+    });
+    $("madeCols").onclick = (e) => {
+      const b = e.target.closest("[data-col]"); if (!b) return; const c = b.dataset.col;
+      draft.madeCols = draft.madeCols.includes(c) ? draft.madeCols.filter((x) => x !== c) : [...draft.madeCols, c];
+      keepScroll(renderMadeCapture);
+    };
+    $("back").onclick = () => { draft.mode = null; draft.cands.length || draft.work ? stepPick() : backToNote(); };
+    $("saveMade").onclick = commitMade;
+  }
+  function commitMade() {
+    const m = draft.made || {}, w = draft.work, id = "i" + Date.now();
+    const inspo = {
+      id, title: (draft.madeTitle || "Untitled inspo").trim(), url: w?.url || "", kind: "inspo", blurb: w?.blurb || m.summary || "",
+      thumb: draft.photo || "", image: w?.image || "", fallback: w?.fallback || "", favicon: w?.favicon || "",
+      forWhat: draft.text.trim() || "Figure out how it was made", heard: draft.text.trim(), seen: draft.photo || "",
+      via: draft.via || "other", from: (draft.from || "").trim(), cols: draft.madeCols.length ? draft.madeCols : [state.cols[0]],
+      status: "want", take: "", savedAt: today(), made: m.loading || m.error ? undefined : m,
+    };
+    const tools = [...draft.madePick].map((k) => m.tools[k]).filter(Boolean).map((t, k) => ({
+      id: id + "t" + k, title: t.title, url: t.url, kind: t.kind, blurb: t.role || t.blurb, brand: t.brand || "",
+      image: t.image || "", fallback: t.fallback || "", favicon: t.favicon || "", forWhat: t.role || "",
+      heard: `Used to make ${inspo.title}`, via: "made", from: inspo.title, madeFrom: id,
+      cols: [(t.stash && state.cols.includes(t.stash)) ? t.stash : (state.cols.find((c) => /design tools/i.test(c)) || state.cols[0])],
+      status: "want", take: "", savedAt: today(),
+    }));
+    state.items.unshift(inspo, ...tools); save();
+    freshId = id; filter = "All";
+    const wasInline = draft.inline;
+    closeSheet(); renderHome();
+    toast(tools.length ? `Saved ${inspo.title} + ${tools.length} tool${tools.length > 1 ? "s" : ""}` : `Saved ${inspo.title}`);
+    if (wasInline) { $("qText").value = ""; $("qFrom").value = ""; clearPhoto(); syncQuick(); }
   }
   function keepScroll(fn) { const y = $("sheet").scrollTop; fn(); $("sheet").scrollTop = y; }
 
@@ -1085,7 +1183,7 @@ button { cursor: pointer; }
     });
   }
   async function liveMade(i) {
-    const item = { title: i.title, url: i.url, blurb: i.blurb, forWhat: i.forWhat, image: i.seen || "" };
+    const item = { title: i.title, url: i.url || "", blurb: i.blurb || "", forWhat: i.forWhat || "", image: i.seen || "" };
     const r = await fetch("/api/made", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ item, stashes: state.cols }) });
     const data = await r.json().catch(() => ({}));
     if (!r.ok) throw { message: data.error || "Couldn't piece it together." };
@@ -1248,6 +1346,9 @@ button { cursor: pointer; }
           res(KNOWN.slice(0, 3).map((x) => ({ ...x.r, blurb: "Test result. Live mode reads the photo. " + x.r.blurb }))); return;
         }
         const hits = KNOWN.filter((x) => x.k.some((k) => ql.includes(k))).map((x) => x.r);
+        if (!hits.length && /animation|effect|scroll|website|site|poster|3d|shader|made|transition|landing/.test(ql)) {   // test mode: read it as a piece of work
+          res([{ kind: "work", title: titleCase(q.trim().slice(0, 40)), url: "", blurb: "Test result: read as something someone made." }]); return;
+        }
         const name = q.trim().split(/[,.\n]/)[0].trim();
         const g = (s) => "https://www.google.com/search?q=" + encodeURIComponent(s);
         const filler = [
@@ -1260,7 +1361,7 @@ button { cursor: pointer; }
       signal.addEventListener("abort", () => { clearTimeout(t); rej({ code: "cancelled" }); });
     });
   }
-  const titleCase = (s) => s.replace(/\b\w/g, (c) => c.toUpperCase());
+  const titleCase = (s) => s.replace(/(^|\s)\S/g, (c) => c.toUpperCase());
 
   // ---------- search: live mode (local server -> Claude + web search) ----------
   let serverStatus = { reachable: false, live: false, model: "" };
@@ -1341,14 +1442,22 @@ button { cursor: pointer; }
     const f = [...(e.clipboardData?.files || [])].find((x) => /^image\//.test(x.type));
     if (f) { e.preventDefault(); attachPhoto(f); }
   });
+  let capIntent = "tool";
+  $("intent").onclick = (e) => {
+    const b = e.target.closest("[data-intent]"); if (!b) return;
+    capIntent = b.dataset.intent;
+    $("intent").querySelectorAll("[data-intent]").forEach((x) => x.setAttribute("aria-checked", x === b));
+  };
   function syncQuick() {
     const on = !!$("qText").value.trim() || !!capPhoto;
+    $("intent").hidden = !on;
+    if (!on) { capIntent = "tool"; $("intent").querySelectorAll("[data-intent]").forEach((x) => x.setAttribute("aria-checked", x.dataset.intent === "tool")); }
     $("qFind").disabled = !on;
     $("capHint").textContent = on ? (capPhoto && !$("qText").value.trim() ? "Add a note, or just send it" : "Return to find it") : "Type it, snap it, or paste a screenshot.";
   }
   function quickFind() {
     const text = $("qText").value.trim(); if (!text && !capPhoto) return;
-    openSheet({ text, from: $("qFrom").value, photo: capPhoto });
+    openSheet({ text, from: $("qFrom").value, photo: capPhoto, intent: capIntent });
   }
   $("qText").addEventListener("input", syncQuick);
   $("qText").addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); quickFind(); } });

@@ -105,6 +105,7 @@ Rules:
 - If the note could mean several different things, return the different interpretations.
 - "kind" is one of: tool, site, video, article.
 - "blurb" is one plain sentence (max 18 words) on what it is or does.
+- If the note or image shows a piece of work someone made (an animation, a website, an illustration, a video, a 3D scene) rather than a tool or product they could use, put this FIRST: {"kind":"work","title":"<short name for the piece>","url":"<its source link if you found one, else empty>","blurb":"<what it is>"}. Then list any tools you can already tell were used, if any.
 - "brand" is the product's main brand color as #RRGGBB if obvious, else "".
 - "stash" is the best-fitting group for it from this list: ${JSON.stringify(stashList)}. If none fit, suggest a new 1-2 word name.
 
@@ -141,12 +142,12 @@ Finish with only a JSON array, no other text, like:
   try { list = JSON.parse(jsonText); } catch { throw new Error("Claude's answer wasn't in the expected format. Try again."); }
 
   const cands = (Array.isArray(list) ? list : [])
-    .filter((x) => x && typeof x.url === "string" && /^https?:\/\//.test(x.url) && typeof x.title === "string")
-    .slice(0, 3)
+    .filter((x) => x && typeof x.title === "string" && (x.kind === "work" || (typeof x.url === "string" && /^https?:\/\//.test(x.url))))
+    .slice(0, 4)
     .map((x) => ({
       title: x.title.slice(0, 80),
-      url: x.url,
-      kind: ["tool", "site", "video", "article"].includes(x.kind) ? x.kind : "site",
+      url: /^https?:\/\//.test(x.url || "") ? x.url : "",
+      kind: ["tool", "site", "video", "article", "work"].includes(x.kind) ? x.kind : "site",
       blurb: String(x.blurb || "").slice(0, 160),
       brand: /^#[0-9a-f]{6}$/i.test(x.brand || "") ? x.brand : "",
       stash: typeof x.stash === "string" ? x.stash.slice(0, 24) : "",
@@ -235,7 +236,13 @@ http.createServer(async (req, res) => {
   }
 }).listen(PORT, () => {
   console.log(`\n  SVSD toolkit running at http://localhost:${PORT}`);
-  const lan = Object.values(require("node:os").networkInterfaces()).flat().find((n) => n && n.family === "IPv4" && !n.internal);
-  if (lan) console.log(`  On your phone (same Wi-Fi): http://${lan.address}:${PORT}`);
+  // List every network address, Wi-Fi (en0) first. VPNs and virtual adapters show up too, so the first one isn't always right.
+  const nets = Object.entries(require("node:os").networkInterfaces())
+    .flatMap(([name, list]) => (list || []).filter((n) => n.family === "IPv4" && !n.internal).map((n) => ({ name, ip: n.address })))
+    .sort((a, b) => (b.name === "en0") - (a.name === "en0"));
+  if (nets.length) {
+    console.log("  On your phone (same Wi-Fi), try:");
+    nets.forEach((n) => console.log(`    http://${n.ip}:${PORT}   (${n.name === "en0" ? "Wi-Fi" : n.name})`));
+  }
   console.log(API_KEY ? `  Live search on (${MODEL})\n` : "  No API key found: test mode only. Add ANTHROPIC_API_KEY to .env\n");
 });
