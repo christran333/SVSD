@@ -556,7 +556,7 @@ button { cursor: pointer; }
 /* Card title: on every framed card, over a gradient so white text reads on any image (white screenshots included) */
 .shell .ttl {
   position: absolute; z-index: 1; left: 0; right: 0; bottom: 0; height: 62%; pointer-events: none;
-  display: flex; align-items: flex-end; padding: 0 16px 14px;
+  display: flex; align-items: flex-end; padding: 0 10px 6px 16px;
   background: linear-gradient(to top, rgba(8,8,10,.86) 0%, rgba(8,8,10,.55) 38%, rgba(8,8,10,0) 100%);
 }
 .shell .ttl span { color: #fff; font-family: var(--font-display); font-weight: 700; font-size: 24px; line-height: 1.05; letter-spacing: -0.025em;
@@ -583,6 +583,16 @@ button { cursor: pointer; }
 .cap-tools .cam svg { width: 21px; height: 21px; }
 .cap-foot { justify-content: flex-end; }
 #device .cap-date { font-family: var(--font-body); font-weight: 600; font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+/* Status tag on the card face, same tag as the rows view */
+.shell .ttl { justify-content: space-between; gap: 12px; align-items: last baseline; }
+.shell .ttl > span:first-child { flex: 1; min-width: 0; }
+.shell .ttl span.st { flex: none; display: inline-block; margin-bottom: 0; position: relative; top: -4px; border: 1px solid transparent; padding: 3px 9px; font: 600 11.5px/1.3 var(--font-body); letter-spacing: 0; text-shadow: none; -webkit-line-clamp: unset; overflow: visible; }
+.shell .ttl span.st-want { color: #D6D6DC; border-color: rgba(255,255,255,.45); }
+.shell .ttl span.st-tried { color: var(--ink); }
+.shell .ttl span.st-using { color: var(--ok); background: rgba(12,40,24,.8); backdrop-filter: blur(6px); }
+.shell .ttl span.st-nope { color: #FF8A8A; background: rgba(48,14,14,.8); backdrop-filter: blur(6px); }
+.shell .ttl .st-want { background: rgba(10,10,12,.55); color: #D6D6DC; border-color: rgba(255,255,255,.45); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+.shell .ttl .st-tried { background: rgba(42,42,49,.85); backdrop-filter: blur(6px); }
 /* Details drop down inside the card frame when you tap it */
 .drop { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .34s cubic-bezier(.2,.8,.2,1); background: var(--card); }
 .pcard.open .drop { grid-template-rows: 1fr; }
@@ -649,7 +659,7 @@ button { cursor: pointer; }
             </div>
             <label class="cap-from" hidden><span>From</span><input id="qFrom" placeholder="someone? optional"></label>
             <div class="cap-tools">
-              <span class="cap-hint" id="capHint">Type it, snap it, or paste a screenshot.</span>
+              <span class="cap-hint" id="capHint">Type it, snap it, or upload a screenshot.</span>
               <button class="cam mic" id="micBtn" aria-label="Say it out loud"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg><span class="ring"></span></button>
               <button class="cam" id="camBtn" aria-label="Add a photo or screenshot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h1.6l1.4-2h5l1.4 2h1.6A2.5 2.5 0 0 1 20 8.5v8A2.5 2.5 0 0 1 17.5 19h-11A2.5 2.5 0 0 1 4 16.5z"/><circle cx="12" cy="12.5" r="3.4"/></svg></button>
               <input type="file" id="photoIn" accept="image/*" hidden>
@@ -872,7 +882,7 @@ button { cursor: pointer; }
       <div class="shell info-${V.info}">
         <div class="flip${isVid ? " is-video" : ""}">
           <div class="flip-inner">
-            <div class="face front">${previewHTML(i)}<div class="ttl"><span>${esc(i.title)}</span></div>${info}
+            <div class="face front">${previewHTML(i)}<div class="ttl"><span>${esc(i.title)}</span>${pill(i)}</div>${info}
             </div>
           </div>
           <button class="flip-btn edit-btn" data-dmore aria-label="Edit ${esc(i.title)}">${EDIT_ICON}</button>
@@ -891,7 +901,6 @@ button { cursor: pointer; }
         <div class="drop-row"><small>What</small><span>${esc(i.blurb || (i.url ? domainOf(i.url) : "A note"))}</span></div>
         <div class="drop-row"><small>Found</small><span>${originLine(i)}${i.heard ? `<em>“${esc(i.heard)}”</em>` : ""}</span></div>
         <div class="drop-row"><small>For</small><span>${esc(i.forWhat || "Nothing yet")}</span></div>
-        <div class="drop-row"><small>Status</small><span>${pill(i)}</span></div>
       </div></div>`;
   }
   function toggleDrop(card) {
@@ -1677,7 +1686,7 @@ button { cursor: pointer; }
     if (!on) { capIntent = "tool"; $("intent").querySelectorAll("[data-intent]").forEach((x) => x.setAttribute("aria-checked", x.dataset.intent === "tool")); }
     $("qFind").disabled = !on;
     if (listening) return;
-    $("capHint").textContent = on ? (capPhoto && !$("qText").value.trim() ? "Add a note, or just send it" : "Return to find it") : "Type it, snap it, or paste a screenshot.";
+    $("capHint").textContent = on ? (capPhoto && !$("qText").value.trim() ? "Add a note, or just send it" : "Return to find it") : "Type it, snap it, or upload a screenshot.";
   }
   function quickFind() {
     const text = $("qText").value.trim(); if (!text && !capPhoto) return;
