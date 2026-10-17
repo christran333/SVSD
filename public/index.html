@@ -437,7 +437,7 @@ button { cursor: pointer; }
 /* ---------- finder: the loading animation while it searches ---------- */
 #device {
   --ld-spread: 12px; --ld-tilt: 3deg; --ld-float: 6px; --ld-float-speed: 2.4s; --ld-stagger: .18s;
-  --ld-sheen-speed: 1.4s; --ld-sheen: .14; --ld-glow: #C8FF5A; --ld-glow-size: 0px; --ld-radius: 14px; --ld-scale-step: .05;
+  --ld-sheen-speed: 1.4s; --ld-sheen: .14; --ld-glow: #C8FF5A; --ld-glow-size: 0px; --ld-radius: 4px; --ld-scale-step: .05;
 }
 .finder { position: relative; height: 196px; margin: 6px 0 2px; }
 .finder .ghost {
@@ -533,6 +533,68 @@ button { cursor: pointer; }
 .linkbtn { background: none; border: 0; padding: 0; color: var(--accent); text-align: left; font-size: 12.5px; }
 .flip-inner { will-change: transform; }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+/* ---------- one corner radius (brutalist workshop): pills, chips, buttons, inputs and cards all match ---------- */
+#device { --r: 4px; --r-xs: 2px; --ld-radius: var(--r); }
+#device :is(.chip, .st, .saves-btn, .intent button, .btn, .inp, .shell, .d-frame, .cand, .best, .ritem, .gpv, .cand-pv, .cand-pv.big,
+  .made-row .cand-pv, .caption, .pin, .cover-btn, .tag-best, .toast, .made-btn, .made-btn .spark, .made-row, .made-add, .origin,
+  .not-tool, .cap-photo, .cap-photo-tag, .reading, .finder .ghost, .finder .ghost i, .made-detect, .new-col input, .dropzone,
+  .detail .seg, .gst .st, .refine .btn, .open-btn) { border-radius: var(--r); }
+#device :is(.stack i, .fav .letter, .chip .auto) { border-radius: var(--r-xs); }
+#device .sheet { border-radius: 10px 10px 0 0; }
+#device .gst .st { border-radius: var(--r-xs); }
+#device .st-want { border-style: solid; }
+
+/* Filter row: runs to the screen edge and fades out, so a chip past the edge reads as "scroll for more", not clipped */
+#device .app-head #filters {
+  margin: 0 -20px; padding: 0 20px 2px; scroll-padding-inline: 20px; scroll-snap-type: x proximity;
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 14px, #000 calc(100% - 40px), transparent 100%);
+          mask-image: linear-gradient(to right, transparent 0, #000 14px, #000 calc(100% - 40px), transparent 100%);
+}
+#device .app-head #filters .chip { scroll-snap-align: start; }
+#device .app-head #filters::after { content: ""; flex: none; width: 12px; }   /* room so the last chip clears the fade */
+
+/* Card title: on every framed card, over a gradient so white text reads on any image (white screenshots included) */
+.shell .ttl {
+  position: absolute; z-index: 1; left: 0; right: 0; bottom: 0; height: 62%; pointer-events: none;
+  display: flex; align-items: flex-end; padding: 0 16px 14px;
+  background: linear-gradient(to top, rgba(8,8,10,.86) 0%, rgba(8,8,10,.55) 38%, rgba(8,8,10,0) 100%);
+}
+.shell .ttl span { color: #fff; font-family: var(--font-display); font-weight: 700; font-size: 24px; line-height: 1.05; letter-spacing: -0.025em;
+  text-shadow: 0 1px 12px rgba(0,0,0,.35); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.shell .pv-word, .shell .pv-sub { display: none; }              /* the overlay is the title now; no duplicate */
+.shell.info-bottom .ttl { padding-bottom: 60px; height: 80%; }  /* sits above the bottom caption variant */
+.shell .caption { z-index: 2; }
+.list:not(.compact):not(.grid) { gap: 16px; }
+
+
+.detail textarea.inp { resize: none; overflow: hidden; min-height: 64px; }
+.pcard .shell { transition: border-color .2s; }
+/* Cards / rows switch in the toolkit header */
+.head-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
+.view-tog { display: flex; border: 1px solid var(--line); border-radius: var(--r, 4px); overflow: hidden; flex: none; margin-bottom: 2px; }
+.view-tog button { width: 36px; height: 32px; display: grid; place-items: center; border: 0; background: transparent; color: var(--muted); padding: 0; }
+.view-tog button + button { border-left: 1px solid var(--line); }
+.view-tog button svg { width: 17px; height: 17px; }
+.view-tog button[aria-pressed="true"] { background: var(--ink); color: var(--card); }
+/* Add screen: hint + mic + camera sit right under the input, send button alone in the corner */
+.cap-tools { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+.cap-tools .cap-hint { flex: 1; min-width: 0; line-height: 1.3; }
+.cap-tools .cam { width: 48px; height: 48px; }
+.cap-tools .cam svg { width: 21px; height: 21px; }
+.cap-foot { justify-content: flex-end; }
+#device .cap-date { font-family: var(--font-body); font-weight: 600; font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+/* Details drop down inside the card frame when you tap it */
+.drop { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .34s cubic-bezier(.2,.8,.2,1); background: var(--card); }
+.pcard.open .drop { grid-template-rows: 1fr; }
+.drop-in { min-height: 0; overflow: hidden; padding: 0 16px; opacity: 0; transform: translateY(-6px); transition: opacity .2s, transform .34s cubic-bezier(.2,.8,.2,1), padding .34s cubic-bezier(.2,.8,.2,1); }
+.pcard.open .drop-in { padding: 14px 16px 16px; opacity: 1; transform: none; transition-delay: 0s, 0s, 0s; border-top: 1px solid var(--line); }
+.drop-row { display: grid; grid-template-columns: 64px 1fr; gap: 10px; padding: 7px 0; font-size: 13px; line-height: 1.35; color: var(--ink); border-bottom: 1px dashed var(--line); }
+.drop-row:last-child { border-bottom: 0; padding-bottom: 0; }
+.drop-row em { display: block; margin-top: 3px; font-style: normal; color: var(--muted); font-size: 12px; }
+.drop-row small { font: 500 9.5px/1.6 var(--font-label); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.pcard.open .shell { border-color: var(--ink); }
+.shell .foot { cursor: pointer; }
+@media (prefers-reduced-motion: reduce) { .drop, .drop-in { transition: none; } }
 /* On a real phone: no fake frame, no sidebar. The app is the page. */
 @media (max-width: 600px) {
   html, body { height: 100%; overflow: hidden; background: var(--app-bg); }
@@ -585,25 +647,33 @@ button { cursor: pointer; }
               <button role="radio" data-intent="tool" aria-checked="true">Find the tool</button>
               <button role="radio" data-intent="made" aria-checked="false">✦ How was it made?</button>
             </div>
-            <label class="cap-from"><span>From</span><input id="qFrom" placeholder="someone? optional"></label>
+            <label class="cap-from" hidden><span>From</span><input id="qFrom" placeholder="someone? optional"></label>
+            <div class="cap-tools">
+              <span class="cap-hint" id="capHint">Type it, snap it, or paste a screenshot.</span>
+              <button class="cam mic" id="micBtn" aria-label="Say it out loud"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg><span class="ring"></span></button>
+              <button class="cam" id="camBtn" aria-label="Add a photo or screenshot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h1.6l1.4-2h5l1.4 2h1.6A2.5 2.5 0 0 1 20 8.5v8A2.5 2.5 0 0 1 17.5 19h-11A2.5 2.5 0 0 1 4 16.5z"/><circle cx="12" cy="12.5" r="3.4"/></svg></button>
+              <input type="file" id="photoIn" accept="image/*" hidden>
+            </div>
           </div>
           <div class="cap-foot">
-            <button class="cam mic" id="micBtn" aria-label="Say it out loud"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg><span class="ring"></span></button>
-            <button class="cam" id="camBtn" aria-label="Add a photo or screenshot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h1.6l1.4-2h5l1.4 2h1.6A2.5 2.5 0 0 1 20 8.5v8A2.5 2.5 0 0 1 17.5 19h-11A2.5 2.5 0 0 1 4 16.5z"/><circle cx="12" cy="12.5" r="3.4"/></svg></button>
-            <input type="file" id="photoIn" accept="image/*" hidden>
-            <span class="cap-hint" id="capHint">Type it, snap it, or paste a screenshot.</span>
             <button class="send" id="qFind" disabled aria-label="Find it"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
           </div>
         </section>
 
-        <section class="view lib" aria-label="Your saves">
+        <section class="view lib" aria-label="Your toolkit">
           <div class="lib-top">
             <button class="back-cap" id="backCap"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>Add</button>
           </div>
           <header class="app-head">
-            <div>
-              <h1 id="appTitle">Your saves</h1>
-              <div class="sub" id="countLine"></div>
+            <div class="head-row">
+              <div>
+                <h1 id="appTitle">Your toolkit</h1>
+                <div class="sub" id="countLine"></div>
+              </div>
+              <div class="view-tog" id="viewTog" role="group" aria-label="View">
+                <button data-view="framed" aria-label="Cards"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="11" rx="1"/><path d="M4 19h16"/></svg></button>
+                <button data-view="compact" aria-label="Rows"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4.5" width="5" height="5" rx="1"/><rect x="4" y="14.5" width="5" height="5" rx="1"/><path d="M12 7h8M12 17h8"/></svg></button>
+              </div>
             </div>
             <div class="chips" id="filters" role="group" aria-label="Filter"></div>
           </header>
@@ -644,13 +714,13 @@ button { cursor: pointer; }
     <div class="field">
       <label for="termSel"><span class="section-label">Name for a group</span></label>
       <select id="termSel">
-        <option value="Stash">Stash</option>
-        <option value="Shelf">Shelf</option>
-        <option value="Kit">Kit</option>
         <option value="Drawer">Drawer</option>
-        <option value="Pocket">Pocket</option>
+        <option value="Bin">Bin</option>
+        <option value="Rack">Rack</option>
+        <option value="Shelf">Shelf</option>
+        <option value="Box">Box</option>
       </select>
-      <div class="small">Placeholder copy while the team picks a name that isn't "board" or "channel".</div>
+      <div class="small">What a group of tools is called. Workshop words, not "board" or "channel".</div>
     </div>
     <div class="field">
       <span>Data</span>
@@ -698,7 +768,7 @@ button { cursor: pointer; }
   let mode = "test";
   const VKEY = "svsd-variants";
   const V = Object.assign({ open: "capture", label: "mono", info: "flip", cards: "framed", forReq: "optional", alts: "collapsed" }, (() => { try { return JSON.parse(localStorage.getItem(VKEY)) || {}; } catch (e) { return {}; } })());
-  let term = "Stash";
+  let term = "Drawer";
 
   function load() {
     try {
@@ -779,6 +849,7 @@ button { cursor: pointer; }
   function originLine(i) {
     return [i.from ? `${esc(viaLabel(i.via))} · ${esc(i.from)}` : esc(viaLabel(i.via)), fmtDate(i.savedAt)].join(" · ");
   }
+  const EDIT_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg>`;
   const FLIP_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15.5-6.2L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15.5 6.2L3 16"/><path d="M3 21v-5h5"/></svg>`;
   function backHTML(i) {
     return `<div class="face back">
@@ -797,54 +868,43 @@ button { cursor: pointer; }
     const info = V.info === "flip" ? ""
       : V.info === "bottom" ? (i.forWhat ? `<div class="caption"><small>${who}</small><span>${esc(i.forWhat)}</span></div>` : "")
       : (i.forWhat ? `<div class="pin"><small>${who}</small>${esc(i.forWhat)}</div>` : "");
-    return `<article class="pcard${fresh ? " fresh" : ""}" data-item="${esc(i.id)}">
+    return `<article class="pcard is-${i.status}${fresh ? " fresh" : ""}${openId === i.id ? " open" : ""}" data-item="${esc(i.id)}">
       <div class="shell info-${V.info}">
         <div class="flip${isVid ? " is-video" : ""}">
           <div class="flip-inner">
-            <div class="face front">${previewHTML(i)}${info}
-              <button class="cover-btn" data-cover="${esc(i.id)}">${i.thumb ? "Change cover" : "Add cover"}</button>
+            <div class="face front">${previewHTML(i)}<div class="ttl"><span>${esc(i.title)}</span></div>${info}
             </div>
-            ${V.info === "flip" ? backHTML(i) : ""}
           </div>
-          ${V.info === "flip" ? `<button class="flip-btn" data-flip aria-label="Flip card">${FLIP_ICON}</button>` : ""}
+          <button class="flip-btn edit-btn" data-dmore aria-label="Edit ${esc(i.title)}">${EDIT_ICON}</button>
         </div>
         ${i.url
           ? `<div class="foot"><span class="fav">${favHTML(i)}</span><a class="url" ${open}>${esc(i.url)}</a></div>`
           : `<div class="foot"><span class="fav"><span class="letter" style="--fav-bg:#2A2A31;--fav-ink:var(--ink)">✎</span></span><span class="url" style="text-decoration:none">No link yet</span></div>`}
+        ${dropHTML(i)}
       </div>
-      <div class="under"><b>${esc(i.title)}</b> ${pill(i)} <span>${originLine(i)}</span>${i.example ? ` <span class="example-tag">example</span>` : ""}</div>
     </article>`;
   }
-
-  // Swipe a card sideways to flip it. The card follows the finger, then settles to whichever side is closer.
-  let swipe = null, swallowClick = false;
-  $("list").addEventListener("pointerdown", (e) => {
-    const f = e.target.closest(".flip"); if (!f || !f.querySelector(".back") || e.target.closest("[data-cover]")) return;
-    swipe = { f, x: e.clientX, y: e.clientY, base: f.classList.contains("flipped") ? 180 : 0, active: false, id: e.pointerId };
-  });
-  addEventListener("pointermove", (e) => {
-    if (!swipe || e.pointerId !== swipe.id) return;
-    const dx = e.clientX - swipe.x, dy = e.clientY - swipe.y;
-    if (!swipe.active) {
-      if (Math.abs(dx) < 8 || Math.abs(dx) < Math.abs(dy)) { if (Math.abs(dy) > 12) swipe = null; return; }
-      swipe.active = true; swipe.f.setPointerCapture?.(e.pointerId);
+  // Tap a card and its details drop down inside the same frame. One open at a time.
+  let openId = null;
+  function dropHTML(i) {
+    return `<div class="drop" aria-hidden="${openId !== i.id}"><div class="drop-in">
+        <div class="drop-row"><small>What</small><span>${esc(i.blurb || (i.url ? domainOf(i.url) : "A note"))}</span></div>
+        <div class="drop-row"><small>Found</small><span>${originLine(i)}${i.heard ? `<em>“${esc(i.heard)}”</em>` : ""}</span></div>
+        <div class="drop-row"><small>For</small><span>${esc(i.forWhat || "Nothing yet")}</span></div>
+        <div class="drop-row"><small>Status</small><span>${pill(i)}</span></div>
+      </div></div>`;
+  }
+  function toggleDrop(card) {
+    const was = card.classList.contains("open");
+    $("list").querySelectorAll(".pcard.open").forEach((c) => { c.classList.remove("open"); c.querySelector(".drop")?.setAttribute("aria-hidden", "true"); });
+    openId = was ? null : card.dataset.item;
+    if (!was) {
+      card.classList.add("open"); card.querySelector(".drop").setAttribute("aria-hidden", "false");
+      setTimeout(() => card.scrollIntoView({ block: "nearest", behavior: reduceMotion ? "auto" : "smooth" }), 200);
     }
-    const inner = swipe.f.querySelector(".flip-inner");
-    inner.style.transition = "none";
-    inner.style.transform = `rotateY(${swipe.base + Math.max(-180, Math.min(180, dx * 0.9))}deg)`;
-  });
-  addEventListener("pointerup", (e) => {
-    if (!swipe || e.pointerId !== swipe.id) return;
-    const { f, active, x } = swipe; swipe = null;
-    if (!active) return;
-    swallowClick = true; setTimeout(() => (swallowClick = false), 50);
-    const inner = f.querySelector(".flip-inner");
-    inner.style.transition = ""; inner.style.transform = "";
-    if (Math.abs(e.clientX - x) > 45) f.classList.toggle("flipped");
-  });
-  addEventListener("pointercancel", () => {
-    if (!swipe) return; const inner = swipe.f.querySelector(".flip-inner"); inner.style.transition = ""; inner.style.transform = ""; swipe = null;
-  });
+  }
+
+  let swallowClick = false;
 
   // Attach a real cover: the viewer picks a screenshot or thumbnail; we downscale it so it fits in browser storage.
   const coverInput = Object.assign(document.createElement("input"), { type: "file", accept: "image/*", id: "coverInput", hidden: true });
@@ -859,7 +919,7 @@ button { cursor: pointer; }
     try {
       const url = await downscale(f, 960);
       const it = state.items.find((x) => x.id === coverFor); if (!it) return;
-      it.thumb = url; save(); renderHome(); toast("Cover added");
+      it.thumb = url; save(); renderHome(); if (draft?.detail === it.id) keepScroll(() => renderDetail(it)); toast("Cover added");
     } catch (err) { toast("Couldn't read that image"); }
   });
   function downscale(file, maxW) {
@@ -885,7 +945,7 @@ button { cursor: pointer; }
       </span></div>`;
   }
   function gridHTML(i, fresh) {
-    return `<div class="gtile${fresh ? " fresh" : ""}" data-item="${esc(i.id)}" role="button" tabindex="0">
+    return `<div class="gtile is-${i.status}${fresh ? " fresh" : ""}" data-item="${esc(i.id)}" role="button" tabindex="0">
       <span class="gpv">${previewHTML(i)}<span class="gst">${pill(i)}</span></span>
       <span class="gtitle">${esc(i.title)}</span>
       <span class="gdom">${esc(i.forWhat || (i.url ? domainOf(i.url) : "note"))}</span></div>`;
@@ -893,25 +953,28 @@ button { cursor: pointer; }
   function renderList() {
     const items = filter === "Archived" ? state.items.filter((i) => i.archived)
       : live().filter((i) => filter === "All" || i.cols.includes(filter));
-    $("countLine").textContent = `${live().length} saved · ${state.cols.length} ${state.cols.length === 1 ? term.toLowerCase() : pluralWord(term)}`;
+    $("countLine").textContent = `${live().length} ${live().length === 1 ? "tool" : "tools"} · ${state.cols.length} ${state.cols.length === 1 ? term.toLowerCase() : pluralWord(term)}`;
+    if (openId && !items.some((i) => i.id === openId)) openId = null;
     $("list").innerHTML = items.length
       ? items.map((i) => (V.cards === "compact" ? compactHTML : V.cards === "grid" ? gridHTML : itemHTML)(i, i.id === freshId)).join("")
-      : `<div class="empty">Nothing in ${esc(filter)} yet.<br>Next time someone mentions something, add it here.</div>`;
+      : `<div class="empty">${filter === "All" ? "Your toolkit is empty." : `Nothing in ${esc(filter)} yet.`}<br>Hear about a tool? Throw it in.</div>`;
     freshId = null;
   }
   $("list").addEventListener("click", (e) => {
     if (swallowClick) return;
-    const fb = e.target.closest("[data-flip]");
-    if (fb) { fb.closest(".flip").classList.toggle("flipped"); return; }
     if (e.target.closest("a, [data-cover]")) return;
-    const card = e.target.closest("[data-item]"); if (card) openDetail(card.dataset.item);
+    const card = e.target.closest("[data-item]"); if (!card) return;
+    const it = state.items.find((x) => x.id === card.dataset.item);
+    if (e.target.closest("[data-dmore]")) { openDetail(it.id); return; }
+    if (e.target.closest(".drop")) return;
+    if (card.classList.contains("pcard")) toggleDrop(card); else openDetail(card.dataset.item);
   });
   $("list").addEventListener("keydown", (e) => {
     if (e.key !== "Enter") return;
     const card = e.target.closest("[data-item]"); if (card) openDetail(card.dataset.item);
   });
-  const plural = (t) => (t.endsWith("sh") ? "es" : t === "Shelf" ? "" : "s");
-  const pluralWord = (t) => t === "Shelf" ? "shelves" : t.toLowerCase() + plural(t);
+  const pluralWord = (t) => ({ Shelf: "shelves", Box: "boxes" })[t] || t.toLowerCase() + "s";
+  const groupLabel = (n) => n > 1 ? pluralWord(term).replace(/^./, (c) => c.toUpperCase()) : term;
   function renderHome() { renderFilters(); renderList(); renderCapture(); }
   $("filters").addEventListener("click", (e) => {
     const b = e.target.closest("[data-f]"); if (!b) return;
@@ -1093,7 +1156,7 @@ button { cursor: pointer; }
         <div class="chips wrap" id="viaChips">${VIA_PICK.map(([v, l]) => `<button class="chip" aria-pressed="${draft.via === v}" data-via="${v}">${esc(l)}</button>`).join("")}</div>
         <input class="inp" id="fromWho" placeholder="Who? (optional)" value="${esc(draft.from || "")}">
 
-        <div class="section-label">${esc(term)}${draft.cols.length > 1 ? (term === "Shelf" ? "ves" : plural(term)) : ""}</div>
+        <div class="section-label">${esc(groupLabel(draft.cols.length))}</div>
         <div class="chips wrap" id="colChips">${state.cols.map((n) => `<button class="chip" aria-pressed="${draft.cols.includes(n)}" data-col="${esc(n)}">${esc(n)}${n === draft.autoCol && !draft.colsEdited ? `<span class="auto">auto</span>` : ""}</button>`).join("")}<button class="chip new" id="newColBtn">+ New</button></div>
         <div class="new-col" id="newColRow" hidden><input id="newColName" placeholder="${esc(term)} name"><button class="btn ghost" id="newColAdd">Add</button></div>
 
@@ -1174,7 +1237,7 @@ button { cursor: pointer; }
                <div class="made-row">
                  <span class="cand-pv">${previewHTML(t)}</span>
                  <span class="item-body"><span class="item-title">${esc(t.title)}</span><span class="blurb">${esc(t.role || t.blurb)}</span></span>
-                 ${savedUrl(t.url) ? `<span class="made-saved">Saved</span>` : `<button class="made-add" data-pk="${k}" aria-pressed="${draft.madePick.has(k)}">${draft.madePick.has(k) ? "✓ Adding" : "+ Add"}</button>`}
+                 ${savedUrl(t.url) ? `<span class="made-saved">In toolkit</span>` : `<button class="made-add" data-pk="${k}" aria-pressed="${draft.madePick.has(k)}">${draft.madePick.has(k) ? "✓ Adding" : "+ Add"}</button>`}
                </div>`).join("") || `<p class="hint">Couldn't find solid evidence of the tools used.</p>`}</div>`}
         <div class="section-label">${esc(term)}</div>
         <div class="chips wrap" id="madeCols">${state.cols.map((c) => `<button class="chip" aria-pressed="${draft.madeCols.includes(c)}" data-col="${esc(c)}">${esc(c)}</button>`).join("")}</div>
@@ -1215,7 +1278,7 @@ button { cursor: pointer; }
     freshId = id; filter = "All";
     const wasInline = draft.inline;
     closeSheet(); renderHome();
-    toast(tools.length ? `Saved ${inspo.title} + ${tools.length} tool${tools.length > 1 ? "s" : ""}` : `Saved ${inspo.title}`);
+    toast(tools.length ? `Into the toolkit · ${inspo.title} + ${tools.length} tool${tools.length > 1 ? "s" : ""}` : `Into the toolkit · ${inspo.title}`);
     if (wasInline) { $("qText").value = ""; $("qFrom").value = ""; clearPhoto(); syncQuick(); }
   }
   function keepScroll(fn) { const y = $("sheet").scrollTop; fn(); $("sheet").scrollTop = y; }
@@ -1244,7 +1307,7 @@ button { cursor: pointer; }
     freshId = item.id; filter = "All";
     const wasInline = draft.inline;
     closeSheet(); renderHome();
-    toast(`Saved to ${item.cols.join(" + ")}`);
+    toast(`Into the toolkit · ${item.cols.join(" + ")}`);
     if (wasInline) {
       $("qText").value = ""; $("qFrom").value = ""; clearPhoto(); syncQuick(); setTimeout(() => $("qText").focus(), 340);
       const sb = $("toSaves"); sb.classList.remove("bump"); void sb.offsetWidth; sb.classList.add("bump");
@@ -1268,7 +1331,7 @@ button { cursor: pointer; }
             <span class="item-title">${esc(t.title)}</span>
             <span class="blurb">${esc(t.role || t.blurb)}</span>
           </span>
-          ${savedUrl(t.url) ? `<span class="made-saved">Saved</span>` : `<button class="made-add" data-made="${n}">+ Save</button>`}
+          ${savedUrl(t.url) ? `<span class="made-saved">In toolkit</span>` : `<button class="made-add" data-made="${n}">+ Add</button>`}
         </div>`).join("") || `<p class="hint">Couldn't find solid evidence of the tools used.</p>`}</div>`;
   }
   function wireMade(i) {
@@ -1293,7 +1356,7 @@ button { cursor: pointer; }
         cols: [col], status: "want", take: "", savedAt: today(),
       });
       save(); renderHome(); keepScroll(() => { $("made").innerHTML = madeHTML(i); wireMade(i); });
-      toast(`Saved ${t.title} to ${col}`);
+      toast(`${t.title} → ${col}`);
     });
   }
   async function liveMade(i) {
@@ -1326,7 +1389,7 @@ button { cursor: pointer; }
     const takeHint = { want: "What do you want to try it for?", tried: "How'd it go?", using: "What do you use it for now?", nope: "Why not? Save future-you the time." }[i.status];
     $("sheetBody").innerHTML = `
       <div class="detail">
-        <div class="d-frame">${previewHTML(i)}</div>
+        <div class="d-frame">${previewHTML(i)}<button class="cover-btn d-cover" data-cover="${esc(i.id)}">${i.thumb ? "Change cover" : "Add cover"}</button></div>
         <div class="d-head">
           <div style="min-width:0">
             <h2>${esc(i.title)}</h2>
@@ -1354,7 +1417,7 @@ button { cursor: pointer; }
 
         ${i.kind === "inspo" ? `<div class="made" id="made">${madeHTML(i)}</div>` : ""}
 
-        <div class="section-label">${esc(term)}${i.cols.length > 1 ? (term === "Shelf" ? "ves" : plural(term)) : ""}</div>
+        <div class="section-label">${esc(groupLabel(i.cols.length))}</div>
         <div class="chips wrap" id="dCols">${state.cols.map((n) => `<button class="chip" aria-pressed="${i.cols.includes(n)}" data-col="${esc(n)}">${esc(n)}</button>`).join("")}</div>
 
         <div class="row">
@@ -1367,8 +1430,11 @@ button { cursor: pointer; }
       const b = e.target.closest("[data-st]"); if (!b) return;
       i.status = b.dataset.st; commitEdit(); keepScroll(() => renderDetail(i));
     };
-    $("dFor").oninput = (e) => { i.forWhat = e.target.value; save(); };
-    $("dTake").oninput = (e) => { i.take = e.target.value; save(); };
+    // Text boxes grow with their text, so nothing gets cut off at the bottom.
+    const fit = (t) => { t.style.height = "auto"; t.style.height = t.scrollHeight + 2 + "px"; };
+    ["dFor", "dTake"].forEach((id) => requestAnimationFrame(() => fit($(id))));
+    $("dFor").oninput = (e) => { i.forWhat = e.target.value; fit(e.target); save(); };
+    $("dTake").oninput = (e) => { i.take = e.target.value; fit(e.target); save(); };
     $("dCols").onclick = (e) => {
       const b = e.target.closest("[data-col]"); if (!b) return;
       const n = b.dataset.col;
@@ -1624,10 +1690,10 @@ button { cursor: pointer; }
 
   // ---------- variants sidebar ----------
   const VARIANTS = [
-    { key: "open", label: "When the app opens", opts: [["capture", "Add screen"], ["library", "Your saves"]] },
-    { key: "info", label: "Card info", opts: [["flip", "On the back"], ["bottom", "Bottom caption"], ["pin", "Corner tag"]] },
+    { key: "open", label: "When the app opens", opts: [["capture", "Add screen"], ["library", "Your toolkit"]] },
+    { key: "info", label: "Card info", opts: [["flip", "Title only"], ["bottom", "Bottom caption"], ["pin", "Corner tag"]] },
     { key: "label", label: "Label font", opts: [["mono", "Mono"], ["caps", "Sans caps"], ["serif", "Serif italic"], ["cond", "Condensed"]] },
-    { key: "cards", label: "Saved items", opts: [["framed", "Framed"], ["compact", "Rows"], ["grid", "Grid"]] },
+    { key: "cards", label: "Toolkit layout", opts: [["framed", "Framed"], ["compact", "Rows"], ["grid", "Grid"]] },
     { key: "forReq", label: "What it's for", opts: [["optional", "Optional"], ["required", "Required"]] },
     { key: "alts", label: "Other matches", opts: [["collapsed", "Behind “Not it?”"], ["shown", "Always shown"]] },
   ];
@@ -1685,7 +1751,7 @@ button { cursor: pointer; }
   addEventListener("pointercancel", endPage);
 
   // Two-finger trackpad swipe: arrives as horizontal scrolling. Drives the same motion as a drag:
-  // over a flippable card it flips the card, anywhere else it moves between Add and Saves.
+  // it moves between Add and Saves.
   let wheel = null, wheelIdle = 0, wheelCooldown = 0;
   views.addEventListener("wheel", (e) => {
     if (Math.abs(e.deltaX) <= Math.abs(e.deltaY) || $("sheet").classList.contains("on")) return;
@@ -1693,17 +1759,12 @@ button { cursor: pointer; }
     e.preventDefault();
     if (performance.now() < wheelCooldown) return;               // ignore the trackpad's momentum tail
     if (!wheel) {
-      const fl = e.target.closest(".flip");
-      wheel = { dx: 0, t: performance.now(), card: fl && fl.querySelector(".back") ? fl : null, from: $("screen").dataset.view };
-      if (!wheel.card) views.classList.add("dragging");
+      wheel = { dx: 0, t: performance.now(), from: $("screen").dataset.view };
+      views.classList.add("dragging");
     }
     wheel.dx -= e.deltaX;
     const W = views.getBoundingClientRect().width;
-    if (wheel.card) {
-      const base = wheel.card.classList.contains("flipped") ? 180 : 0, inner = wheel.card.querySelector(".flip-inner");
-      inner.style.transition = "none";
-      inner.style.transform = `rotateY(${base + Math.max(-180, Math.min(180, wheel.dx * 0.9))}deg)`;
-    } else {
+    {
       let p = wheel.from === "cap" ? -wheel.dx / W : 1 - wheel.dx / W;
       p = Math.max(0, Math.min(1, p)); wheel.p = p;
       document.querySelector(".cap").style.transform = `translateX(${-28 * p}%)`;
@@ -1716,11 +1777,6 @@ button { cursor: pointer; }
   function endWheel() {
     const w = wheel; wheel = null; if (!w) return;
     wheelCooldown = performance.now() + 450;
-    if (w.card) {
-      const inner = w.card.querySelector(".flip-inner"); inner.style.transition = ""; inner.style.transform = "";
-      if (Math.abs(w.dx) > 45) w.card.classList.toggle("flipped");
-      return;
-    }
     views.classList.remove("dragging");
     ["cap", "lib"].forEach((c) => { const el = document.querySelector("." + c); el.style.transform = ""; el.style.opacity = ""; });
     const flick = Math.abs(w.dx) / Math.max(1, performance.now() - w.t) > .35 && Math.abs(w.dx) > 30;
@@ -1731,7 +1787,7 @@ button { cursor: pointer; }
   function renderCapture() {
     $("capDate").textContent = new Date().toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" });
     const items = live();
-    $("savesCount").textContent = `${items.length} saved`;
+    $("savesCount").textContent = `${items.length} ${items.length === 1 ? "tool" : "tools"}`;
     $("stack").innerHTML = items.slice(0, 3).map((i) => {
       const yt = i.url && isYouTube(i.url);
       const b = yt ? "#FF0033" : /^#[0-9a-f]{6}$/i.test(i.brand || "") ? i.brand : COVERS[hash(i.title) % COVERS.length];
@@ -1741,10 +1797,16 @@ button { cursor: pointer; }
   function applyVariants(focus) {
     $("device").dataset.label = V.label;
     $("list").className = "list " + V.cards;
+    $("viewTog").querySelectorAll("[data-view]").forEach((b) => b.setAttribute("aria-pressed", b.dataset.view === V.cards));
     renderVariants(); renderHome();
     try { localStorage.setItem(VKEY, JSON.stringify(V)); } catch (e) {}
     if (focus) showView(V.open === "library" ? "lib" : "cap");
   }
+  // Cards or rows, switched right on the toolkit page
+  $("viewTog").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-view]"); if (!b || V.cards === b.dataset.view) return;
+    V.cards = b.dataset.view; openId = null; applyVariants();
+  });
   $("variantGroups").addEventListener("click", (e) => {
     const b = e.target.closest("[data-vk]"); if (!b) return;
     V[b.dataset.vk] = b.dataset.vv; applyVariants(b.dataset.vk === "open");
@@ -1777,7 +1839,7 @@ button { cursor: pointer; }
       spread: [12, 0, 40, 1],
       tilt: [3, 0, 14, 0.5],
       depth: [0.05, 0, 0.15, 0.01],
-      radius: [14, 4, 28, 1],
+      radius: [4, 0, 28, 1],
       motion: {
         float: [6, 0, 24, 1],
         floatSpeed: [2.4, 0.6, 6, 0.1],
@@ -1789,7 +1851,7 @@ button { cursor: pointer; }
       status: { show: true, every: [1.8, 0.6, 4, 0.1] },
       copy: { type: "action", label: "Copy values" },
     }, {
-      persist: { key: "svsd-loader" },
+      persist: { key: "svsd-loader-v2" },
       onAction: (a) => {
         if (a === "preview") previewLoader();
         if (a === "copy") {
