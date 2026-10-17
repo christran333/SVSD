@@ -2,7 +2,12 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,interactive-widget=resizes-content">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="SVSD">
+<meta name="theme-color" content="#0A0A0B">
 <title>SVSD Toolkit (local)</title>
 <style>
 /* ABC Areal by Dinamo (licensed, kept out of git). Variable: weight 400–700. */
@@ -50,6 +55,7 @@ button { cursor: pointer; }
   padding-right: max(16px, env(safe-area-inset-right, 0px));
 }
 @media (max-width: 900px) { .page { grid-template-columns: 1fr; height: auto; } }
+
 .stage { display: flex; justify-content: center; align-items: center; min-width: 0; }
 
 /* ---------- phone ---------- */
@@ -307,7 +313,23 @@ button { cursor: pointer; }
 .cap-from input { flex: 1; min-width: 0; background: transparent; border: 0; outline: none; color: var(--ink); font-size: 14px; padding: 0; }
 .cap-from input::placeholder { color: #4A4A52; }
 
-.cap-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.cap-foot { display: flex; align-items: center; gap: 12px; }
+.cap-foot .cap-hint { flex: 1; min-width: 0; }
+.cam { flex: none; width: 52px; height: 52px; border-radius: 50%; border: 1px solid var(--line); background: transparent; color: var(--ink); display: grid; place-items: center; }
+.cam svg { width: 23px; height: 23px; }
+.cam:active { transform: scale(.94); }
+.cap-photo { position: relative; align-self: flex-start; max-width: 78%; border-radius: 16px; overflow: hidden; border: 1px solid var(--line); animation: pop .4s cubic-bezier(.2,.9,.3,1.2); }
+.cap-photo img { display: block; max-height: 210px; width: auto; max-width: 100%; }
+.cap-photo-x { position: absolute; top: 8px; right: 8px; width: 28px; height: 28px; border-radius: 50%; border: 0; display: grid; place-items: center; color: #fff; background: rgba(0,0,0,.6); backdrop-filter: blur(8px); }
+.cap-photo-x svg { width: 14px; height: 14px; }
+.cap-photo-tag { position: absolute; left: 8px; bottom: 8px; font-size: 11px; padding: 4px 8px; border-radius: 999px; color: #fff; background: rgba(0,0,0,.6); backdrop-filter: blur(8px); }
+@keyframes pop { from { transform: scale(.9) rotate(-2deg); opacity: 0; } to { transform: none; opacity: 1; } }
+.reading { position: relative; border-radius: 16px; overflow: hidden; border: 1px solid var(--line); max-height: 200px; }
+.reading img { display: block; width: 100%; max-height: 200px; object-fit: cover; filter: saturate(.7) brightness(.7); }
+.reading::after { content: ""; position: absolute; left: 0; right: 0; height: 40%; top: -40%; background: linear-gradient(180deg, transparent, rgba(200,255,90,.28), transparent); animation: scan 1.4s ease-in-out infinite; }
+@keyframes scan { to { top: 100%; } }
+.b-seen { position: absolute; right: 14px; bottom: 14px; width: 56px; height: 56px; object-fit: cover; border-radius: 10px; border: 1px solid var(--line); transform: rotate(4deg); }
+.seen-img { display: block; width: 100%; max-height: 220px; object-fit: cover; border-radius: 10px; margin-top: 6px; }
 .cap-hint { font-size: 13px; color: var(--muted); }
 .send { width: 52px; height: 52px; border-radius: 50%; border: 0; background: var(--ink); color: var(--app-bg); display: grid; place-items: center; transition: transform .15s, opacity .2s; }
 .send svg { width: 22px; height: 22px; }
@@ -371,6 +393,28 @@ button { cursor: pointer; }
 .chip .auto { margin-left: 6px; font: 500 9.5px/1 var(--font-mono); text-transform: uppercase; letter-spacing: .06em; padding: 2px 4px; border-radius: 4px; background: rgba(255,255,255,.12); color: var(--ink); }
 .sticky-actions { position: sticky; bottom: -40px; background: var(--card); padding: 10px 0 0; margin-top: 4px; }
 
+/* ---------- drag and drop ---------- */
+.dropzone { position: absolute; z-index: 40; inset: 10px; border-radius: 28px; border: 2px dashed rgba(200,255,90,.7); background: rgba(10,10,11,.86); display: grid; place-items: center; text-align: center; pointer-events: none; animation: dz .2s ease-out; }
+.dropzone div { display: flex; flex-direction: column; align-items: center; gap: 6px; color: var(--ink); }
+.dropzone svg { width: 34px; height: 34px; color: var(--accent); margin-bottom: 4px; }
+.dropzone b { font-size: 18px; font-weight: 600; }
+.dropzone small { font-size: 13px; color: var(--muted); }
+@keyframes dz { from { opacity: 0; transform: scale(.98); } }
+
+/* ---------- how was this made ---------- */
+.made { display: flex; flex-direction: column; gap: 10px; }
+.made-btn { display: flex; align-items: center; gap: 12px; text-align: left; width: 100%; padding: 14px; border-radius: 14px; border: 1px solid var(--line); background: linear-gradient(135deg, rgba(200,255,90,.08), transparent 60%); color: var(--ink); }
+.made-btn b { display: block; font-size: 14px; font-weight: 600; }
+.made-btn small { display: block; font-size: 12px; color: var(--muted); margin-top: 2px; }
+.made-btn .spark { width: 34px; height: 34px; flex: none; border-radius: 10px; display: grid; place-items: center; background: rgba(200,255,90,.12); color: var(--accent); font-size: 16px; }
+.made-sum { margin: 0; font-size: 13.5px; line-height: 1.45; color: var(--ink); opacity: .9; }
+.made-list { display: flex; flex-direction: column; gap: 8px; }
+.made-row { display: grid; grid-template-columns: 64px 1fr auto; gap: 10px; align-items: center; padding: 8px; border: 1px solid var(--line); border-radius: 12px; }
+.made-row .cand-pv { width: 64px; }
+.made-row .item-title { white-space: normal; font-size: 14px; }
+.made-add { border: 0; border-radius: 999px; padding: 7px 11px; font-size: 12px; font-weight: 600; background: var(--ink); color: var(--app-bg); white-space: nowrap; }
+.made-saved { font-size: 12px; color: var(--ok); font-weight: 600; padding: 0 6px; }
+
 /* ---------- detail ---------- */
 .d-frame { position: relative; aspect-ratio: 16 / 9; border: 3px solid var(--frame); border-radius: 14px; overflow: hidden; }
 .d-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
@@ -406,6 +450,21 @@ button { cursor: pointer; }
 .linkbtn { background: none; border: 0; padding: 0; color: var(--accent); text-align: left; font-size: 12.5px; }
 .flip-inner { will-change: transform; }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+/* On a real phone: no fake frame, no sidebar. The app is the page. */
+@media (max-width: 600px) {
+  html, body { height: 100%; overflow: hidden; background: var(--app-bg); }
+  .page { display: block; height: 100%; padding: 0; max-width: none; }
+  .panel { display: none; }
+  .stage, .device-fit { width: 100% !important; height: 100% !important; display: block; }
+  .device { position: static; width: 100% !important; height: 100% !important; transform: none !important; padding: 0; border-radius: 0; background: var(--app-bg); box-shadow: none; }
+  .device::before, .device::after, .btn-action, .btn-camera, .island, .status, .home-ind { display: none !important; }
+  .screen { width: 100%; height: 100dvh; border-radius: 0; padding-top: env(safe-area-inset-top, 0px); }
+  .cap { padding-bottom: calc(18px + env(safe-area-inset-bottom, 0px)); }
+  .fab { bottom: calc(24px + env(safe-area-inset-bottom, 0px)); }
+  .pager { bottom: calc(6px + env(safe-area-inset-bottom, 0px)); }
+  .sheet { padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)); }
+  .toast { top: calc(10px + env(safe-area-inset-top, 0px)); }
+}
 </style>
 </head>
 <body>
@@ -434,10 +493,17 @@ button { cursor: pointer; }
             <div class="cap-date" id="capDate"></div>
             <h1 class="cap-q">What'd you find today?</h1>
             <textarea id="qText" rows="3" placeholder="A tool, a link, a name, half a name…" aria-label="What you found"></textarea>
+            <div class="cap-photo" id="capPhoto" hidden>
+              <img id="capPhotoImg" alt="Your photo">
+              <button class="cap-photo-x" id="capPhotoX" aria-label="Remove photo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+              <span class="cap-photo-tag">We'll read this and find what's in it</span>
+            </div>
             <label class="cap-from"><span>From</span><input id="qFrom" placeholder="someone? optional"></label>
           </div>
           <div class="cap-foot">
-            <span class="cap-hint" id="capHint">Type it how you'd say it. We'll find it.</span>
+            <button class="cam" id="camBtn" aria-label="Add a photo or screenshot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h1.6l1.4-2h5l1.4 2h1.6A2.5 2.5 0 0 1 20 8.5v8A2.5 2.5 0 0 1 17.5 19h-11A2.5 2.5 0 0 1 4 16.5z"/><circle cx="12" cy="12.5" r="3.4"/></svg></button>
+            <input type="file" id="photoIn" accept="image/*" hidden>
+            <span class="cap-hint" id="capHint">Type it, snap it, or paste a screenshot.</span>
             <button class="send" id="qFind" disabled aria-label="Find it"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
           </div>
         </section>
@@ -457,6 +523,7 @@ button { cursor: pointer; }
           <button class="fab" id="openCapture" aria-label="Add something"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
         </section>
         <div class="pager" aria-hidden="true"><i></i><i></i></div>
+        <div class="dropzone" id="dropzone" hidden><div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg><b>Drop it here</b><small>We'll find what's in it</small></div></div>
         </div>
 
         <div class="scrim" id="scrim" hidden></div>
@@ -559,10 +626,12 @@ button { cursor: pointer; }
     if (i.heard === undefined) i.heard = i.note || "";
     if (!i.via) i.via = i.from ? "person" : "other";
     if (i.take === undefined) i.take = "";
+    if (i.made && (i.made.loading || i.made.error)) delete i.made;
   }
-  const VIA = [["person", "In person"], ["call", "Call or meeting"], ["x", "X"], ["ig", "Instagram"], ["yt", "YouTube"], ["other", "Somewhere else"]];
+  const VIA = [["person", "In person"], ["call", "Call or meeting"], ["x", "X"], ["ig", "Instagram"], ["yt", "YouTube"], ["other", "Somewhere else"], ["made", "Used to make"]];
   const STATUS = [["want", "Want to try"], ["tried", "Tried it"], ["using", "Using"], ["nope", "Not for me"]];
   const viaLabel = (v) => (VIA.find((x) => x[0] === v) || VIA[5])[1];
+  const VIA_PICK = VIA.filter(([v]) => v !== "made");   // "Used to make" is set by breakdowns, not picked by hand
   const statusLabel = (v) => (STATUS.find((x) => x[0] === v) || STATUS[0])[1];
   const pill = (i) => `<span class="st st-${esc(i.status)}">${esc(statusLabel(i.status))}</span>`;
   const live = () => state.items.filter((i) => !i.archived);
@@ -629,6 +698,7 @@ button { cursor: pointer; }
         <span class="b-row">${pill(i)} <span>${originLine(i)}</span></span>
         ${i.take ? `<span class="b-take">“${esc(i.take)}”</span>` : ""}
         <span class="b-hint">Swipe to flip back · tap for details</span>
+        ${i.seen ? `<img class="b-seen" src="${i.seen}" alt="Where you saw it">` : ""}
       </div>`;
   }
   function itemHTML(i, fresh) {
@@ -809,7 +879,7 @@ button { cursor: pointer; }
   async function runSearch() {
     $("sheetBody").innerHTML = `
       <div style="display:flex;flex-direction:column;gap:12px">
-        <h2>Looking for “${esc(draft.text.trim())}”</h2>
+        ${draft.photo ? `<h2>Reading your photo…</h2><div class="reading"><img src="${draft.photo}" alt=""></div>` : `<h2>Looking for “${esc(draft.text.trim())}”</h2>`}
         <p class="hint" id="searchStatus">Finding it…</p>
         <div class="shimmer"></div><div class="shimmer"></div><div class="shimmer"></div>
         <div class="row"><button class="btn ghost" id="stop">Back</button></div>
@@ -861,7 +931,7 @@ button { cursor: pointer; }
     const canSave = !need || (draft.forWhat || "").trim();
     const row = (y, i) => `
       <button class="cand alt" data-i="${i}">
-        <span class="cand-pv">${y ? previewHTML(y) : previewHTML({ title: draft.text.trim(), kind: "note" })}</span>
+        <span class="cand-pv">${y ? previewHTML(y) : previewHTML({ title: draft.text.trim() || "Photo", kind: "note" })}</span>
         <span class="item-body">
           <span class="item-top"><span class="item-title">${y ? esc(y.title) : "Keep it as a note"}</span>${y ? `<span class="kind">${esc(y.kind)}</span>` : ""}</span>
           <span class="domain">${y ? esc(domainOf(y.url)) + (mode === "live" && y.verified === false ? " · unverified" : "") : "Attach the link later"}</span>
@@ -881,7 +951,7 @@ button { cursor: pointer; }
           </span>
         </div>` : `
         <div class="best note-only">
-          <span class="cand-pv big">${previewHTML({ title: draft.text.trim(), kind: "note" })}</span>
+          <span class="cand-pv big">${previewHTML({ title: draft.text.trim() || "Photo", kind: "note" })}</span>
           <span class="item-body"><span class="item-title">Saving as a note</span><span class="blurb">${c.length ? "You can attach the link later." : "Couldn't pin down a link for this one. It'll save as a note."}</span></span>
         </div>`}
         ${c.length || x ? `
@@ -894,7 +964,7 @@ button { cursor: pointer; }
         <textarea class="inp" id="forWhat" rows="2" placeholder="What it does, or what you saw it used for">${esc(draft.forWhat || "")}</textarea>
 
         <div class="section-label">How'd you find it</div>
-        <div class="chips wrap" id="viaChips">${VIA.map(([v, l]) => `<button class="chip" aria-pressed="${draft.via === v}" data-via="${v}">${esc(l)}</button>`).join("")}</div>
+        <div class="chips wrap" id="viaChips">${VIA_PICK.map(([v, l]) => `<button class="chip" aria-pressed="${draft.via === v}" data-via="${v}">${esc(l)}</button>`).join("")}</div>
         <input class="inp" id="fromWho" placeholder="Who? (optional)" value="${esc(draft.from || "")}">
 
         <div class="section-label">${esc(term)}${draft.cols.length > 1 ? (term === "Shelf" ? "ves" : plural(term)) : ""}</div>
@@ -942,14 +1012,16 @@ button { cursor: pointer; }
     const x = selected();
     const item = {
       id: "i" + Date.now(),
-      title: x ? x.title : draft.text.trim(),
+      title: x ? x.title : (draft.text.trim() || "Photo from " + fmtDate(today())),
       url: x ? x.url : "",
       kind: x ? x.kind : "note",
       blurb: x ? x.blurb : "",
       brand: x?.brand || "",
       image: x?.image || "", fallback: x?.fallback || "", favicon: x?.favicon || "",
+      thumb: !x && draft.photo ? draft.photo : "",
       forWhat: (draft.forWhat || "").trim(),
       heard: draft.text.trim(),
+      seen: draft.photo ? draft.photo : "",
       via: draft.via || "other",
       from: (draft.from || "").trim(),
       cols: draft.cols.length ? draft.cols : [state.cols[0]].filter(Boolean),
@@ -962,9 +1034,72 @@ button { cursor: pointer; }
     closeSheet(); renderHome();
     toast(`Saved to ${item.cols.join(" + ")}`);
     if (wasInline) {
-      $("qText").value = ""; $("qFrom").value = ""; syncQuick(); setTimeout(() => $("qText").focus(), 340);
+      $("qText").value = ""; $("qFrom").value = ""; clearPhoto(); syncQuick(); setTimeout(() => $("qText").focus(), 340);
       const sb = $("toSaves"); sb.classList.remove("bump"); void sb.offsetWidth; sb.classList.add("bump");
     }
+  }
+
+  // ---------- how was this made? ----------
+  // Turns one inspiring thing into the tools behind it. Each tool saves with a link back to what it came from.
+  const savedUrl = (u) => state.items.some((x) => x.url === u && !x.archived);
+  function madeHTML(i) {
+    const m = i.made;
+    if (!m) return `<button class="made-btn" id="madeBtn"><span class="spark">✦</span><span><b>How was this made?</b><small>Find the tools and techniques behind it</small></span></button>`;
+    if (m.loading) return `<div class="section-label">How it was made</div><p class="hint">Digging through posts, repos and credits…</p><div class="shimmer"></div><div class="shimmer"></div>`;
+    if (m.error) return `<div class="section-label">How it was made</div><p class="hint">${esc(m.error)}</p><button class="linkish" id="madeRetry">Try again</button>`;
+    return `<div class="section-label">How it was made</div>
+      ${m.summary ? `<p class="made-sum">${esc(m.summary)}</p>` : ""}
+      <div class="made-list">${m.tools.map((t, n) => `
+        <div class="made-row">
+          <span class="cand-pv">${previewHTML(t)}</span>
+          <span class="item-body">
+            <span class="item-title">${esc(t.title)}</span>
+            <span class="blurb">${esc(t.role || t.blurb)}</span>
+          </span>
+          ${savedUrl(t.url) ? `<span class="made-saved">Saved</span>` : `<button class="made-add" data-made="${n}">+ Save</button>`}
+        </div>`).join("") || `<p class="hint">Couldn't find solid evidence of the tools used.</p>`}</div>`;
+  }
+  function wireMade(i) {
+    const el = $("made"); if (!el) return;
+    const run = async () => {
+      i.made = { loading: true }; el.innerHTML = madeHTML(i);
+      try {
+        i.made = mode === "live" ? await liveMade(i) : await testMade(i);
+      } catch (e) { i.made = { error: e?.message || "Couldn't piece it together. Try again." }; }
+      if (i.made && !i.made.error) save();
+      if ($("made")) { $("made").innerHTML = madeHTML(i); wireMade(i); }
+    };
+    if ($("madeBtn")) $("madeBtn").onclick = run;
+    if ($("madeRetry")) $("madeRetry").onclick = run;
+    el.querySelectorAll("[data-made]").forEach((b) => b.onclick = () => {
+      const t = i.made.tools[Number(b.dataset.made)];
+      const col = (t.stash && state.cols.includes(t.stash)) ? t.stash : (state.cols.find((c) => /design tools/i.test(c)) || state.cols[0]);
+      state.items.unshift({
+        id: "i" + Date.now() + Math.random().toString(36).slice(2, 5), title: t.title, url: t.url, kind: t.kind, blurb: t.role || t.blurb,
+        brand: t.brand || "", image: t.image || "", fallback: t.fallback || "", favicon: t.favicon || "",
+        forWhat: t.role || "", heard: `Used to make ${i.title}`, via: "made", from: i.title, madeFrom: i.id,
+        cols: [col], status: "want", take: "", savedAt: today(),
+      });
+      save(); renderHome(); keepScroll(() => { $("made").innerHTML = madeHTML(i); wireMade(i); });
+      toast(`Saved ${t.title} to ${col}`);
+    });
+  }
+  async function liveMade(i) {
+    const item = { title: i.title, url: i.url, blurb: i.blurb, forWhat: i.forWhat, image: i.seen || "" };
+    const r = await fetch("/api/made", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ item, stashes: state.cols }) });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw { message: data.error || "Couldn't piece it together." };
+    return data;
+  }
+  function testMade(i) {
+    return new Promise((res) => setTimeout(() => res({
+      summary: `Test result. Live mode searches the maker's posts, repos and credits for ${i.title}. Here's what a breakdown looks like.`,
+      tools: [
+        { title: "Framer", url: "https://www.framer.com", kind: "tool", role: "Site build and scroll interactions", brand: "#0055FF", stash: "Design tools" },
+        { title: "Rive", url: "https://rive.app", kind: "tool", role: "Interactive hero animation", brand: "#1D1D1D", stash: "Motion" },
+        { title: "Figma", url: "https://www.figma.com", kind: "tool", role: "Layouts and component system", brand: "#A259FF", stash: "Design tools" },
+      ],
+    }), 1400));
   }
 
   // ---------- item detail: what it is, where it came from, did you try it ----------
@@ -1002,7 +1137,10 @@ button { cursor: pointer; }
           <div class="section-label">Where it came from</div>
           <div>${originLine(i)}</div>
           ${i.heard ? `<div class="heard-as">You wrote “${esc(i.heard)}”</div>` : ""}
+          ${i.seen ? `<img class="seen-img" src="${i.seen}" alt="The photo you snapped">` : ""}
         </div>
+
+        <div class="made" id="made">${madeHTML(i)}</div>
 
         <div class="section-label">${esc(term)}${i.cols.length > 1 ? (term === "Shelf" ? "ves" : plural(term)) : ""}</div>
         <div class="chips wrap" id="dCols">${state.cols.map((n) => `<button class="chip" aria-pressed="${i.cols.includes(n)}" data-col="${esc(n)}">${esc(n)}</button>`).join("")}</div>
@@ -1026,6 +1164,7 @@ button { cursor: pointer; }
       if (!next.length) { toast(`Keep it in at least one ${term.toLowerCase()}`); return; }
       i.cols = next; commitEdit(); keepScroll(() => renderDetail(i));
     };
+    wireMade(i);
     $("dArchive").onclick = () => {
       closeSheet();
       if (i.archived) { i.archived = false; commitEdit(); toast(`Restored ${i.title}`); return; }
@@ -1105,6 +1244,9 @@ button { cursor: pointer; }
     return new Promise((res, rej) => {
       const t = setTimeout(() => {
         const ql = q.toLowerCase();
+        if (!ql && draft?.photo) {   // test mode can't read photos; pretend it spotted a couple of known tools
+          res(KNOWN.slice(0, 3).map((x) => ({ ...x.r, blurb: "Test result. Live mode reads the photo. " + x.r.blurb }))); return;
+        }
         const hits = KNOWN.filter((x) => x.k.some((k) => ql.includes(k))).map((x) => x.r);
         const name = q.trim().split(/[,.\n]/)[0].trim();
         const g = (s) => "https://www.google.com/search?q=" + encodeURIComponent(s);
@@ -1123,7 +1265,7 @@ button { cursor: pointer; }
   // ---------- search: live mode (local server -> Claude + web search) ----------
   let serverStatus = { reachable: false, live: false, model: "" };
   async function liveSearch(q, signal) {
-    const r = await fetch("/api/search", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ q, from: draft.from, stashes: state.cols }), signal });
+    const r = await fetch("/api/search", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ q, from: draft.from, stashes: state.cols, image: draft.photo || "" }), signal });
     const data = await r.json().catch(() => ({}));
     if (!r.ok) throw { code: "server", message: data.error || "Search didn't finish." };
     return data.candidates || [];
@@ -1167,14 +1309,46 @@ button { cursor: pointer; }
   $("clearBtn").onclick = () => { state = { items: [], cols: DEFAULT_COLS.slice() }; save(); filter = "All"; renderHome(); toast("Cleared"); };
 
   // ---------- quick capture (capture-first home) ----------
+  let capPhoto = "";
+  async function attachPhoto(file) {
+    if (!file || !/^image\//.test(file.type)) return;
+    try {
+      capPhoto = await downscale(file, 1100);
+      $("capPhotoImg").src = capPhoto; $("capPhoto").hidden = false; syncQuick();
+    } catch (e) { toast("Couldn't read that image"); }
+  }
+  function clearPhoto() { capPhoto = ""; $("capPhoto").hidden = true; $("capPhotoImg").removeAttribute("src"); syncQuick(); }
+  $("camBtn").onclick = () => { $("photoIn").value = ""; $("photoIn").click(); };
+  $("photoIn").onchange = () => attachPhoto($("photoIn").files?.[0]);
+  $("capPhotoX").onclick = clearPhoto;
+  // Drag and drop: an image or a link dropped anywhere on the page goes to the Add screen.
+  let dragDepth = 0;
+  const hasDroppable = (e) => [...(e.dataTransfer?.types || [])].some((t) => t === "Files" || t === "text/uri-list" || t === "text/plain");
+  addEventListener("dragenter", (e) => { if (!hasDroppable(e)) return; e.preventDefault(); dragDepth++; $("dropzone").hidden = false; });
+  addEventListener("dragover", (e) => { if (!hasDroppable(e)) return; e.preventDefault(); e.dataTransfer.dropEffect = "copy"; });
+  addEventListener("dragleave", () => { if (--dragDepth <= 0) { dragDepth = 0; $("dropzone").hidden = true; } });
+  addEventListener("drop", (e) => {
+    e.preventDefault(); dragDepth = 0; $("dropzone").hidden = true;
+    if ($("sheet").classList.contains("on")) closeSheet();
+    showView("cap");
+    const f = [...(e.dataTransfer?.files || [])].find((x) => /^image\//.test(x.type));
+    if (f) { attachPhoto(f); return; }
+    if (e.dataTransfer?.files?.length) { toast("That file isn't an image. Drop a photo or screenshot."); return; }
+    const link = (e.dataTransfer.getData("text/uri-list") || e.dataTransfer.getData("text/plain") || "").trim().split("\n")[0];
+    if (link) { $("qText").value = link; syncQuick(); }
+  });
+  document.querySelector(".cap").addEventListener("paste", (e) => {
+    const f = [...(e.clipboardData?.files || [])].find((x) => /^image\//.test(x.type));
+    if (f) { e.preventDefault(); attachPhoto(f); }
+  });
   function syncQuick() {
-    const on = !!$("qText").value.trim();
+    const on = !!$("qText").value.trim() || !!capPhoto;
     $("qFind").disabled = !on;
-    $("capHint").textContent = on ? "Return to find it" : "Type it how you'd say it. We'll find it.";
+    $("capHint").textContent = on ? (capPhoto && !$("qText").value.trim() ? "Add a note, or just send it" : "Return to find it") : "Type it, snap it, or paste a screenshot.";
   }
   function quickFind() {
-    const text = $("qText").value.trim(); if (!text) return;
-    openSheet({ text, from: $("qFrom").value });
+    const text = $("qText").value.trim(); if (!text && !capPhoto) return;
+    openSheet({ text, from: $("qFrom").value, photo: capPhoto });
   }
   $("qText").addEventListener("input", syncQuick);
   $("qText").addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); quickFind(); } });
@@ -1269,6 +1443,7 @@ button { cursor: pointer; }
 
   // Fit the true-size device to the window
   function fitDevice() {
+    if (matchMedia("(max-width: 600px)").matches) { $("device").style.transform = ""; $("deviceFit").style.width = $("deviceFit").style.height = ""; return; }
     const W = 424, H = 896, pad = 48;
     const narrow = innerWidth <= 900;
     const availH = narrow ? Infinity : innerHeight - pad;
@@ -1289,6 +1464,9 @@ button { cursor: pointer; }
 })();
 </script>
 <!-- Agentation: click the icon in the bottom-right, then click any element to leave feedback for Claude. Dev only. -->
-<script src="/vendor/agentation.js" defer></script>
+<script>
+  // Agentation is a desktop feedback tool; skip it when the app runs on a phone.
+  if (!matchMedia("(max-width: 600px)").matches) { const s = document.createElement("script"); s.src = "/vendor/agentation.js"; s.defer = true; document.body.appendChild(s); }
+</script>
 </body>
 </html>

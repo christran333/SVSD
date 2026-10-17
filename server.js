@@ -31,7 +31,7 @@ const send = (res, code, body, type = "application/json") => {
   res.end(type === "application/json" ? JSON.stringify(body) : body);
 };
 const readBody = (req) => new Promise((ok, bad) => {
-  let d = ""; req.on("data", (c) => { d += c; if (d.length > 1e5) req.destroy(); });
+  let d = ""; req.on("data", (c) => { d += c; if (d.length > 8e6) req.destroy(); }); // 8MB: room for one downscaled photo
   req.on("end", () => { try { ok(d ? JSON.parse(d) : {}); } catch (e) { bad(e); } });
 });
 const hostOf = (u) => { try { return new URL(u).hostname.replace(/^www\./, ""); } catch { return ""; } };
@@ -89,11 +89,15 @@ async function previewFor(rawUrl) {
 }
 
 // ---------- search with Claude + web search ----------
-async function search(q, from, stashes = []) {
+async function search(q, from, stashes = [], image = "") {
   const stashList = (Array.isArray(stashes) ? stashes : []).map(String).slice(0, 30);
-  const prompt = `A designer jotted down a note about something a friend recommended. Use web search to find what they most likely mean, then return up to 3 candidate links, best match first.
+  const img = /^data:(image\/(?:jpeg|png|webp|gif));base64,(.+)$/.exec(String(image || ""));
+  const intro = img
+    ? `A designer snapped a photo or screenshot of something they want to remember: a tool, app, site, video or creator they saw (on a friend's screen, a tweet, a slide, a poster). First read the image: product names, logos, URLs, handles. Then use web search to find the actual thing and return up to 3 candidate links, best match first. If the image shows several different tools, return each one.`
+    : `A designer jotted down a note about something a friend recommended. Use web search to find what they most likely mean, then return up to 3 candidate links, best match first.`;
+  const prompt = `${intro}
 
-Note: """${String(q).slice(0, 500)}"""
+${q ? `Their note: """${String(q).slice(0, 500)}"""` : ""}
 ${from ? `Who told them: """${String(from).slice(0, 200)}"""` : ""}
 
 Rules:
@@ -114,7 +118,9 @@ Finish with only a JSON array, no other text, like:
       model: MODEL,
       max_tokens: 1500,
       tools: [{ type: "web_search_20250305", name: "web_search", max_uses: 3 }],
-      messages: [{ role: "user", content: prompt }],
+      messages: [{ role: "user", content: img
+        ? [{ type: "image", source: { type: "base64", media_type: img[1], data: img[2] } }, { type: "text", text: prompt }]
+        : prompt }],
     }),
   });
   const data = await r.json();
@@ -151,8 +157,53 @@ Finish with only a JSON array, no other text, like:
   return cands;
 }
 
+// ---------- how was this made? ----------
+async function howMade({ title = "", url = "", blurb = "", forWhat = "", image = "" }, stashes = []) {
+  const img = /^data:(image\/(?:jpeg|png|webp|gif));base64,(.+)$/.exec(String(image || ""));
+  const prompt = `A designer saved something that impressed them and wants to know how it was made: which tools, libraries, frameworks, plugins or techniques were used, so they can try them.
+
+Thing: ${String(title).slice(0, 120)}
+${url ? `Link: ${String(url).slice(0, 400)}` : ""}
+${blurb ? `About: ${String(blurb).slice(0, 300)}` : ""}
+${forWhat ? `Their note: ${String(forWhat).slice(0, 300)}` : ""}
+${img ? "The attached image is where they saw it (a screenshot or photo). Read it for names, handles, links." : ""}
+
+Use web search to find real evidence: the maker's posts or threads, a case study, a GitHub repo, a talk, a "built with" credit, the site's own source hints. Do not guess a stack without evidence; if you can't find much, say so in the summary and return fewer tools.
+
+Finish with only a JSON object, no other text, like:
+{"summary":"One or two plain sentences on how it was made and how sure you are.","tools":[{"title":"Rive","url":"https://rive.app","kind":"tool","role":"Interactive animations in the hero","brand":"#1D1D1D","stash":"Motion"}]}
+- Up to 5 tools, most important first. "role" says what it was used for in this project, max 12 words.
+- "stash" is the best fit from ${JSON.stringify((stashes || []).map(String).slice(0, 30))} or a new 1-2 word name.`;
+
+  const r = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "x-api-key": API_KEY, "anthropic-version": "2023-06-01", "content-type": "application/json" },
+    body: JSON.stringify({
+      model: MODEL, max_tokens: 2000,
+      tools: [{ type: "web_search_20250305", name: "web_search", max_uses: 5 }],
+      messages: [{ role: "user", content: img ? [{ type: "image", source: { type: "base64", media_type: img[1], data: img[2] } }, { type: "text", text: prompt }] : prompt }],
+    }),
+  });
+  const data = await r.json();
+  if (!r.ok) { const err = new Error(data?.error?.message || `Claude API error ${r.status}`); err.status = r.status; throw err; }
+  const texts = (data.content || []).filter((b) => b.type === "text").map((b) => b.text);
+  const last = texts[texts.length - 1] || "";
+  let out;
+  try { out = JSON.parse((/\{[\s\S]*\}/.exec(last) || [])[0]); } catch { throw new Error("Couldn't piece together how this was made. Try again."); }
+  const tools = (Array.isArray(out.tools) ? out.tools : [])
+    .filter((x) => x && typeof x.title === "string" && /^https?:\/\//.test(x.url || ""))
+    .slice(0, 5)
+    .map((x) => ({
+      title: x.title.slice(0, 60), url: x.url, kind: ["tool", "site", "video", "article"].includes(x.kind) ? x.kind : "tool",
+      role: String(x.role || "").slice(0, 120), blurb: String(x.role || "").slice(0, 120),
+      brand: /^#[0-9a-f]{6}$/i.test(x.brand || "") ? x.brand : "", stash: typeof x.stash === "string" ? x.stash.slice(0, 24) : "",
+    }));
+  await Promise.all(tools.map(async (c) => Object.assign(c, await previewFor(c.url))));
+  return { summary: String(out.summary || "").slice(0, 400), tools };
+}
+
 // ---------- server ----------
-const TYPES = { ".html": "text/html; charset=utf-8", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".png": "image/png", ".json": "application/json" };
+const TYPES = { ".html": "text/html; charset=utf-8", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".png": "image/png", ".json": "application/json", ".woff2": "font/woff2", ".jpg": "image/jpeg" };
 
 http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host}`);
@@ -163,9 +214,15 @@ http.createServer(async (req, res) => {
 
     if (url.pathname === "/api/search" && req.method === "POST") {
       if (!API_KEY) return send(res, 400, { error: "No API key yet. Add ANTHROPIC_API_KEY to .env and restart the server." });
-      const { q, from, stashes } = await readBody(req);
-      if (!q || !String(q).trim()) return send(res, 400, { error: "Type what you heard about first." });
-      return send(res, 200, { candidates: await search(q, from, stashes) });
+      const { q, from, stashes, image } = await readBody(req);
+      if ((!q || !String(q).trim()) && !image) return send(res, 400, { error: "Type what you heard about, or add a photo." });
+      return send(res, 200, { candidates: await search(q || "", from, stashes, image) });
+    }
+
+    if (url.pathname === "/api/made" && req.method === "POST") {
+      if (!API_KEY) return send(res, 400, { error: "No API key yet. Add ANTHROPIC_API_KEY to .env and restart the server." });
+      const { item, stashes } = await readBody(req);
+      return send(res, 200, await howMade(item || {}, stashes));
     }
 
     // static files
@@ -178,5 +235,7 @@ http.createServer(async (req, res) => {
   }
 }).listen(PORT, () => {
   console.log(`\n  SVSD toolkit running at http://localhost:${PORT}`);
+  const lan = Object.values(require("node:os").networkInterfaces()).flat().find((n) => n && n.family === "IPv4" && !n.internal);
+  if (lan) console.log(`  On your phone (same Wi-Fi): http://${lan.address}:${PORT}`);
   console.log(API_KEY ? `  Live search on (${MODEL})\n` : "  No API key found: test mode only. Add ANTHROPIC_API_KEY to .env\n");
 });
