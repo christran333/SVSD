@@ -801,7 +801,8 @@ button { cursor: pointer; }
 #device .detail textarea.inp { min-height: 72px; }
 #device .seg button { height: var(--h-control); padding: 0 var(--sp-2); }
 #device .origin { padding: var(--sp-4); gap: var(--sp-1); border-radius: var(--r); }
-#device .origin .section-label { margin-bottom: var(--sp-1); }
+#device .origin { border: 1px solid var(--line); padding: var(--sp-3) var(--sp-4); font-size: var(--t-body); line-height: 1.4; }   /* reads like the fields above it, just not editable */
+#device .origin .heard-as { font-size: 13px; }
 #device .btn { height: var(--h-button); padding: 0 var(--sp-5); display: inline-flex; align-items: center; justify-content: center; }
 #device .row { gap: var(--gap-inline); }
 #device .section-label { font-size: var(--t-label); line-height: 1; }
@@ -1888,8 +1889,8 @@ button { cursor: pointer; }
         <label class="section-label" for="dTake">Notes</label>
         <textarea class="inp" id="dTake" rows="2" placeholder="${esc(takeHint)}">${esc(i.take)}</textarea>
 
+        <div class="section-label">Where it came from</div>
         <div class="origin">
-          <div class="section-label">Where it came from</div>
           <div>${originLine(i)}</div>
           ${i.heard ? `<div class="heard-as">You wrote “${esc(i.heard)}”</div>` : ""}
           ${i.seen ? `<img class="seen-img" src="${i.seen}" alt="The photo you snapped">` : ""}
