@@ -285,8 +285,9 @@ button { cursor: pointer; }
 .views { position: relative; flex: 1; min-height: 0; }
 /* Side-by-side pages: Add on the left, Saves on the right. Swipe or tap to move between them. */
 .views { touch-action: pan-y; overflow: hidden; }
-.view { position: absolute; inset: 0; display: flex; flex-direction: column; background: var(--app-bg); transition: transform .5s cubic-bezier(.2,.85,.2,1), opacity .5s; }
+.view { position: absolute; inset: 0; display: flex; flex-direction: column; background: var(--app-bg); transition: transform .42s cubic-bezier(.22,.9,.28,1); will-change: transform; backface-visibility: hidden; }
 .view.off { pointer-events: none; }
+.view.far { visibility: hidden; }   /* two pages away: nothing to see, nothing to bleed through */
 .views.dragging .view { transition: none; }
 .view { user-select: none; -webkit-user-select: none; }
 .view textarea, .view input, .sheet { user-select: text; -webkit-user-select: text; }
@@ -754,6 +755,21 @@ button { cursor: pointer; }
   .sheet { padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)); }
   .toast { top: calc(10px + env(safe-area-inset-top, 0px)); }
 }
+
+/* ===== Bottom dock: the page bar and the round action button share one line on every screen ===== */
+#device { --dock-b: 22px; --dock-h: 58px; }
+@media (max-width: 600px) { #device { --dock-b: calc(10px + env(safe-area-inset-bottom, 0px)); } }
+#device .pager { bottom: var(--dock-b); height: var(--dock-h); align-items: center; box-sizing: border-box; }
+#device .fab, #device #qFind, #device #flowGo {
+  position: absolute; z-index: 6; right: var(--gutter, 20px); bottom: calc(var(--dock-b) + (var(--dock-h) - 56px) / 2);
+  width: 56px; height: 56px; margin: 0;
+}
+#device .cap-foot { position: static; }
+#device .cap, #device .flow { padding-bottom: calc(var(--dock-b) + var(--dock-h) + 16px); }
+#device .lib .list { padding-bottom: calc(var(--dock-b) + var(--dock-h) + 32px); }
+#device .fab-menu { bottom: calc(var(--dock-b) + var(--dock-h) + 12px); }
+#device .flow-out { padding-bottom: calc(var(--dock-b) + var(--dock-h) + 40px); }
+#device .flow.has-out { padding-bottom: 0; }   /* the workflow scrolls under the dock instead */
 </style>
 </head>
 <body>
@@ -1847,11 +1863,16 @@ button { cursor: pointer; }
   // Drag and drop: an image or a link dropped anywhere on the page goes to the Add screen.
   let dragDepth = 0;
   const hasDroppable = (e) => [...(e.dataTransfer?.types || [])].some((t) => t === "Files" || t === "text/uri-list" || t === "text/plain");
-  addEventListener("dragenter", (e) => { if (!hasDroppable(e)) return; e.preventDefault(); dragDepth++; $("dropzone").hidden = false; });
-  addEventListener("dragover", (e) => { if (!hasDroppable(e)) return; e.preventDefault(); e.dataTransfer.dropEffect = "copy"; });
+  // Only drops from outside the app count. Dragging a link or image that's already in the app is ignored.
+  let innerDrag = false;
+  addEventListener("dragstart", () => { innerDrag = true; });
+  addEventListener("dragend", () => { innerDrag = false; });
+  addEventListener("dragenter", (e) => { if (innerDrag || !hasDroppable(e)) return; e.preventDefault(); dragDepth++; $("dropzone").hidden = false; });
+  addEventListener("dragover", (e) => { if (innerDrag || !hasDroppable(e)) return; e.preventDefault(); e.dataTransfer.dropEffect = "copy"; });
   addEventListener("dragleave", () => { if (--dragDepth <= 0) { dragDepth = 0; $("dropzone").hidden = true; } });
   addEventListener("drop", (e) => {
     e.preventDefault(); dragDepth = 0; $("dropzone").hidden = true;
+    if (innerDrag) { innerDrag = false; return; }
     if ($("sheet").classList.contains("on")) closeSheet();
     showView("cap");
     const f = [...(e.dataTransfer?.files || [])].find((x) => /^image\//.test(x.type));
@@ -1943,12 +1964,14 @@ button { cursor: pointer; }
   }
   // Three pages side by side: Add | Toolkit | Workflow. pos runs 0 → 2; each page slides in over the one before it.
   const PAGES = ["cap", "lib", "flow"];
+  // Pages sit side by side like iOS: each one is exactly one screen-width from the next. No overlap, no fade.
   function layoutPages(pos) {
     PAGES.forEach((c, n) => {
-      const el = document.querySelector("." + c), d = pos - n;
-      if (d < 0) { el.style.transform = `translateX(${Math.min(1, -d) * 100}%)`; el.style.opacity = ""; }
-      else { const k = Math.min(1, d); el.style.transform = `translateX(${-28 * k}%)`; el.style.opacity = 1 - .75 * k; }
+      const el = document.querySelector("." + c), d = n - pos;
+      el.style.transform = `translate3d(${d * 100}%,0,0)`;
+      el.style.opacity = "";
       el.classList.toggle("off", Math.abs(d) > .5);
+      el.classList.toggle("far", Math.abs(d) >= 1.5);
     });
   }
   function showView(v) {
@@ -1964,9 +1987,14 @@ button { cursor: pointer; }
   $("flowBack").onclick = () => showView("lib");
   const pageIdx = () => PAGES.indexOf($("screen").dataset.view);
   // Drag position, kept to the pages next to where you started
-  const dragPos = (from, dx, W) => Math.max(Math.max(0, from - 1), Math.min(Math.min(2, from + 1), from - dx / W));
+  const dragPos = (from, dx, W) => {
+    let p = Math.max(from - 1, Math.min(from + 1, from - dx / W));      // one page at a time
+    if (p < 0) p = p * .25; if (p > 2) p = 2 + (p - 2) * .25;           // soft resistance past the first and last page
+    return p;
+  };
   function settlePage(from, pos, dx, flick) {
-    const to = flick ? Math.max(0, Math.min(2, from + (dx < 0 ? 1 : -1))) : Math.round(pos);
+    const moved = pos - from;
+    const to = Math.max(0, Math.min(2, flick || Math.abs(moved) > .22 ? from + (dx < 0 ? 1 : -1) : from));
     if (to !== from) showView(PAGES[to]); else layoutPages(from);
   }
 
@@ -1974,7 +2002,9 @@ button { cursor: pointer; }
   let page = null;
   const views = document.querySelector(".views");
   views.addEventListener("pointerdown", (e) => {
-    if (e.target.closest("textarea, input, .chips")) return;
+    // Swipes can start anywhere, the big text boxes included (they're most of the Add screen).
+    // Only small inputs and the sideways-scrolling filter chips keep the gesture for themselves.
+    if (e.target.closest("input, .chips, .fab-menu")) return;
     if ($("sheet").classList.contains("on")) return;
     page = { x: e.clientX, y: e.clientY, t: performance.now(), from: pageIdx(), active: false, id: e.pointerId };
   });
@@ -1982,19 +2012,25 @@ button { cursor: pointer; }
     if (!page || e.pointerId !== page.id) return;
     const dx = e.clientX - page.x, dy = e.clientY - page.y;
     if (!page.active) {
-      if (Math.abs(dx) < 10 || Math.abs(dx) < Math.abs(dy) * 1.2) { if (Math.abs(dy) > 14) page = null; return; }
+      // Lock to sideways early and forgive a diagonal thumb; give up only on a clearly vertical scroll.
+      if (Math.abs(dx) < 6 || Math.abs(dx) < Math.abs(dy) * .75) { if (Math.abs(dy) > 18 && Math.abs(dy) > Math.abs(dx) * 1.6) page = null; return; }
       page.active = true; views.classList.add("dragging");
+      if (document.activeElement && /TEXTAREA|INPUT/.test(document.activeElement.tagName)) document.activeElement.blur();   // drop the keyboard while swiping
+      window.getSelection?.().removeAllRanges();
     }
-    page.dx = dx; page.pos = dragPos(page.from, dx, views.getBoundingClientRect().width);
+    const now = performance.now();
+    page.vx = (dx - (page.dx || 0)) / Math.max(1, now - (page.lt || page.t));   // finger speed right now, px/ms
+    page.lt = now; page.dx = dx; page.pos = dragPos(page.from, dx, views.getBoundingClientRect().width);
     layoutPages(page.pos);
   });
   function endPage(e) {
     if (!page || (e && e.pointerId !== page.id)) return;
-    const { active, pos = page.from, dx = 0, t, from } = page; page = null;
+    const { active, pos = page.from, dx = 0, from, vx = 0, lt = 0 } = page; page = null;
     if (!active) return;
     swallowClick = true; setTimeout(() => (swallowClick = false), 60);
     views.classList.remove("dragging");
-    settlePage(from, pos, dx, Math.abs(dx) / Math.max(1, performance.now() - t) > .5);
+    const flick = Math.abs(vx) > .2 && performance.now() - lt < 140 && Math.sign(vx) === Math.sign(dx);
+    settlePage(from, pos, dx, flick);
   }
   addEventListener("pointerup", endPage);
   addEventListener("pointercancel", endPage);
