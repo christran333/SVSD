@@ -604,14 +604,14 @@ button { cursor: pointer; }
 .send.spark svg { width: 24px; height: 24px; }
 .flow.has-out #flowAsk { display: none; }
 .flow.has-out .cap-foot { display: none; }
-.flow-out { position: relative; flex: 1; min-height: 0; overflow-y: auto; margin: 0 -24px; padding: 18px 24px 110px; scrollbar-width: none; }
+.flow-out { position: relative; flex: 1; min-height: 0; overflow-y: auto; margin: 0 -24px; padding: 24px 24px 110px; scrollbar-width: none; }
 .flow-out::-webkit-scrollbar { display: none; }
-.fo-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
-.fo-goal { font-family: var(--font-display); font-weight: 700; font-size: 26px; line-height: 1.05; letter-spacing: -0.025em; margin: 6px 0 8px; }
-.fo-sum { color: var(--muted); font-size: 13.5px; line-height: 1.4; margin: 0 0 6px; }
-.fo-new { flex: none; border: 1px solid var(--line); background: transparent; color: var(--ink); border-radius: var(--r, 4px); padding: 7px 11px; font-size: 12.5px; font-weight: 600; }
-.fo-key { display: flex; gap: 12px; flex-wrap: wrap; margin: 10px 0 4px; font-size: 11px; color: var(--muted); }
-.fo-chain { position: relative; margin-top: 18px; }
+.fo-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 34px; }
+.fo-goal { font-family: var(--font-display); font-weight: 700; font-size: 28px; line-height: 1.08; letter-spacing: -0.025em; margin: 22px 0 10px; text-wrap: balance; }
+.fo-sum { color: var(--muted); font-size: 14px; line-height: 1.45; margin: 0; }
+.fo-new { flex: none; height: 34px; display: inline-flex; align-items: center; border: 1px solid var(--line); background: transparent; color: var(--ink); border-radius: var(--r, 4px); padding: 0 12px; font-size: 12.5px; font-weight: 600; }
+.fo-key { display: flex; gap: 14px; flex-wrap: wrap; margin: 16px 0 0; padding-top: 14px; border-top: 1px solid var(--line); font-size: 11.5px; color: var(--muted); }
+.fo-chain { position: relative; margin-top: 30px; }
 .fo-lines { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
 .fo-lines .fo-lit { fill: none; stroke: #fff; stroke-width: 1.6; stroke-linecap: round; filter: drop-shadow(0 0 3px rgba(255,255,255,.75)); }
 .fo-lines .fo-head { fill: #fff; opacity: 0; transition: opacity .2s; filter: drop-shadow(0 0 4px #fff) drop-shadow(0 0 10px rgba(255,255,255,.6)); }
@@ -659,6 +659,7 @@ button { cursor: pointer; }
 .fo-copy { display: inline-flex; align-items: center; gap: 6px; }
 .fo-copy svg { width: 14px; height: 14px; }
 .fo-copy.done { color: var(--ok); border-color: rgba(76,192,124,.4); }
+.fo-head .cap-date { line-height: 1; }
 /* Details drop down inside the card frame when you tap it */
 .drop { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .34s cubic-bezier(.2,.8,.2,1); background: var(--card); }
 .pcard.open .drop { grid-template-rows: 1fr; }
@@ -671,6 +672,58 @@ button { cursor: pointer; }
 .pcard.open .shell { border-color: var(--ink); }
 .shell .foot { cursor: pointer; }
 @media (prefers-reduced-motion: reduce) { .drop, .drop-in { transition: none; } }
+/* ================= DESIGN SYSTEM =================
+   Mirrors the "SVSD Toolkit DS" variables in Figma. Change a value there, paste it back here.
+   Spacing is a 4pt scale. Rules:
+   - Screen gutter: 20 on every page
+   - Label → its field: 8   · Inside a group: 12–16   · Between sections: 24   · Before the main action: 32
+   - Inline gaps (chips, buttons side by side): 8
+   - Card padding: 16   · Controls: 44 tall (inputs, segments), 48 for the main button
+   ================================================= */
+#device {
+  --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 20px; --sp-6: 24px; --sp-8: 32px; --sp-10: 40px; --sp-12: 48px;
+  --gutter: var(--sp-5); --gap-label: var(--sp-2); --gap-group: var(--sp-4); --gap-section: var(--sp-6); --gap-action: var(--sp-8); --gap-inline: var(--sp-2);
+  --pad-card: var(--sp-4); --h-control: 44px; --h-control-sm: 34px; --h-button: 48px;
+  --r-sheet: 12px;
+  --t-display: 34px; --t-h1: 30px; --t-h2: 24px; --t-h3: 19px; --t-body: 15px; --t-small: 13px; --t-caption: 12px; --t-label: 11px;
+}
+/* one gutter everywhere */
+#device .cap, #device .flow { padding-left: var(--gutter); padding-right: var(--gutter); }
+#device .flow-out { margin: 0 calc(-1 * var(--gutter)); padding-left: var(--gutter); padding-right: var(--gutter); }
+#device .lib-top { padding: var(--sp-2) var(--gutter) 0; }
+#device .app-head { padding: var(--sp-1) var(--gutter) var(--sp-3); gap: var(--sp-4); }
+#device .list { padding-left: var(--gutter); padding-right: var(--gutter); }
+#device .chips { gap: var(--gap-inline); }
+#device .chip { padding: 0 var(--sp-3); height: var(--h-control-sm); display: inline-flex; align-items: center; }
+
+/* sheets: grouped by section, labels hug their fields */
+#device .sheet { padding: var(--sp-2) var(--gutter) var(--sp-8); gap: var(--sp-4); border-radius: var(--r-sheet) var(--r-sheet) 0 0; }
+#device .detail { gap: var(--gap-section); }
+#device .detail > .section-label + * { margin-top: calc(var(--gap-label) - var(--gap-section)); }
+#device .detail > .d-frame + .d-head, #device .detail > .d-head + .seg { margin-top: calc(var(--gap-group) - var(--gap-section)); }
+#device .detail > h2 + .section-label { margin-top: calc(var(--gap-group) - var(--gap-section)); }
+#device .detail > .row:last-child { margin-top: calc(var(--gap-action) - var(--gap-section)); }
+#device .d-head { gap: var(--sp-4); align-items: center; }
+#device .d-head .domain { margin-top: var(--sp-1); }
+#device .d-head .open-btn { height: var(--h-control); padding: 0 var(--sp-4); display: inline-flex; align-items: center; flex: none; }
+#device .d-frame { border-radius: var(--r); }
+#device .d-cover { top: var(--sp-3); right: var(--sp-3); }
+#device .inp { padding: var(--sp-3) var(--sp-4); font-size: var(--t-body); line-height: 1.4; }
+#device input.inp { height: var(--h-control); padding-top: 0; padding-bottom: 0; }
+#device .detail textarea.inp { min-height: 72px; }
+#device .seg button { height: var(--h-control); padding: 0 var(--sp-2); }
+#device .origin { padding: var(--sp-4); gap: var(--sp-1); border-radius: var(--r); }
+#device .origin .section-label { margin-bottom: var(--sp-1); }
+#device .btn { height: var(--h-button); padding: 0 var(--sp-5); display: inline-flex; align-items: center; justify-content: center; }
+#device .row { gap: var(--gap-inline); }
+#device .section-label { font-size: var(--t-label); line-height: 1; }
+
+#device .d-frame .pv-word, #device .d-frame .pv-sub { display: none; }   /* the name sits right below; don't say it twice */
+/* cards */
+#device .foot { padding: var(--sp-3) var(--pad-card); gap: var(--sp-3); }
+#device .pcard.open .drop-in { padding: var(--sp-2) var(--pad-card) var(--sp-4); }
+#device .drop-row { padding: var(--sp-3) 0; gap: var(--sp-3); }
+
 /* On a real phone: no fake frame, no sidebar. The app is the page. */
 @media (max-width: 600px) {
   html, body { height: 100%; overflow: hidden; background: var(--app-bg); }
@@ -1157,6 +1210,7 @@ button { cursor: pointer; }
         <textarea class="inp" id="mFor" rows="2" placeholder="What it does, or what you'd use it for"></textarea>
         <label class="section-label" for="mFrom">Who told you <span class="opt">optional</span></label>
         <input class="inp" id="mFrom" placeholder="A friend, a creator, a thread…" autocomplete="off">
+        <div class="section-label">Status</div>
         <div class="seg d-status" role="group" aria-label="Status" style="--n:4">
           ${STATUS.map(([v, l]) => `<button data-st="${v}" aria-pressed="${v === status}">${esc(l)}</button>`).join("")}
         </div>
@@ -1883,6 +1937,7 @@ button { cursor: pointer; }
     });
   }
   function showView(v) {
+    if (!PAGES.includes(v)) return;
     $("screen").dataset.view = v;
     layoutPages(PAGES.indexOf(v));
     if (v === "cap") setTimeout(() => $("qText").focus(), 380);
@@ -1895,7 +1950,7 @@ button { cursor: pointer; }
   const pageIdx = () => PAGES.indexOf($("screen").dataset.view);
   // Drag position, kept to the pages next to where you started
   const dragPos = (from, dx, W) => Math.max(Math.max(0, from - 1), Math.min(Math.min(2, from + 1), from - dx / W));
-  function settle(from, pos, dx, flick) {
+  function settlePage(from, pos, dx, flick) {
     const to = flick ? Math.max(0, Math.min(2, from + (dx < 0 ? 1 : -1))) : Math.round(pos);
     if (to !== from) showView(PAGES[to]); else layoutPages(from);
   }
@@ -1924,7 +1979,7 @@ button { cursor: pointer; }
     if (!active) return;
     swallowClick = true; setTimeout(() => (swallowClick = false), 60);
     views.classList.remove("dragging");
-    settle(from, pos, dx, Math.abs(dx) / Math.max(1, performance.now() - t) > .5);
+    settlePage(from, pos, dx, Math.abs(dx) / Math.max(1, performance.now() - t) > .5);
   }
   addEventListener("pointerup", endPage);
   addEventListener("pointercancel", endPage);
@@ -1947,7 +2002,7 @@ button { cursor: pointer; }
     const w = wheel; wheel = null; if (!w) return;
     wheelCooldown = performance.now() + 450;
     views.classList.remove("dragging");
-    settle(w.from, w.pos ?? w.from, w.dx, Math.abs(w.dx) / Math.max(1, performance.now() - w.t) > .35 && Math.abs(w.dx) > 30);
+    settlePage(w.from, w.pos ?? w.from, w.dx, Math.abs(w.dx) / Math.max(1, performance.now() - w.t) > .35 && Math.abs(w.dx) > 30);
   }
 
   // ---------- workflow screen (step 1: just the prompt) ----------
