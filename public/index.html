@@ -131,6 +131,9 @@ button { cursor: pointer; }
 .device[data-device="desktop"] .views { height: 100%; }
 .device[data-device="desktop"] .app-head { padding-top: 24px; }
 .device[data-device="desktop"] .cap { padding-left: 72px; padding-right: 72px; }
+/* desktop: toolkit cards flow into a 2-column grid instead of one full-width card per row */
+.device[data-device="desktop"] .list.framed { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px 16px; align-content: start; align-items: start; }
+.device[data-device="desktop"] .list.framed .empty { grid-column: 1 / -1; }
 
 .app-head { padding: 6px 20px 8px; display: flex; flex-direction: column; gap: 12px; }
 .app-head h1 { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: 30px; letter-spacing: -0.02em; line-height: 1.05; }
@@ -341,6 +344,7 @@ button { cursor: pointer; }
 .cap-bg { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; display: block; }
 .cap > *:not(.cap-bg) { position: relative; z-index: 1; }
 .lib > *:not(.cap-bg):not(.fab) { position: relative; z-index: 1; }
+.flow > *:not(.cap-bg) { position: relative; z-index: 1; }
 .lib .list { background-color: transparent; }
 /* toolkit header matches the first page: mono label over a big tight headline */
 /* toolkit cards: same 1px outline + dark translucent fill as the input box, so the constellation shows through */
@@ -357,17 +361,16 @@ button { cursor: pointer; }
 .stack { display: flex; }
 .stack i { width: 22px; height: 22px; border-radius: 7px; border: 2px solid var(--app-bg); display: grid; place-items: center; font: 700 10px/1 var(--font-display); font-style: normal; }
 .stack i + i { margin-left: -8px; }
-.saves-btn.bump { animation: bump .5s cubic-bezier(.3,1.6,.5,1); }
+.saves-btn.bump, #toSaves.bump { animation: bump .5s cubic-bezier(.3,1.6,.5,1); }
 @keyframes bump { 40% { transform: scale(1.08); } }
 
 .cap-body { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 14px; padding-bottom: 40px; }
 .cap-date { font: 500 12px/1 var(--font-label); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
 .cap-q { margin: 0; font-family: var(--font-display); font-weight: 600; font-size: 34px; line-height: 1.02; letter-spacing: -0.035em; text-wrap: balance; }
 .cap textarea {
-  width: 100%; background: rgba(10,10,11,.6); border: 1px solid var(--line); border-radius: 4px; outline: none; resize: none; padding: 14px 16px; margin-top: 6px; transition: border-color .2s;
+  width: 100%; background: rgba(10,10,11,.6); border: 1px solid transparent; border-radius: 4px; outline: none; resize: none; padding: 14px 16px; margin-top: 6px;
   color: var(--ink); caret-color: var(--accent); font-family: var(--font-body); font-size: 22px; font-weight: 500; line-height: 1.3; letter-spacing: -0.01em;
 }
-.cap textarea:focus { border-color: var(--accent); }
 .cap textarea::placeholder { color: #4A4A52; }
 .cap-from { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 14px; }
 .cap-from input { flex: 1; min-width: 0; background: transparent; border: 0; outline: none; color: var(--ink); font-size: 14px; padding: 0; }
@@ -842,7 +845,7 @@ button { cursor: pointer; }
           <canvas class="cap-bg" id="capBg" aria-hidden="true"></canvas>
           <div class="cap-top">
             <span class="avatar" aria-hidden="true">C</span>
-            <button class="saves-btn" id="toSaves"><span class="stack" id="stack"></span><span id="savesCount"></span></button>
+            <button class="back-cap" id="toSaves">Toolkit<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg><span class="stack" id="stack" hidden></span><span id="savesCount" hidden></span></button>
           </div>
           <div class="cap-body">
             <div class="cap-date" id="capDate"></div>
@@ -873,7 +876,7 @@ button { cursor: pointer; }
         <section class="view lib" aria-label="Your toolkit">
           <canvas class="cap-bg" id="libBg" aria-hidden="true"></canvas>
           <div class="lib-top">
-            <button class="back-cap" id="backCap"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>Add</button>
+            <button class="back-cap" id="backCap"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>Add</button>
             <button class="back-cap" id="toFlow">Workflow<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
           </div>
           <header class="app-head">
@@ -898,6 +901,7 @@ button { cursor: pointer; }
         </section>
 
         <section class="view flow" aria-label="Build a workflow">
+          <canvas class="cap-bg" id="flowBg" aria-hidden="true"></canvas>
           <div class="cap-top">
             <button class="back-cap" id="flowBack"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>Toolkit</button>
             <button class="fo-new fo-copy" id="flowSaved" aria-label="Saved workflows"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5h12a1 1 0 0 1 1 1V21l-7-4.5L5 21V4.5a1 1 0 0 1 1-1z"/></svg><span id="flowSavedN">Saved</span></button>
@@ -1142,7 +1146,7 @@ button { cursor: pointer; }
     const info = V.info === "flip" ? ""
       : V.info === "bottom" ? (i.forWhat ? `<div class="caption"><small>${who}</small><span>${esc(i.forWhat)}</span></div>` : "")
       : (i.forWhat ? `<div class="pin"><small>${who}</small>${esc(i.forWhat)}</div>` : "");
-    return `<article class="pcard is-${i.status}${fresh ? " fresh" : ""}${openId === i.id ? " open" : ""}" data-item="${esc(i.id)}">
+    return `<article class="pcard is-${i.status}${fresh ? " fresh" : ""}${openIds.has(i.id) ? " open" : ""}" data-item="${esc(i.id)}">
       <div class="shell info-${V.info}">
         <div class="flip${isVid ? " is-video" : ""}">
           <div class="flip-inner">
@@ -1158,10 +1162,10 @@ button { cursor: pointer; }
       </div>
     </article>`;
   }
-  // Tap a card and its details drop down inside the same frame. One open at a time.
-  let openId = null;
+  // Tap a card and its details drop down inside the same frame. Several can stay open at once; tap again to close one.
+  const openIds = new Set();
   function dropHTML(i) {
-    return `<div class="drop" aria-hidden="${openId !== i.id}"><div class="drop-in">
+    return `<div class="drop" aria-hidden="${!openIds.has(i.id)}"><div class="drop-in">
         <div class="drop-row"><small>What</small><span>${esc(i.blurb || (i.url ? domainOf(i.url) : "A note"))}</span></div>
         <div class="drop-row"><small>Found</small><span>${originLine(i)}${i.heard ? `<em>“${esc(i.heard)}”</em>` : ""}</span></div>
         <div class="drop-row"><small>For</small><span>${esc(i.forWhat || "Nothing yet")}</span></div>
@@ -1169,11 +1173,10 @@ button { cursor: pointer; }
       </div></div>`;
   }
   function toggleDrop(card) {
-    const was = card.classList.contains("open");
-    $("list").querySelectorAll(".pcard.open").forEach((c) => { c.classList.remove("open"); c.querySelector(".drop")?.setAttribute("aria-hidden", "true"); });
-    openId = was ? null : card.dataset.item;
+    const was = card.classList.contains("open"), id = card.dataset.item;
+    card.classList.toggle("open", !was); card.querySelector(".drop")?.setAttribute("aria-hidden", String(was));
+    if (was) openIds.delete(id); else openIds.add(id);
     if (!was) {
-      card.classList.add("open"); card.querySelector(".drop").setAttribute("aria-hidden", "false");
       setTimeout(() => card.scrollIntoView({ block: "nearest", behavior: reduceMotion ? "auto" : "smooth" }), 200);
     }
   }
@@ -1228,7 +1231,7 @@ button { cursor: pointer; }
     const items = filter === "Archived" ? state.items.filter((i) => i.archived)
       : live().filter((i) => filter === "All" || i.cols.includes(filter));
     $("countLine").textContent = `${live().length} ${live().length === 1 ? "tool" : "tools"} · ${state.cols.length} ${state.cols.length === 1 ? term.toLowerCase() : pluralWord(term)}`;
-    if (openId && !items.some((i) => i.id === openId)) openId = null;
+    openIds.forEach((id) => { if (!items.some((i) => i.id === id)) openIds.delete(id); });
     $("list").innerHTML = items.length
       ? items.map((i) => (V.cards === "compact" ? compactHTML : V.cards === "grid" ? gridHTML : itemHTML)(i, i.id === freshId)).join("")
       : `<div class="empty">${filter === "All" ? "Your toolkit is empty." : `Nothing in ${esc(filter)} yet.`}<br>Hear about a tool? Throw it in.</div>`;
@@ -2445,7 +2448,7 @@ button { cursor: pointer; }
   // Cards or rows, switched right on the toolkit page
   $("viewTog").addEventListener("click", (e) => {
     const b = e.target.closest("[data-view]"); if (!b || V.cards === b.dataset.view) return;
-    V.cards = b.dataset.view; openId = null; applyVariants();
+    V.cards = b.dataset.view; openIds.clear(); applyVariants();
   });
   $("variantGroups").addEventListener("click", (e) => {
     const b = e.target.closest("[data-vk]"); if (!b) return;
@@ -2573,18 +2576,27 @@ function constellation(cv, opt) {
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const LINK_ALPHA = opt.line, DENSITY = opt.density, DIM = opt.dim;   // keep LINK_ALPHA low: the lines should whisper
   const SPIN = 0.10;   // radians per second around the vertical axis (one turn in about a minute)
+  const DRIFT = 0.5, TILT = 0.10, TILT_MAX = 0.14, EDGE = 40;   // drift size, camera tilt, and the soft fade-out zone at the canvas edges (px)
   let W = 0, H = 0, DEPTH = 0, F = 1, dpr = 2, pts = [], order = [], raf = 0, last = 0, clock = 0, lastFix = 0, edges = new Map();
   const rnd = (a, b) => a + Math.random() * (b - a);
   function make() {
-    DEPTH = Math.max(W, H) * 0.9; F = Math.max(W, H) * 1.4;   // F = camera distance: bigger is flatter, smaller is more perspective
+    F = Math.max(W, H) * 2;   // F = camera distance: bigger is flatter, smaller is more perspective
+    // Keep the whole cloud inside the canvas: a cylinder (radius Rh, half-height Hh) sized so that, turning, tilting, drifting
+    // and with perspective, no square ever reaches the edges.
+    const dr = 94 * DRIFT;
+    let Rh = W / 2 * 0.8;
+    for (let i = 0; i < 4; i++) { const k = F / (F - Rh - dr); Rh = Math.max(30, 1 * W / 2 / k - dr); }
+    const kk = F / (F - Rh - dr), Hh = Math.max(30, 1 * (H / 2) / kk - Rh * Math.sin(TILT_MAX) - dr);
+    DEPTH = 2 * (Rh + dr);
     const n = Math.round(W * H * DENSITY);
     pts = Array.from({ length: n }, () => {
       const big = Math.random() < 0.16;
-      const hx = rnd(-W / 2, W / 2), hy = rnd(-H / 2, H / 2), hz = rnd(-DEPTH / 2, DEPTH / 2);
-      return { x: hx, y: hy, z: hz, hx, hy, hz, u: 0, v: 0, k: 1, depth: .5, fade: 1,
-               ax: rnd(28, 72), ay: rnd(28, 72), az: rnd(28, 72), sx: rnd(.09, .26), sy: rnd(.09, .26), sz: rnd(.09, .26),
+      const r = Rh * Math.sqrt(Math.random()), th = rnd(0, 6.2832);
+      const hx = r * Math.cos(th), hz = r * Math.sin(th), hy = rnd(-Hh, Hh);
+      return { x: hx, y: hy, z: hz, hx, hy, hz, u: 0, v: 0, k: 1, depth: .5, fade: 1, edge: 1,
+               ax: rnd(28, 72) * DRIFT, ay: rnd(28, 72) * DRIFT, az: rnd(28, 72) * DRIFT, sx: rnd(.09, .26), sy: rnd(.09, .26), sz: rnd(.09, .26),
                px: rnd(0, 6.28), py: rnd(0, 6.28), pz: rnd(0, 6.28),
-               bx: rnd(8, 22), by: rnd(8, 22), bz: rnd(8, 22), tx: rnd(.3, .6), ty: rnd(.3, .6), tz: rnd(.3, .6),
+               bx: rnd(8, 22) * DRIFT, by: rnd(8, 22) * DRIFT, bz: rnd(8, 22) * DRIFT, tx: rnd(.3, .6), ty: rnd(.3, .6), tz: rnd(.3, .6),
                s: big ? rnd(4, 6) : rnd(2, 3.4), a: big ? rnd(.85, 1) : rnd(.4, .85),
                ph: rnd(0, 6.28), sp: rnd(.4, 1.2) };
     });
@@ -2616,7 +2628,7 @@ function constellation(cv, opt) {
   }
   // Drift every square in 3D, turn the whole cloud (around the vertical axis, with a gentle tilt), then project with perspective.
   function place() {
-    const ry = clock * SPIN, rx = 0.3 + 0.12 * Math.sin(clock * 0.11);
+    const ry = clock * SPIN, rx = TILT + 0.04 * Math.sin(clock * 0.11);
     const cy = Math.cos(ry), sy = Math.sin(ry), cx = Math.cos(rx), sx = Math.sin(rx);
     for (const p of pts) {
       p.x = p.hx + p.ax * Math.sin(clock * p.sx + p.px) + p.bx * Math.sin(clock * p.tx + p.py);
@@ -2628,6 +2640,8 @@ function constellation(cv, opt) {
       p.u = W / 2 + x1 * p.k; p.v = H / 2 + y2 * p.k;
       p.depth = Math.min(1, Math.max(0, (z2 + DEPTH * .5) / DEPTH));  // 0 = near, 1 = far
       p.fade = 1.05 - 0.7 * p.depth;                                  // far ones dim
+      const e = Math.min(1, Math.max(0, Math.min(p.u, W - p.u, p.v, H - p.v) / EDGE));
+      p.edge = e * e * (3 - 2 * e);                                   // soft fade right at the canvas edges
     }
   }
   function size() {
@@ -2637,7 +2651,7 @@ function constellation(cv, opt) {
   }
   function draw(t, dt = 0) {
     ctx.clearRect(0, 0, W, H);
-    const al = pts.map(p => DIM * p.a * p.fade * (0.8 + 0.2 * Math.sin(t * p.sp + p.ph)));
+    const al = pts.map(p => DIM * p.a * p.fade * p.edge * (0.8 + 0.2 * Math.sin(t * p.sp + p.ph)));
     // one continuous line threaded through the squares. When untangling swaps a link, the old one fades out and the new one fades in
     // (about 0.8s) instead of popping, so the line always looks like it is gently re-threading itself.
     const want = new Set();
@@ -2650,7 +2664,7 @@ function constellation(cv, opt) {
       edges.set(key, nv);
       const [i, j] = key.split(",").map(Number), a = pts[i], b = pts[j], d = Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z);
       const e = nv * nv * (3 - 2 * nv);   // ease
-      ctx.strokeStyle = `rgba(255,255,255,${LINK_ALPHA * Math.max(0.4, 1 - d / 420) * e * (a.fade + b.fade) / 2})`;
+      ctx.strokeStyle = `rgba(255,255,255,${LINK_ALPHA * Math.max(0.4, 1 - d / 420) * e * (a.fade + b.fade) / 2 * Math.min(a.edge, b.edge)})`;
       ctx.beginPath(); ctx.moveTo(a.u, a.v); ctx.lineTo(b.u, b.v); ctx.stroke();
     }
     // squares far to near, so close ones sit on top
@@ -2671,14 +2685,15 @@ function constellation(cv, opt) {
   function run() { if (!raf && !reduce) { last = 0; raf = requestAnimationFrame(tick); } }
   function stop() { cancelAnimationFrame(raf); raf = 0; }
   const scr = document.getElementById("screen");
-  const sync = () => (document.hidden || (scr && (scr.dataset.view === "lib") !== opt.onLib)) ? stop() : run();
+  const sync = () => (document.hidden || (scr && scr.dataset.view !== opt.view)) ? stop() : run();
   new ResizeObserver(size).observe(host);
   document.addEventListener("visibilitychange", sync);
   if (scr) new MutationObserver(sync).observe(scr, { attributes: true, attributeFilter: ["data-view"] });
   size(); sync();
 }
-constellation(document.getElementById("capBg"), { line: 0.22, density: 1 / 11000, dim: 0.72, onLib: false });   // same faintness as the toolkit
-constellation(document.getElementById("libBg"), { line: 0.22, density: 1 / 11000, dim: 0.72, onLib: true });   // quieter: the cards sit on top of it
+constellation(document.getElementById("capBg"), { line: 0.14, density: 1 / 11000, dim: 0.5, view: "cap" });
+constellation(document.getElementById("libBg"), { line: 0.14, density: 1 / 11000, dim: 0.5, view: "lib" });   // the cards sit on top of it
+constellation(document.getElementById("flowBg"), { line: 0.14, density: 1 / 11000, dim: 0.5, view: "flow" });
 </script>
 </body>
 </html>
