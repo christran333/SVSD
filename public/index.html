@@ -286,14 +286,14 @@ button { cursor: pointer; }
 /* Side-by-side pages: Add on the left, Saves on the right. Swipe or tap to move between them. */
 .views { touch-action: pan-y; overflow: hidden; }
 .view { position: absolute; inset: 0; display: flex; flex-direction: column; background: var(--app-bg); transition: transform .5s cubic-bezier(.2,.85,.2,1), opacity .5s; }
-#screen[data-view="cap"] .lib { transform: translateX(100%); pointer-events: none; }
-#screen[data-view="lib"] .cap { transform: translateX(-28%); opacity: .25; pointer-events: none; }
+.view.off { pointer-events: none; }
 .views.dragging .view { transition: none; }
 .view { user-select: none; -webkit-user-select: none; }
 .view textarea, .view input, .sheet { user-select: text; -webkit-user-select: text; }
-.pager { position: absolute; z-index: 6; left: 50%; bottom: 20px; transform: translateX(-50%); display: flex; gap: 6px; pointer-events: none; }
-.pager i { width: 6px; height: 6px; border-radius: 3px; background: #3A3A42; transition: width .3s, background .3s; }
-#screen[data-view="cap"] .pager i:first-child, #screen[data-view="lib"] .pager i:last-child { width: 16px; background: var(--ink); }
+.pager { position: absolute; z-index: 6; left: 50%; bottom: 33px; transform: translateX(-50%); display: flex; gap: 3px; padding: 4px; border: 1px solid var(--line); border-radius: 999px; background: rgba(14,14,17,.82); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+.pager button { width: 58px; height: 48px; border: 0; padding: 0; border-radius: 999px; background: transparent; color: #5C5C66; display: grid; place-items: center; transition: background .25s, color .25s; }
+.pager svg { width: 22px; height: 22px; }
+#screen[data-view="cap"] .pager [data-go="cap"], #screen[data-view="lib"] .pager [data-go="lib"], #screen[data-view="flow"] .pager [data-go="flow"] { background: var(--ink); color: var(--app-bg); }
 
 .cap { padding: 8px 24px 34px; }
 .cap-top { display: flex; align-items: center; justify-content: space-between; }
@@ -593,6 +593,72 @@ button { cursor: pointer; }
 .shell .ttl span.st-nope { color: #FF8A8A; background: rgba(48,14,14,.8); backdrop-filter: blur(6px); }
 .shell .ttl .st-want { background: rgba(10,10,12,.55); color: #D6D6DC; border-color: rgba(255,255,255,.45); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
 .shell .ttl .st-tried { background: rgba(42,42,49,.85); backdrop-filter: blur(6px); }
+/* Workflow screen: same bones as Add */
+.flow { padding: 8px 24px 34px; }
+.flow textarea { width: 100%; background: transparent; border: 0; outline: none; resize: none; padding: 0; margin-top: 6px; color: var(--ink); caret-color: var(--accent); font-family: var(--font-body); font-size: 22px; font-weight: 500; line-height: 1.3; letter-spacing: -0.01em; }
+.flow textarea::placeholder { color: #4A4A52; }
+.flow .cap-top .back-cap { padding: 6px 0; }
+.flow-count { font-size: 13px; color: var(--muted); border: 1px solid var(--line); border-radius: var(--r, 4px); padding: 6px 10px; }
+.lib-top #toFlow { margin-left: auto; }
+/* Workflow result: thumbnails chained down the screen */
+.send.spark svg { width: 24px; height: 24px; }
+.flow.has-out #flowAsk { display: none; }
+.flow.has-out .cap-foot { display: none; }
+.flow-out { position: relative; flex: 1; min-height: 0; overflow-y: auto; margin: 0 -24px; padding: 18px 24px 110px; scrollbar-width: none; }
+.flow-out::-webkit-scrollbar { display: none; }
+.fo-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.fo-goal { font-family: var(--font-display); font-weight: 700; font-size: 26px; line-height: 1.05; letter-spacing: -0.025em; margin: 6px 0 8px; }
+.fo-sum { color: var(--muted); font-size: 13.5px; line-height: 1.4; margin: 0 0 6px; }
+.fo-new { flex: none; border: 1px solid var(--line); background: transparent; color: var(--ink); border-radius: var(--r, 4px); padding: 7px 11px; font-size: 12.5px; font-weight: 600; }
+.fo-key { display: flex; gap: 12px; flex-wrap: wrap; margin: 10px 0 4px; font-size: 11px; color: var(--muted); }
+.fo-chain { position: relative; margin-top: 18px; }
+.fo-lines { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
+.fo-lines .fo-lit { fill: none; stroke: #fff; stroke-width: 1.6; stroke-linecap: round; filter: drop-shadow(0 0 3px rgba(255,255,255,.75)); }
+.fo-lines .fo-head { fill: #fff; opacity: 0; transition: opacity .2s; filter: drop-shadow(0 0 4px #fff) drop-shadow(0 0 10px rgba(255,255,255,.6)); }
+.fo-lines .fo-line { fill: none; stroke: rgba(255,255,255,.28); stroke-width: 1.25; stroke-dasharray: var(--len); stroke-dashoffset: var(--len); animation: draw .6s ease forwards; }
+@keyframes draw { to { stroke-dashoffset: 0; } }
+.fo-node { position: relative; width: 74%; margin-bottom: 34px; opacity: 0; transform: translateY(10px); animation: nodeIn .45s cubic-bezier(.2,.8,.2,1) forwards; }
+.fo-node:nth-child(even) { margin-left: auto; }
+.fo-node:last-child { margin-bottom: 0; }
+@keyframes nodeIn { to { opacity: 1; transform: none; } }
+.fo-label { display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px; }
+.fo-n { font: 500 10px/1 var(--font-label); letter-spacing: .1em; color: var(--muted); }
+.fo-name { font-family: var(--font-display); font-weight: 700; font-size: 19px; letter-spacing: -0.02em; line-height: 1.05; }
+.fo-thumb { position: relative; display: block; width: 100%; aspect-ratio: 16 / 10; border: 3px solid var(--frame); border-radius: var(--r, 4px); overflow: hidden; background: var(--card); padding: 0; cursor: pointer; text-align: left; color: inherit; }
+.fo-thumb .pv-sub, .fo-thumb .pv-word { display: none; }
+.fo-node.sug .fo-thumb { border-style: dashed; border-color: #5A5A62; }
+.fo-tag { position: absolute; z-index: 2; right: 7px; bottom: 7px; }
+.fo-tag .st { font-size: 10.5px; padding: 2px 7px; backdrop-filter: blur(6px); }
+.fo-tag .st-want { background: rgba(10,10,12,.6); color: #D6D6DC; border: 1px solid rgba(255,255,255,.45); }
+.st-sug { background: rgba(10,10,12,.6); color: #fff; border: 1px dashed rgba(255,255,255,.6); }
+.fo-step { margin-top: 8px; font-size: 12px; font-weight: 600; color: var(--ink); }
+.fo-use { margin-top: 2px; font-size: 12.5px; line-height: 1.35; color: var(--muted); }
+.fo-add { margin-top: 8px; border: 1px solid var(--line); background: transparent; color: var(--ink); border-radius: var(--r, 4px); padding: 6px 10px; font-size: 12px; font-weight: 600; }
+.fo-add[disabled] { color: var(--muted); }
+.fo-load .fo-thumb { border-color: var(--line); background: linear-gradient(100deg, #141417 30%, #1E1E23 50%, #141417 70%) 0 0 / 300% 100%; animation: shimmer 1.3s linear infinite; }
+.fo-load .fo-node { animation: nodeIn .45s forwards; }
+.fo-load .fo-name { width: 90px; height: 16px; background: #1A1A1E; border-radius: 2px; }
+@keyframes shimmer { to { background-position: -150% 0; } }
+.fo-err { margin-top: 30px; color: var(--muted); font-size: 14px; }
+/* + menu on the toolkit page */
+.fab { transition: transform .25s cubic-bezier(.2,.8,.2,1); }
+.fab.open { transform: rotate(45deg); }
+.fab-menu { position: absolute; z-index: 6; right: 20px; bottom: 102px; width: 264px; display: flex; flex-direction: column; gap: 6px; opacity: 0; transform: translateY(8px) scale(.97); transform-origin: bottom right; pointer-events: none; transition: opacity .18s, transform .25s cubic-bezier(.2,.8,.2,1); }
+.fab-menu.on { opacity: 1; transform: none; pointer-events: auto; }
+.fab-menu button { display: flex; align-items: center; gap: 12px; text-align: left; border: 1px solid var(--line); background: #141417; color: var(--ink); border-radius: var(--r, 4px); padding: 12px 14px; box-shadow: 0 16px 32px -12px rgba(0,0,0,.9); }
+.fab-menu button span { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.fab-menu b { font-size: 14.5px; font-weight: 600; }
+.fab-menu small { font-size: 12px; color: var(--muted); line-height: 1.3; }
+.fab-menu svg { flex: none; width: 19px; height: 19px; color: var(--muted); }
+.fab-menu button:active { background: #1C1C20; }
+.manual h2 { margin: 0 0 4px; font-family: var(--font-display); font-size: 24px; letter-spacing: -0.02em; }
+.manual .opt { text-transform: none; letter-spacing: 0; opacity: .6; margin-left: 4px; }
+.manual input.inp { height: 44px; }
+.drop-note { white-space: pre-line; }
+.fo-acts { display: flex; gap: 6px; flex: none; }
+.fo-copy { display: inline-flex; align-items: center; gap: 6px; }
+.fo-copy svg { width: 14px; height: 14px; }
+.fo-copy.done { color: var(--ok); border-color: rgba(76,192,124,.4); }
 /* Details drop down inside the card frame when you tap it */
 .drop { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .34s cubic-bezier(.2,.8,.2,1); background: var(--card); }
 .pcard.open .drop { grid-template-rows: 1fr; }
@@ -616,7 +682,7 @@ button { cursor: pointer; }
   .screen { width: 100%; height: 100dvh; border-radius: 0; padding-top: env(safe-area-inset-top, 0px); }
   .cap { padding-bottom: calc(18px + env(safe-area-inset-bottom, 0px)); }
   .fab { bottom: calc(24px + env(safe-area-inset-bottom, 0px)); }
-  .pager { bottom: calc(6px + env(safe-area-inset-bottom, 0px)); }
+  .pager { bottom: calc(23px + env(safe-area-inset-bottom, 0px)); }
   .sheet { padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)); }
   .toast { top: calc(10px + env(safe-area-inset-top, 0px)); }
 }
@@ -673,6 +739,7 @@ button { cursor: pointer; }
         <section class="view lib" aria-label="Your toolkit">
           <div class="lib-top">
             <button class="back-cap" id="backCap"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>Add</button>
+            <button class="back-cap" id="toFlow">Workflow<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
           </div>
           <header class="app-head">
             <div class="head-row">
@@ -688,9 +755,36 @@ button { cursor: pointer; }
             <div class="chips" id="filters" role="group" aria-label="Filter"></div>
           </header>
           <main class="list" id="list"></main>
-          <button class="fab" id="openCapture" aria-label="Add something"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+          <div class="fab-menu" id="fabMenu" role="menu" aria-hidden="true">
+            <button role="menuitem" id="fabFind"><span><b>Find a tool</b><small>Type, say or snap it. We'll find the link.</small></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg></button>
+            <button role="menuitem" id="fabManual"><span><b>Enter it manually</b><small>You already know the name and link.</small></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg></button>
+          </div>
+          <button class="fab" id="openCapture" aria-label="Add something" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
         </section>
-        <div class="pager" aria-hidden="true"><i></i><i></i></div>
+
+        <section class="view flow" aria-label="Build a workflow">
+          <div class="cap-top">
+            <button class="back-cap" id="flowBack"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>Toolkit</button>
+            <span class="flow-count" id="flowCount"></span>
+          </div>
+          <div class="flow-out" id="flowOut" hidden></div>
+          <div class="cap-body" id="flowAsk">
+            <div class="cap-date">Workflow</div>
+            <h1 class="cap-q">What are you trying to make?</h1>
+            <textarea id="flowText" rows="3" placeholder="A project, a deliverable, or just the vibe of it…" aria-label="What you're trying to make"></textarea>
+            <div class="cap-tools">
+              <span class="cap-hint" id="flowHint">We'll map out how to use the tools in your toolkit for it.</span>
+            </div>
+          </div>
+          <div class="cap-foot">
+            <button class="send spark" id="flowGo" disabled aria-label="Build the workflow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round" stroke-linecap="round"><path d="M10 3.5l1.6 4.9a3 3 0 0 0 1.9 1.9l4.9 1.6-4.9 1.6a3 3 0 0 0-1.9 1.9L10 20.5l-1.6-4.9a3 3 0 0 0-1.9-1.9L1.6 12l4.9-1.6a3 3 0 0 0 1.9-1.9z"/><path d="M19 2.5v4M17 4.5h4"/></svg></button>
+          </div>
+        </section>
+        <nav class="pager" aria-label="Pages">
+          <button data-go="cap" aria-label="Add"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+          <button data-go="lib" aria-label="Toolkit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="1"/><rect x="13" y="4" width="7" height="7" rx="1"/><rect x="4" y="13" width="7" height="7" rx="1"/><rect x="13" y="13" width="7" height="7" rx="1"/></svg></button>
+          <button data-go="flow" aria-label="Workflow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3.5" width="7" height="5.5" rx="1"/><rect x="14" y="15" width="7" height="5.5" rx="1"/><path d="M10 6.25h3.5a2 2 0 0 1 2 2V15"/></svg></button>
+        </nav>
         <div class="dropzone" id="dropzone" hidden><div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg><b>Drop it here</b><small>We'll find what's in it</small></div></div>
         </div>
 
@@ -901,6 +995,7 @@ button { cursor: pointer; }
         <div class="drop-row"><small>What</small><span>${esc(i.blurb || (i.url ? domainOf(i.url) : "A note"))}</span></div>
         <div class="drop-row"><small>Found</small><span>${originLine(i)}${i.heard ? `<em>“${esc(i.heard)}”</em>` : ""}</span></div>
         <div class="drop-row"><small>For</small><span>${esc(i.forWhat || "Nothing yet")}</span></div>
+        ${i.take ? `<div class="drop-row"><small>Notes</small><span class="drop-note">${esc(i.take)}</span></div>` : ""}
       </div></div>`;
   }
   function toggleDrop(card) {
@@ -1036,7 +1131,69 @@ button { cursor: pointer; }
     $("scrim").classList.remove("on"); $("sheet").classList.remove("on");
     setTimeout(() => { $("scrim").hidden = true; $("sheet").hidden = true; }, 320);
   }
-  $("openCapture").addEventListener("click", () => showView("cap"));
+  // + opens a small menu: find a tool (back to the Add screen) or enter one by hand
+  const fabOpen = (on) => {
+    $("fabMenu").classList.toggle("on", on); $("fabMenu").setAttribute("aria-hidden", !on);
+    $("openCapture").classList.toggle("open", on); $("openCapture").setAttribute("aria-expanded", on);
+  };
+  $("openCapture").addEventListener("click", (e) => { e.stopPropagation(); fabOpen(!$("fabMenu").classList.contains("on")); });
+  document.addEventListener("click", (e) => { if (!e.target.closest("#fabMenu, #openCapture")) fabOpen(false); });
+  $("fabFind").onclick = () => { fabOpen(false); showView("cap"); };
+  $("fabManual").onclick = () => { fabOpen(false); openManual(); };
+  function openManual() {
+    draft = { manual: true };
+    const cols = [filter !== "All" && state.cols.includes(filter) ? filter : state.cols[0]].filter(Boolean);
+    let status = "want";
+    $("scrim").hidden = false; $("sheet").hidden = false;
+    requestAnimationFrame(() => { $("scrim").classList.add("on"); $("sheet").classList.add("on"); });
+    $("sheetBody").innerHTML = `
+      <div class="detail manual">
+        <h2>Add it by hand</h2>
+        <label class="section-label" for="mName">Name</label>
+        <input class="inp" id="mName" placeholder="Rive, Spline, that Figma plugin…" autocomplete="off">
+        <label class="section-label" for="mUrl">Link <span class="opt">optional</span></label>
+        <input class="inp" id="mUrl" placeholder="https://" inputmode="url" autocomplete="off">
+        <label class="section-label" for="mFor">What it's for</label>
+        <textarea class="inp" id="mFor" rows="2" placeholder="What it does, or what you'd use it for"></textarea>
+        <label class="section-label" for="mFrom">Who told you <span class="opt">optional</span></label>
+        <input class="inp" id="mFrom" placeholder="A friend, a creator, a thread…" autocomplete="off">
+        <div class="seg d-status" role="group" aria-label="Status" style="--n:4">
+          ${STATUS.map(([v, l]) => `<button data-st="${v}" aria-pressed="${v === status}">${esc(l)}</button>`).join("")}
+        </div>
+        <div class="section-label">${esc(groupLabel(2))}</div>
+        <div class="chips wrap" id="mCols">${state.cols.map((n) => `<button class="chip" aria-pressed="${cols.includes(n)}" data-col="${esc(n)}">${esc(n)}</button>`).join("")}</div>
+        <div class="row">
+          <button class="btn ghost" id="mCancel">Cancel</button>
+          <button class="btn primary" id="mSave" disabled>Add to toolkit</button>
+        </div>
+      </div>`;
+    const ok = () => { $("mSave").disabled = !$("mName").value.trim(); };
+    $("mName").oninput = ok;
+    setTimeout(() => $("mName").focus(), 320);
+    $("sheetBody").querySelector(".d-status").onclick = (e) => {
+      const b = e.target.closest("[data-st]"); if (!b) return; status = b.dataset.st;
+      $("sheetBody").querySelectorAll("[data-st]").forEach((x) => x.setAttribute("aria-pressed", x === b));
+    };
+    $("mCols").onclick = (e) => {
+      const b = e.target.closest("[data-col]"); if (!b) return; const n = b.dataset.col;
+      if (cols.includes(n)) { if (cols.length === 1) { toast(`Keep it in at least one ${term.toLowerCase()}`); return; } cols.splice(cols.indexOf(n), 1); } else cols.push(n);
+      b.setAttribute("aria-pressed", cols.includes(n));
+    };
+    $("mCancel").onclick = closeSheet;
+    $("mSave").onclick = () => {
+      const title = $("mName").value.trim(); if (!title) return;
+      let url = $("mUrl").value.trim();
+      if (url && !/^https?:\/\//i.test(url)) url = "https://" + url;
+      const forWhat = $("mFor").value.trim(), from = $("mFrom").value.trim();
+      const item = { id: "i" + Date.now() + Math.random().toString(36).slice(2, 5), title, url, kind: url ? (isYouTube(url) ? "video" : "tool") : "note",
+        blurb: "", brand: "", image: "", fallback: "", favicon: "", thumb: "", forWhat, heard: "", seen: "",
+        via: from ? "person" : "other", from, cols: cols.length ? cols : [state.cols[0]].filter(Boolean), status, take: "", savedAt: today() };
+      state.items.unshift(item); save();
+      freshId = item.id; filter = "All";
+      closeSheet(); renderHome(); toast(`Into the toolkit · ${item.cols.join(" + ")}`);
+      if (url) backfillPreviews();
+    };
+  }
   $("scrim").addEventListener("click", () => { closeSheet(); if (draft?.detail) renderHome(); });
 
   function stepCompose() {
@@ -1414,7 +1571,7 @@ button { cursor: pointer; }
         <label class="section-label" for="dFor">What it's for</label>
         <textarea class="inp" id="dFor" rows="2" placeholder="What it does, or what you saw it used for">${esc(i.forWhat)}</textarea>
 
-        <label class="section-label" for="dTake">Your take</label>
+        <label class="section-label" for="dTake">Notes</label>
         <textarea class="inp" id="dTake" rows="2" placeholder="${esc(takeHint)}">${esc(i.take)}</textarea>
 
         <div class="origin">
@@ -1715,21 +1872,41 @@ button { cursor: pointer; }
         </div>
       </div>`).join("");
   }
+  // Three pages side by side: Add | Toolkit | Workflow. pos runs 0 → 2; each page slides in over the one before it.
+  const PAGES = ["cap", "lib", "flow"];
+  function layoutPages(pos) {
+    PAGES.forEach((c, n) => {
+      const el = document.querySelector("." + c), d = pos - n;
+      if (d < 0) { el.style.transform = `translateX(${Math.min(1, -d) * 100}%)`; el.style.opacity = ""; }
+      else { const k = Math.min(1, d); el.style.transform = `translateX(${-28 * k}%)`; el.style.opacity = 1 - .75 * k; }
+      el.classList.toggle("off", Math.abs(d) > .5);
+    });
+  }
   function showView(v) {
     $("screen").dataset.view = v;
+    layoutPages(PAGES.indexOf(v));
     if (v === "cap") setTimeout(() => $("qText").focus(), 380);
+    if (v === "flow") { renderFlow(); setTimeout(() => $("flowText").focus(), 380); }
   }
   $("toSaves").onclick = () => showView("lib");
+  $("toFlow").onclick = () => showView("flow");
+  document.querySelector(".pager").addEventListener("click", (e) => { const b = e.target.closest("[data-go]"); if (b) showView(b.dataset.go); });
+  $("flowBack").onclick = () => showView("lib");
+  const pageIdx = () => PAGES.indexOf($("screen").dataset.view);
+  // Drag position, kept to the pages next to where you started
+  const dragPos = (from, dx, W) => Math.max(Math.max(0, from - 1), Math.min(Math.min(2, from + 1), from - dx / W));
+  function settle(from, pos, dx, flick) {
+    const to = flick ? Math.max(0, Math.min(2, from + (dx < 0 ? 1 : -1))) : Math.round(pos);
+    if (to !== from) showView(PAGES[to]); else layoutPages(from);
+  }
 
-  // Horizontal swipe between Add and Saves. Follows the finger; settles past halfway or on a quick flick.
-  // Swipes that start on a flippable card flip the card instead, and text fields keep their own dragging.
+  // Horizontal swipe between pages. Follows the finger; settles past halfway or on a quick flick.
   let page = null;
   const views = document.querySelector(".views");
   views.addEventListener("pointerdown", (e) => {
     if (e.target.closest("textarea, input, .chips")) return;
-    const fl = e.target.closest(".flip"); if (fl && fl.querySelector(".back")) return;
     if ($("sheet").classList.contains("on")) return;
-    page = { x: e.clientX, y: e.clientY, t: performance.now(), from: $("screen").dataset.view, active: false, id: e.pointerId };
+    page = { x: e.clientX, y: e.clientY, t: performance.now(), from: pageIdx(), active: false, id: e.pointerId };
   });
   addEventListener("pointermove", (e) => {
     if (!page || e.pointerId !== page.id) return;
@@ -1738,48 +1915,31 @@ button { cursor: pointer; }
       if (Math.abs(dx) < 10 || Math.abs(dx) < Math.abs(dy) * 1.2) { if (Math.abs(dy) > 14) page = null; return; }
       page.active = true; views.classList.add("dragging");
     }
-    const W = views.getBoundingClientRect().width;
-    let p = page.from === "cap" ? -dx / W : 1 - dx / W;          // 0 = Add, 1 = Saves
-    p = Math.max(0, Math.min(1, p)); page.p = p; page.dx = dx;
-    document.querySelector(".cap").style.transform = `translateX(${-28 * p}%)`;
-    document.querySelector(".cap").style.opacity = 1 - .75 * p;
-    document.querySelector(".lib").style.transform = `translateX(${(1 - p) * 100}%)`;
+    page.dx = dx; page.pos = dragPos(page.from, dx, views.getBoundingClientRect().width);
+    layoutPages(page.pos);
   });
   function endPage(e) {
     if (!page || (e && e.pointerId !== page.id)) return;
-    const { active, p = page.from === "lib" ? 1 : 0, dx = 0, t, from } = page; page = null;
+    const { active, pos = page.from, dx = 0, t, from } = page; page = null;
     if (!active) return;
     swallowClick = true; setTimeout(() => (swallowClick = false), 60);
     views.classList.remove("dragging");
-    ["cap", "lib"].forEach((c) => { const el = document.querySelector("." + c); el.style.transform = ""; el.style.opacity = ""; });
-    const flick = Math.abs(dx) / Math.max(1, performance.now() - t) > .5;
-    const to = flick ? (dx < 0 ? "lib" : "cap") : (p > .5 ? "lib" : "cap");
-    if (to !== from) showView(to);
+    settle(from, pos, dx, Math.abs(dx) / Math.max(1, performance.now() - t) > .5);
   }
   addEventListener("pointerup", endPage);
   addEventListener("pointercancel", endPage);
 
-  // Two-finger trackpad swipe: arrives as horizontal scrolling. Drives the same motion as a drag:
-  // it moves between Add and Saves.
+  // Two-finger trackpad swipe: arrives as horizontal scrolling. Drives the same motion as a drag.
   let wheel = null, wheelIdle = 0, wheelCooldown = 0;
   views.addEventListener("wheel", (e) => {
     if (Math.abs(e.deltaX) <= Math.abs(e.deltaY) || $("sheet").classList.contains("on")) return;
     if (e.target.closest(".chips")) return;                       // filter chips scroll sideways on their own
     e.preventDefault();
     if (performance.now() < wheelCooldown) return;               // ignore the trackpad's momentum tail
-    if (!wheel) {
-      wheel = { dx: 0, t: performance.now(), from: $("screen").dataset.view };
-      views.classList.add("dragging");
-    }
+    if (!wheel) { wheel = { dx: 0, t: performance.now(), from: pageIdx() }; views.classList.add("dragging"); }
     wheel.dx -= e.deltaX;
-    const W = views.getBoundingClientRect().width;
-    {
-      let p = wheel.from === "cap" ? -wheel.dx / W : 1 - wheel.dx / W;
-      p = Math.max(0, Math.min(1, p)); wheel.p = p;
-      document.querySelector(".cap").style.transform = `translateX(${-28 * p}%)`;
-      document.querySelector(".cap").style.opacity = 1 - .75 * p;
-      document.querySelector(".lib").style.transform = `translateX(${(1 - p) * 100}%)`;
-    }
+    wheel.pos = dragPos(wheel.from, wheel.dx, views.getBoundingClientRect().width);
+    layoutPages(wheel.pos);
     clearTimeout(wheelIdle);
     wheelIdle = setTimeout(endWheel, 110);
   }, { passive: false });
@@ -1787,10 +1947,174 @@ button { cursor: pointer; }
     const w = wheel; wheel = null; if (!w) return;
     wheelCooldown = performance.now() + 450;
     views.classList.remove("dragging");
-    ["cap", "lib"].forEach((c) => { const el = document.querySelector("." + c); el.style.transform = ""; el.style.opacity = ""; });
-    const flick = Math.abs(w.dx) / Math.max(1, performance.now() - w.t) > .35 && Math.abs(w.dx) > 30;
-    const to = flick ? (w.dx < 0 ? "lib" : "cap") : ((w.p || 0) > .5 ? "lib" : "cap");
-    if (to !== w.from) showView(to);
+    settle(w.from, w.pos ?? w.from, w.dx, Math.abs(w.dx) / Math.max(1, performance.now() - w.t) > .35 && Math.abs(w.dx) > 30);
+  }
+
+  // ---------- workflow screen (step 1: just the prompt) ----------
+  function renderFlow() {
+    const n = live().length;
+    $("flowCount").textContent = `${n} ${n === 1 ? "tool" : "tools"} to work with`;
+    if (state.flow && $("flowOut").hidden) { $("screen").querySelector(".flow").classList.add("has-out"); $("flowOut").hidden = false; renderFlowOut(); }
+  }
+  $("flowText").addEventListener("input", (e) => {
+    $("flowGo").disabled = !e.target.value.trim();
+    e.target.style.height = "auto"; e.target.style.height = e.target.scrollHeight + "px";
+  });
+  $("flowText").addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); $("flowGo").click(); } });
+  $("flowGo").onclick = () => { const g = $("flowText").value.trim(); if (g) buildFlow(g); };
+  let flowRun = 0;
+  const flowSrc = (st) => st.item ? (st.item.status === "using" ? "using" : st.item.status) : "sug";
+  const srcPill = (k) => k === "sug" ? `<span class="st st-sug">Suggested</span>` : `<span class="st st-${k}">${esc(statusLabel(k))}</span>`;
+  async function buildFlow(goal) {
+    const run = ++flowRun;
+    $("screen").querySelector(".flow").classList.add("has-out");
+    const out = $("flowOut"); out.hidden = false;
+    out.innerHTML = flowHeadHTML(goal, "Pulling from your toolkit…") + `<div class="fo-chain fo-load">${[0, 1, 2].map((n) => `<div class="fo-node" style="animation-delay:${n * 120}ms"><div class="fo-label"><span class="fo-name"></span></div><div class="fo-thumb"></div></div>`).join("")}</div>`;
+    wireFlowHead();
+    let res;
+    try { res = mode === "live" ? await liveFlow(goal) : await testFlow(goal); }
+    catch (e) { if (run !== flowRun) return; out.querySelector(".fo-chain").outerHTML = `<p class="fo-err">${esc(e?.message || "Couldn't map out a workflow.")} <button class="fo-add" id="foRetry">Try again</button></p>`; $("foRetry").onclick = () => buildFlow(goal); return; }
+    if (run !== flowRun) return;
+    state.flow = { goal, ...res }; save();
+    renderFlowOut();
+  }
+  function flowHeadHTML(goal, sum) {
+    return `<div class="fo-head"><div class="cap-date">Workflow</div><span class="fo-acts">${state.flow ? `<button class="fo-new fo-copy" id="foCopy" aria-label="Copy workflow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></svg>Copy</button>` : ""}<button class="fo-new" id="foNew">New</button></span></div>
+      <h2 class="fo-goal">${esc(goal)}</h2>${sum ? `<p class="fo-sum">${esc(sum)}</p>` : ""}`;
+  }
+  // Copy: the workflow as plain text, plus a link that rebuilds it on another device
+  function flowLink(f) {
+    const data = { g: f.goal, t: f.title, s: f.summary, p: f.steps.map((st) => { const it = st.id && state.items.find((x) => x.id === st.id); return [it ? it.title : st.title, (it ? it.url : st.url) || "", st.step || "", st.use || ""]; }) };
+    return location.origin + location.pathname + "#flow=" + btoa(unescape(encodeURIComponent(JSON.stringify(data)))).replace(/=+$/, "");
+  }
+  function flowText(f) {
+    const lines = [f.title || f.goal, f.summary || "", ""];
+    f.steps.forEach((st, n) => {
+      const it = st.id && state.items.find((x) => x.id === st.id);
+      lines.push(`${n + 1}. ${it ? it.title : st.title}${st.step ? ` · ${st.step}` : ""}${it ? "" : " (suggested)"}`, `   ${st.use}`);
+      const u = it ? it.url : st.url; if (u) lines.push(`   ${u}`);
+    });
+    lines.push("", "Open it: " + flowLink(f));
+    return lines.filter((l, i) => l || i > 1).join("\n");
+  }
+  async function copyFlow() {
+    const text = flowText(state.flow);
+    try { await navigator.clipboard.writeText(text); }
+    catch { const t = Object.assign(document.createElement("textarea"), { value: text }); document.body.appendChild(t); t.select(); document.execCommand("copy"); t.remove(); }
+    const b = $("foCopy"); b.classList.add("done"); b.lastChild.textContent = "Copied"; setTimeout(() => { if (b.isConnected) { b.classList.remove("done"); b.lastChild.textContent = "Copy"; } }, 1600);
+    toast("Workflow copied, link included");
+  }
+  // Opening a shared link: rebuild the flow, matching steps to this toolkit by site
+  function importFlowFromHash() {
+    const m = /^#flow=(.+)$/.exec(location.hash); if (!m) return false;
+    try {
+      const d = JSON.parse(decodeURIComponent(escape(atob(m[1]))));
+      const steps = (d.p || []).slice(0, 6).map(([title, url, step, use]) => {
+        const it = url && live().find((x) => x.url && domainOf(x.url) === domainOf(url));
+        return { id: it ? it.id : "", title, url, step, use, brand: "" };
+      });
+      state.flow = { goal: d.g || d.t || "Shared workflow", title: d.t || "", summary: d.s || "", steps }; save();
+      history.replaceState(null, "", location.pathname);
+      steps.filter((x) => !x.id && x.url).forEach((x) => fetch("/api/preview?url=" + encodeURIComponent(x.url)).then((r) => r.json()).then((pv) => { Object.assign(x, pv); save(); if ($("screen").dataset.view === "flow") renderFlowOut(); }).catch(() => {}));
+      return true;
+    } catch { return false; }
+  }
+  function wireFlowHead() {
+    if ($("foCopy")) $("foCopy").onclick = copyFlow;
+    $("foNew").onclick = () => {
+      flowRun++; state.flow = null; save();
+      $("screen").querySelector(".flow").classList.remove("has-out"); $("flowOut").hidden = true;
+      $("flowText").value = ""; $("flowGo").disabled = true; $("flowText").focus();
+    };
+  }
+  function renderFlowOut() {
+    const f = state.flow; if (!f) return;
+    const steps = f.steps.map((st) => ({ ...st, item: st.id ? state.items.find((x) => x.id === st.id) : null }));
+    const card = (st) => st.item || { title: st.title, url: st.url, kind: "tool", image: st.image || "", fallback: st.fallback || "", favicon: st.favicon || "", brand: st.brand || "" };
+    $("flowOut").innerHTML = flowHeadHTML(f.title || f.goal, f.summary) +
+      `<div class="fo-key"><span>${steps.filter((s) => s.item).length} from your toolkit</span><span>${steps.filter((s) => !s.item).length} suggested</span></div>
+      <div class="fo-chain"><svg class="fo-lines" aria-hidden="true"></svg>
+      ${steps.map((st, n) => { const it = card(st), k = flowSrc(st), have = !st.item && state.items.some((x) => x.url && st.url && domainOf(x.url) === domainOf(st.url));
+        return `<div class="fo-node${st.item ? "" : " sug"}" style="animation-delay:${n * 140}ms">
+          <div class="fo-label"><span class="fo-n">${String(n + 1).padStart(2, "0")}</span><span class="fo-name">${esc(st.item ? st.item.title : st.title)}</span></div>
+          <button class="fo-thumb" ${st.item ? `data-fo-item="${esc(st.item.id)}"` : `data-fo-url="${esc(st.url)}"`}>${previewHTML(it)}<span class="fo-tag">${srcPill(k)}</span></button>
+          ${st.step ? `<div class="fo-step">${esc(st.step)}</div>` : ""}<div class="fo-use">${esc(st.use)}</div>
+          ${st.item ? "" : `<button class="fo-add" data-fo-add="${n}" ${have ? "disabled" : ""}>${have ? "In toolkit" : "+ Add to toolkit"}</button>`}
+        </div>`; }).join("")}</div>`;
+    wireFlowHead();
+    $("flowOut").querySelectorAll("[data-fo-item]").forEach((b) => b.onclick = () => openDetail(b.dataset.foItem));
+    $("flowOut").querySelectorAll("[data-fo-url]").forEach((b) => b.onclick = () => window.open(b.dataset.foUrl, "_blank", "noopener"));
+    $("flowOut").querySelectorAll("[data-fo-add]").forEach((b) => b.onclick = () => {
+      const st = f.steps[Number(b.dataset.foAdd)];
+      const col = state.cols.find((c) => /design tools/i.test(c)) || state.cols[0];
+      const id = "i" + Date.now() + Math.random().toString(36).slice(2, 5);
+      state.items.unshift({ id, title: st.title, url: st.url, kind: "tool", blurb: st.use, brand: st.brand || "", image: st.image || "", fallback: st.fallback || "", favicon: st.favicon || "",
+        forWhat: st.use, heard: `Suggested for: ${f.goal}`, via: "made", from: "Workflow", cols: [col], status: "want", take: "", savedAt: today() });
+      st.id = id; save(); renderHome(); renderFlowOut(); toast(`${st.title} → ${col}`);
+    });
+    requestAnimationFrame(drawFlowLines);
+  }
+  // Curved connectors from the bottom of each thumbnail to the top of the next one.
+  function drawFlowLines() {
+    const chain = $("flowOut").querySelector(".fo-chain"); if (!chain) return;
+    const svg = chain.querySelector(".fo-lines"), k = chain.getBoundingClientRect().width / chain.offsetWidth || 1, c = chain.getBoundingClientRect();
+    const th = [...chain.querySelectorAll(".fo-thumb")].map((t) => { const r = t.getBoundingClientRect(); return { x: (r.left - c.left) / k, y: (r.top - c.top) / k, w: r.width / k, h: r.height / k }; });
+    const paths = th.slice(1).map((b, n) => {
+      // Leave the card from its open side, run down the empty gutter, drop into the next card's top
+      const a = th[n], toRight = a.x < b.x;
+      const x1 = toRight ? a.x + a.w : a.x, y1 = a.y + a.h * .5;
+      const xe = toRight ? (a.x + a.w + b.x + b.w) / 2 : (b.x + a.x) / 2, y2 = b.y, r = 14;
+      const d = `M${x1} ${y1} H${xe + (toRight ? -r : r)} Q${xe} ${y1} ${xe} ${y1 + r} V${y2}`;
+      return d;
+    });
+    // Scroll-linked glow: lines light up to where you are on the page, with a bright head at that point.
+    svg.innerHTML = paths.map((d, n) => `<path class="fo-line" d="${d}" style="--len:600;animation-delay:${(n + 1) * 140 + 200}ms"/>`).join("") +
+      paths.map((d) => `<path class="fo-lit" d="${d}"/>`).join("") + `<circle class="fo-head" r="4.5" cx="-20" cy="-20"/>`;
+    flowTrack = [...svg.querySelectorAll(".fo-lit")].map((el) => {
+      const len = el.getTotalLength(), pts = [];
+      for (let t = 0; t <= len; t += 4) { const q = el.getPointAtLength(t); pts.push([t, q.x, q.y]); }
+      const q = el.getPointAtLength(len); pts.push([len, q.x, q.y]);
+      el.style.strokeDasharray = len; el.style.strokeDashoffset = len;
+      return { el, len, pts };
+    });
+    flowScroll();
+  }
+  let flowTrack = [], flowRaf = 0;
+  function flowScroll() {
+    const out = $("flowOut"), chain = out.querySelector(".fo-chain"); if (!chain || !flowTrack.length) return;
+    // Reading line sits a bit below the middle of the screen, in the chain's own coordinates
+    const atEnd = out.scrollTop + out.clientHeight >= out.scrollHeight - 2;
+    const y = atEnd ? Infinity : out.scrollTop + out.clientHeight * .58 - chain.offsetTop;
+    let head = null, lastEnd = null;
+    flowTrack.forEach(({ el, len, pts }) => {
+      let lit = 0;
+      if (y >= pts[pts.length - 1][2]) { lit = len; lastEnd = pts[pts.length - 1]; }
+      else if (y > pts[0][2]) {
+        const hit = pts.find((p) => p[2] >= y) || pts[pts.length - 1]; lit = hit[0]; head = hit;
+      } else if (!head && y > pts[0][2] - 1) head = pts[0];
+      el.style.strokeDashoffset = len - lit;
+    });
+    if (!head) head = lastEnd;                                    // between lines: rest where the last one landed
+    const c = out.querySelector(".fo-head");
+    if (head) { c.setAttribute("cx", head[1]); c.setAttribute("cy", head[2]); c.style.opacity = 1; } else c.style.opacity = 0;
+  }
+  $("flowOut").addEventListener("scroll", () => { cancelAnimationFrame(flowRaf); flowRaf = requestAnimationFrame(flowScroll); }, { passive: true });
+  async function liveFlow(goal) {
+    const items = live().map(({ id, title, url, status, forWhat, blurb, kind }) => ({ id, title, url, status, forWhat, blurb, kind }));
+    const r = await fetch("/api/flow", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ goal, items }) });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw { message: data.error || "Couldn't map out a workflow." };
+    return data;
+  }
+  function testFlow(goal) {
+    return new Promise((res) => setTimeout(() => {
+      const pool = live().filter((i) => i.status !== "nope" && i.url);
+      const pick = [...pool.filter((i) => i.status === "using"), ...pool.filter((i) => i.status === "tried"), ...pool.filter((i) => i.status === "want")].slice(0, 3);
+      const verbs = ["Gather references", "Sketch the idea", "Build it out", "Polish the motion"];
+      const steps = pick.map((i, n) => ({ id: i.id, title: i.title, url: i.url, step: verbs[n], use: `Test result: ${i.forWhat || i.blurb || "how it fits"}. Live mode tailors this to your goal.` }));
+      steps.splice(Math.min(2, steps.length), 0, { id: "", title: "Rive", url: "https://rive.app", brand: "#1D1D1D", step: "Animate the interaction", use: "Test result: build press and release states as a state machine." });
+      res({ title: "", summary: "Test result. Live mode picks the tools from your toolkit that fit, in the order you'd use them.", steps });
+    }, 1300));
   }
   $("backCap").onclick = () => showView("cap");
   function renderCapture() {
@@ -1899,8 +2223,9 @@ button { cursor: pointer; }
   window.addEventListener("load", setupDialKit);
 
   applyVariants(true);
+  if (importFlowFromHash()) showView("flow");
   setMode("test");
-  const APP_SERVER_VERSION = 4;   // must match SERVER_VERSION in server.js
+  const APP_SERVER_VERSION = 5;   // must match SERVER_VERSION in server.js
   fetch("/api/status").then((r) => r.json()).then((st) => {
     serverStatus = { reachable: true, live: !!st.live, model: st.model || "" };
     if ((st.version || 0) < APP_SERVER_VERSION) {
