@@ -662,6 +662,19 @@ button { cursor: pointer; }
 .fo-copy svg { width: 14px; height: 14px; }
 .fo-copy.done { color: var(--ok); border-color: rgba(76,192,124,.4); }
 .fo-head .cap-date { line-height: 1; }
+/* Saved workflows */
+.flow .cap-top #flowSaved { margin-left: auto; }
+.flow.has-out #flowSaved { visibility: hidden; }   /* inside a workflow, Save lives in the header */
+.sf-list { display: flex; flex-direction: column; gap: var(--sp-2, 8px); }
+.sf-row { display: flex; align-items: center; gap: 12px; padding: 12px; border: 1px solid var(--line); border-radius: var(--r, 4px); background: var(--app-bg); cursor: pointer; text-align: left; }
+.sf-thumbs { flex: none; display: grid; grid-template-columns: 1fr 1fr; gap: 2px; width: 56px; height: 56px; }
+.sf-th { position: relative; overflow: hidden; border-radius: 2px; background: var(--card); }
+.sf-th .pv-word, .sf-th .pv-sub, .sf-th .pv-kind, .sf-th .play { display: none; }
+.sf-th .pv { padding: 0; }
+.sf-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.sf-body b { font-size: 15px; font-weight: 600; }
+.sf-body small { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sf-x { flex: none; width: 32px; height: 32px; border: 0; background: transparent; color: var(--muted); font-size: 20px; line-height: 1; }
 /* Details drop down inside the card frame when you tap it */
 .drop { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .34s cubic-bezier(.2,.8,.2,1); background: var(--card); }
 .pcard.open .drop { grid-template-rows: 1fr; }
@@ -820,7 +833,7 @@ button { cursor: pointer; }
         <section class="view flow" aria-label="Build a workflow">
           <div class="cap-top">
             <button class="back-cap" id="flowBack"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>Toolkit</button>
-            <span class="flow-count" id="flowCount"></span>
+            <button class="fo-new fo-copy" id="flowSaved" aria-label="Saved workflows"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5h12a1 1 0 0 1 1 1V21l-7-4.5L5 21V4.5a1 1 0 0 1 1-1z"/></svg><span id="flowSavedN">Saved</span></button>
           </div>
           <div class="flow-out" id="flowOut" hidden></div>
           <div class="cap-body" id="flowAsk">
@@ -2010,7 +2023,8 @@ button { cursor: pointer; }
   // ---------- workflow screen (step 1: just the prompt) ----------
   function renderFlow() {
     const n = live().length;
-    $("flowCount").textContent = `${n} ${n === 1 ? "tool" : "tools"} to work with`;
+    $("flowHint").textContent = `We'll map out how to use the ${n} ${n === 1 ? "tool" : "tools"} in your toolkit for it.`;
+    savedCount();
     if (state.flow && $("flowOut").hidden) { $("screen").querySelector(".flow").classList.add("has-out"); $("flowOut").hidden = false; renderFlowOut(); }
   }
   $("flowText").addEventListener("input", (e) => {
@@ -2032,11 +2046,11 @@ button { cursor: pointer; }
     try { res = mode === "live" ? await liveFlow(goal) : await testFlow(goal); }
     catch (e) { if (run !== flowRun) return; out.querySelector(".fo-chain").outerHTML = `<p class="fo-err">${esc(e?.message || "Couldn't map out a workflow.")} <button class="fo-add" id="foRetry">Try again</button></p>`; $("foRetry").onclick = () => buildFlow(goal); return; }
     if (run !== flowRun) return;
-    state.flow = { goal, ...res }; save();
+    state.flow = { id: "f" + Date.now().toString(36), at: today(), goal, ...res }; save();
     renderFlowOut();
   }
   function flowHeadHTML(goal, sum) {
-    return `<div class="fo-head"><div class="cap-date">Workflow</div><span class="fo-acts">${state.flow ? `<button class="fo-new fo-copy" id="foCopy" aria-label="Copy workflow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></svg>Copy</button>` : ""}<button class="fo-new" id="foNew">New</button></span></div>
+    return `<div class="fo-head"><div class="cap-date">Workflow</div><span class="fo-acts">${state.flow ? `<button class="fo-new fo-copy${isSaved() ? " done" : ""}" id="foSave" aria-label="Save workflow"><svg viewBox="0 0 24 24" fill="${isSaved() ? "currentColor" : "none"}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5h12a1 1 0 0 1 1 1V21l-7-4.5L5 21V4.5a1 1 0 0 1 1-1z"/></svg><span>${isSaved() ? "Saved" : "Save"}</span></button>` : ""}<button class="fo-new" id="foNew">New</button></span></div>
       <h2 class="fo-goal">${esc(goal)}</h2>${sum ? `<p class="fo-sum">${esc(sum)}</p>` : ""}`;
   }
   // Copy: the workflow as plain text, plus a link that rebuilds it on another device
@@ -2070,16 +2084,58 @@ button { cursor: pointer; }
         const it = url && live().find((x) => x.url && domainOf(x.url) === domainOf(url));
         return { id: it ? it.id : "", title, url, step, use, brand: "" };
       });
-      state.flow = { goal: d.g || d.t || "Shared workflow", title: d.t || "", summary: d.s || "", steps }; save();
+      state.flow = { id: "f" + Date.now().toString(36), at: today(), goal: d.g || d.t || "Shared workflow", title: d.t || "", summary: d.s || "", steps }; save();
       history.replaceState(null, "", location.pathname);
       steps.filter((x) => !x.id && x.url).forEach((x) => fetch("/api/preview?url=" + encodeURIComponent(x.url)).then((r) => r.json()).then((pv) => { Object.assign(x, pv); save(); if ($("screen").dataset.view === "flow") renderFlowOut(); }).catch(() => {}));
       return true;
     } catch { return false; }
   }
+  // Saved workflows: keep the ones worth coming back to
+  const savedCount = () => { const k = (state.flows || []).length; $("flowSavedN").textContent = k ? `Saved · ${k}` : "Saved"; };
+  const isSaved = () => !!(state.flow && (state.flows || []).some((x) => x.id === state.flow.id));
+  function toggleSaveFlow() {
+    state.flows = state.flows || [];
+    if (!state.flow.id) state.flow.id = "f" + Date.now().toString(36);
+    if (isSaved()) { state.flows = state.flows.filter((x) => x.id !== state.flow.id); toast("Removed from saved"); }
+    else { state.flows.unshift(JSON.parse(JSON.stringify(state.flow))); toast("Workflow saved"); }
+    save(); savedCount(); keepFlowScroll(renderFlowOut);
+  }
+  function keepFlowScroll(fn) { const o = $("flowOut"), t = o.scrollTop; fn(); o.scrollTop = t; }
+  function openSavedFlows() {
+    draft = { savedFlows: true };
+    $("scrim").hidden = false; $("sheet").hidden = false;
+    requestAnimationFrame(() => { $("scrim").classList.add("on"); $("sheet").classList.add("on"); });
+    renderSavedFlows();
+  }
+  function renderSavedFlows() {
+    const list = state.flows || [];
+    $("sheetBody").innerHTML = `<div class="detail saved-flows">
+      <h2>Saved workflows</h2>
+      ${list.length ? `<div class="sf-list">${list.map((f) => {
+        const tools = f.steps.map((st) => (st.id && state.items.find((x) => x.id === st.id)) || { title: st.title, url: st.url, kind: "tool", image: st.image || "", brand: st.brand || "" });
+        return `<div class="sf-row" data-sf="${esc(f.id)}" role="button" tabindex="0">
+          <span class="sf-thumbs">${tools.slice(0, 4).map((t) => `<span class="sf-th">${previewHTML(t)}</span>`).join("")}</span>
+          <span class="sf-body"><b>${esc(f.title || f.goal)}</b><small>${f.steps.length} steps · ${esc(tools.map((t) => t.title).join(", "))}</small></span>
+          <button class="sf-x" data-sf-del="${esc(f.id)}" aria-label="Remove">×</button>
+        </div>`; }).join("")}</div>`
+      : `<p class="hint">Nothing saved yet. Build a workflow, then tap Save to keep it here.</p>`}
+      <div class="row"><button class="btn ghost" id="sfClose" style="flex:1">Close</button></div>
+    </div>`;
+    $("sfClose").onclick = closeSheet;
+    $("sheetBody").querySelectorAll("[data-sf-del]").forEach((b) => b.onclick = (e) => {
+      e.stopPropagation(); state.flows = state.flows.filter((x) => x.id !== b.dataset.sfDel); save(); renderSavedFlows(); renderFlow(); toast("Removed");
+    });
+    $("sheetBody").querySelectorAll("[data-sf]").forEach((r) => r.onclick = () => {
+      const f = state.flows.find((x) => x.id === r.dataset.sf); if (!f) return;
+      flowRun++; state.flow = JSON.parse(JSON.stringify(f)); save(); closeSheet();
+      $("screen").querySelector(".flow").classList.add("has-out"); $("flowOut").hidden = false; $("flowOut").scrollTop = 0; renderFlowOut();
+    });
+  }
+  $("flowSaved").onclick = openSavedFlows;
   function wireFlowHead() {
-    if ($("foCopy")) $("foCopy").onclick = copyFlow;
+    if ($("foSave")) $("foSave").onclick = toggleSaveFlow;
     $("foNew").onclick = () => {
-      flowRun++; state.flow = null; save();
+      flowRun++; state.flow = null; save(); savedCount();
       $("screen").querySelector(".flow").classList.remove("has-out"); $("flowOut").hidden = true;
       $("flowText").value = ""; $("flowGo").disabled = true; $("flowText").focus();
     };
