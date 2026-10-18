@@ -348,7 +348,7 @@ button { cursor: pointer; }
 /* first-screen constellation: drifting square points, softly linked */
 .cap-bg { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; display: block; }
 .cap > *:not(.cap-bg) { position: relative; z-index: 1; }
-.lib > *:not(.cap-bg):not(.fab) { position: relative; z-index: 1; }
+.lib > *:not(.cap-bg):not(.fab):not(.fab-menu) { position: relative; z-index: 1; }   /* .fab and .fab-menu float, so they keep their own absolute position */
 .flow > *:not(.cap-bg) { position: relative; z-index: 1; }
 .lib .list { background-color: transparent; }
 /* toolkit header matches the first page: mono label over a big tight headline */
@@ -827,35 +827,6 @@ button { cursor: pointer; }
   .sheet { padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)); }
   .toast { top: calc(10px + env(safe-area-inset-top, 0px)); }
 }
-<<<<<<< Updated upstream
-
-/* ===== Bottom dock: the page bar and the round action button share one line on every screen ===== */
-#device { --dock-b: 22px; --dock-h: 58px; }
-@media (max-width: 600px) { #device { --dock-b: calc(10px + env(safe-area-inset-bottom, 0px)); } }
-#device .pager { bottom: var(--dock-b); height: var(--dock-h); align-items: center; box-sizing: border-box; }
-#device .fab, #device #qFind, #device #flowGo {
-  position: absolute; z-index: 6; right: var(--gutter, 20px); bottom: calc(var(--dock-b) + (var(--dock-h) - 56px) / 2);
-  width: 56px; height: 56px; margin: 0;
-}
-#device .cap-foot { position: static; }
-#device .cap, #device .flow { padding-bottom: calc(var(--dock-b) + var(--dock-h) + 16px); }
-#device .lib .list { padding-bottom: calc(var(--dock-b) + var(--dock-h) + 32px); }
-#device .fab-menu { bottom: calc(var(--dock-b) + var(--dock-h) + 12px); }
-#device .flow-out { padding-bottom: calc(var(--dock-b) + var(--dock-h) + 40px); }
-#device .flow.has-out { padding-bottom: 0; }   /* the workflow scrolls under the dock instead */
-
-/* Workflow: the WORKFLOW / Save / New row stays pinned while the steps scroll under it */
-#device .flow-out { overscroll-behavior: contain; }
-#device .fo-head { position: sticky; top: -24px; z-index: 4; margin: -24px calc(-1 * var(--gutter, 20px)) 0; padding: 20px var(--gutter, 20px) 12px;
-  background: linear-gradient(to bottom, var(--app-bg) 78%, rgba(10,10,11,0)); }
-#device .fo-goal { margin-top: 10px; }
-
-/* Card edit button: bigger on screen, and an even bigger invisible tap area for thumbs */
-#device .edit-btn { width: 40px; height: 40px; top: 10px; right: 10px; }
-#device .edit-btn svg { width: 18px; height: 18px; }
-#device .edit-btn::after { content: ""; position: absolute; inset: -6px; border-radius: 50%; }
-=======
->>>>>>> Stashed changes
 </style>
 </head>
 <body>
@@ -2180,20 +2151,12 @@ button { cursor: pointer; }
   }
   // Three pages side by side: Add | Toolkit | Workflow. pos runs 0 → 2; each page slides in over the one before it.
   const PAGES = ["cap", "lib", "flow"];
-<<<<<<< Updated upstream
-  // Pages sit side by side like iOS: each one is exactly one screen-width from the next. No overlap, no fade.
-=======
->>>>>>> Stashed changes
   function layoutPages(pos) {
     PAGES.forEach((c, n) => {
       const el = document.querySelector("." + c), d = pos - n;
       if (d < 0) { el.style.transform = `translateX(${Math.min(1, -d) * 100}%)`; el.style.opacity = ""; }
       else { const k = Math.min(1, d); el.style.transform = `translateX(${-28 * k}%)`; el.style.opacity = 1 - .75 * k; }
       el.classList.toggle("off", Math.abs(d) > .5);
-<<<<<<< Updated upstream
-      el.classList.toggle("far", Math.abs(d) >= 1.5);
-=======
->>>>>>> Stashed changes
     });
   }
   function showView(v) {
