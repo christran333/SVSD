@@ -134,6 +134,11 @@ button { cursor: pointer; }
 /* desktop: toolkit cards flow into a 2-column grid instead of one full-width card per row */
 .device[data-device="desktop"] .list.framed { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px 16px; align-content: start; align-items: start; }
 .device[data-device="desktop"] .list.framed .empty { grid-column: 1 / -1; }
+/* desktop: the tool detail sheet is as wide as the whole screen, so keep Archive / Done compact and together at the right */
+@media (min-width: 601px) {
+  .device[data-device="desktop"] :is(.detail, .dsheet) > .row { justify-content: flex-end; }
+  .device[data-device="desktop"] :is(.detail, .dsheet) > .row .btn { flex: none; min-width: 120px; }
+}
 
 .app-head { padding: 6px 20px 8px; display: flex; flex-direction: column; gap: 12px; }
 .app-head h1 { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: 30px; letter-spacing: -0.02em; line-height: 1.05; }
@@ -329,9 +334,8 @@ button { cursor: pointer; }
 .views { position: relative; flex: 1; min-height: 0; }
 /* Side-by-side pages: Add on the left, Saves on the right. Swipe or tap to move between them. */
 .views { touch-action: pan-y; overflow: hidden; }
-.view { position: absolute; inset: 0; display: flex; flex-direction: column; background: var(--app-bg); transition: transform .42s cubic-bezier(.22,.9,.28,1); will-change: transform; backface-visibility: hidden; }
+.view { position: absolute; inset: 0; display: flex; flex-direction: column; background: var(--app-bg); transition: transform .5s cubic-bezier(.2,.85,.2,1), opacity .5s; }
 .view.off { pointer-events: none; }
-.view.far { visibility: hidden; }   /* two pages away: nothing to see, nothing to bleed through */
 .views.dragging .view { transition: none; }
 .view { user-select: none; -webkit-user-select: none; }
 .view textarea, .view input, .sheet { user-select: text; -webkit-user-select: text; }
@@ -479,8 +483,6 @@ button { cursor: pointer; }
 .refine { display: flex; gap: 8px; }
 .refine .inp { flex: 1; min-width: 0; }
 .refine .btn { flex: none; padding: 10px 12px; font-size: 13px; }
-#device .refine .btn { width: var(--h-control, 44px); height: var(--h-control, 44px); padding: 0; }
-#device .refine .inp { text-overflow: ellipsis; }
 .tag-best.unsure { background: #2A2A31; color: var(--ink); }
 .not-tool { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; padding: 12px 14px; border-radius: 12px; border: 1px dashed var(--line); background: transparent; color: var(--ink); font-size: 13px; text-align: left; }
 .not-tool span:last-child { color: var(--muted); }
@@ -825,6 +827,7 @@ button { cursor: pointer; }
   .sheet { padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)); }
   .toast { top: calc(10px + env(safe-area-inset-top, 0px)); }
 }
+<<<<<<< Updated upstream
 
 /* ===== Bottom dock: the page bar and the round action button share one line on every screen ===== */
 #device { --dock-b: 22px; --dock-h: 58px; }
@@ -851,6 +854,8 @@ button { cursor: pointer; }
 #device .edit-btn { width: 40px; height: 40px; top: 10px; right: 10px; }
 #device .edit-btn svg { width: 18px; height: 18px; }
 #device .edit-btn::after { content: ""; position: absolute; inset: -6px; border-radius: 50%; }
+=======
+>>>>>>> Stashed changes
 </style>
 </head>
 <body>
@@ -1098,25 +1103,42 @@ button { cursor: pointer; }
     if (!names.includes(filter)) filter = "All";
     $("filters").innerHTML = names.map((n) =>
       `<button class="chip" aria-pressed="${n === filter}" data-f="${esc(n)}">${esc(n)}<span class="n">${n === "All" ? live().length : n === "Archived" ? archived : (counts[n] || 0)}</span>${n === filter && state.cols.includes(n) ? PENCIL : ""}</button>`
-    ).join("") + (addingDrawer
-      ? `<span class="chip chip-input"><input id="newDrawer" maxlength="24" placeholder="${esc(term)} name" aria-label="New ${esc(term.toLowerCase())} name" autocomplete="off" enterkeyhint="done"></span>`
-      : `<button class="chip new" id="addDrawer" aria-label="Add a ${esc(term.toLowerCase())}">+ ${esc(term)}</button>`);
-    const inp = $("newDrawer");
-    if (inp) { inp.focus(); inp.scrollIntoView({ inline: "end", block: "nearest" }); }
+    ).join("") + `<button class="chip new" id="addDrawer" aria-label="Add a ${esc(term.toLowerCase())}">+ ${esc(term)}</button>`;
   }
   const PENCIL = `<svg class="ed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4zM13.5 6.5l4 4"/></svg>`;
   // add a drawer straight from the toolkit
-  let addingDrawer = false;
-  function closeDrawerInput() { if (!addingDrawer) return; addingDrawer = false; renderFilters(); }
   function commitDrawer(raw) {
     const n = (raw || "").replace(/\s+/g, " ").trim();
-    addingDrawer = false;
     if (!n) { renderFilters(); return; }
     const dupe = state.cols.find((c) => c.toLowerCase() === n.toLowerCase());
     if (dupe) { filter = dupe; toast(`You already have “${dupe}”`); }
     else { state.cols.push(n); filter = n; save(); toast(`Added ${n}`); }
     renderHome();
     const el = $("filters").querySelector('[aria-pressed="true"]'); if (el) el.scrollIntoView({ inline: "center", block: "nearest" });
+  }
+  // Adding a drawer opens a bottom overlay with the name field (from the toolkit chips and from the add-a-tool sheet).
+  function openNewDrawerSheet(onAdd, onCancel) {
+    const T = term.toLowerCase();
+    $("sheetBody").innerHTML = `
+      <div class="dsheet">
+        <h2>New ${esc(T)}</h2>
+        <div><div class="section-label" style="margin-bottom:6px">Name</div>
+          <input id="dNew" maxlength="24" placeholder="${esc(term)} name" autocomplete="off" aria-label="${esc(term)} name" enterkeyhint="done"></div>
+        <div class="row"><button type="button" class="btn ghost" id="dNewCancel">Cancel</button><button type="button" class="btn primary" id="dNewAdd">Add ${esc(T)}</button></div>
+      </div>`;
+    if (!$("sheet").classList.contains("on")) {
+      $("scrim").hidden = false; $("sheet").hidden = false;
+      requestAnimationFrame(() => { $("scrim").classList.add("on"); $("sheet").classList.add("on"); });
+    }
+    const cancel = () => { if (onCancel) onCancel(); else closeSheet(); };
+    const add = () => {
+      const n = $("dNew").value.replace(/\s+/g, " ").trim();
+      if (!n) { $("dNew").focus(); return; }
+      onAdd(n);
+    };
+    $("dNewAdd").onclick = add; $("dNewCancel").onclick = cancel;
+    $("dNew").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); add(); } else if (e.key === "Escape") cancel(); });
+    setTimeout(() => $("dNew")?.focus(), 340);
   }
   // ---------- previews ----------
   // Curated cover colors for tools with no known brand color, picked by a hash of the name so a tool keeps its color.
@@ -1281,15 +1303,6 @@ button { cursor: pointer; }
   });
   const pluralWord = (t) => ({ Shelf: "shelves", Box: "boxes" })[t] || t.toLowerCase() + "s";
   const groupLabel = (n) => n > 1 ? pluralWord(term).replace(/^./, (c) => c.toUpperCase()) : term;
-  $("filters").addEventListener("keydown", (e) => {
-    if (e.target.id !== "newDrawer") return;
-    if (e.key === "Enter") { e.preventDefault(); const v = e.target.value; e.target.onblur = null; commitDrawer(v); }
-    else if (e.key === "Escape") { e.target.onblur = null; closeDrawerInput(); }
-  });
-  $("filters").addEventListener("focusout", (e) => {
-    if (e.target.id !== "newDrawer" || !addingDrawer) return;
-    const v = e.target.value; if (v.trim()) commitDrawer(v); else closeDrawerInput();
-  });
   // ---------- rename / delete a drawer ----------
   let suppressChipClick = false, pressT = 0, pressXY = null;
   $("filters").addEventListener("pointerdown", (e) => {
@@ -1371,7 +1384,7 @@ button { cursor: pointer; }
   }
   function renderHome() { renderFilters(); renderList(); renderCapture(); }
   $("filters").addEventListener("click", (e) => {
-    if (e.target.closest("#addDrawer")) { addingDrawer = true; renderFilters(); return; }
+    if (e.target.closest("#addDrawer")) { openNewDrawerSheet((n) => { closeSheet(); commitDrawer(n); }); return; }
     const b = e.target.closest("[data-f]"); if (!b) return;
     if (suppressChipClick) { suppressChipClick = false; return; }
     if (b.dataset.f === filter && state.cols.includes(filter)) { openDrawerSheet(filter); return; }   // tap the open drawer again to edit it
@@ -1407,12 +1420,7 @@ button { cursor: pointer; }
   // ---------- capture sheet ----------
   let draft = null;
   let ctl = null;
-  // Close the phone keyboard once you've sent something, so the results aren't hidden behind it.
-  const touch = matchMedia("(pointer: coarse)").matches;
-  const autoFocus = (id, ms = 0) => { if (!touch) setTimeout(() => $(id).focus(), ms); };   // on phones, the keyboard opens only when you tap
-  const dropKeyboard = () => { const a = document.activeElement; if (a && /TEXTAREA|INPUT/.test(a.tagName)) a.blur(); };
   function openSheet(preset) {
-    dropKeyboard();
     draft = { text: "", from: "", cands: [], pick: null, collection: filter !== "All" ? filter : state.cols[0], inline: false };
     if (preset) Object.assign(draft, preset, { inline: true });
     $("scrim").hidden = false; $("sheet").hidden = false;
@@ -1421,7 +1429,7 @@ button { cursor: pointer; }
   }
   // Leaving the search/pick steps: inline captures go back to the home field, sheet captures go back to the note.
   function backToNote() {
-    if (draft.inline) { closeSheet(); autoFocus("qText", 340); }
+    if (draft.inline) { closeSheet(); setTimeout(() => $("qText").focus(), 340); }
     else stepCompose();
   }
   function closeSheet() {
@@ -1520,7 +1528,6 @@ button { cursor: pointer; }
   }
 
   async function runSearch() {
-    dropKeyboard();
     $("sheetBody").innerHTML = `
       <div style="display:flex;flex-direction:column;gap:12px">
         ${draft.photo ? `<h2>Reading your photo…</h2><div class="reading"><img src="${draft.photo}" alt=""></div>` : `<h2>Looking for “${esc(draft.text.trim())}”</h2>`}
@@ -1609,10 +1616,9 @@ button { cursor: pointer; }
           ${showAlts ? `<div class="cands">${others.map(([y, i]) => row(y, i)).join("")}${x ? row(null, -1) : ""}</div>` : ""}
         </div>` : ""}
 
-        <label class="section-label" for="refineIn">Not it? Add a hint</label>
         <div class="refine">
-          <input class="inp" id="refineIn" placeholder="e.g. “framer plugin”, “for 3D”" enterkeyhint="search">
-          <button class="btn ghost" id="refineGo" aria-label="Search again"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15.5-6.2L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15.5 6.2L3 16"/><path d="M3 21v-5h5"/></svg></button>
+          <input class="inp" id="refineIn" placeholder="Not it? Add a hint: a name, “framer plugin”, “for 3D”…">
+          <button class="btn ghost" id="refineGo">Search again</button>
         </div>
         <button class="not-tool" id="notTool"><span>Not a tool? Figure out how it was made</span><span>→</span></button>
 
@@ -1625,7 +1631,6 @@ button { cursor: pointer; }
 
         <div class="section-label">${esc(groupLabel(draft.cols.length))}</div>
         <div class="chips wrap" id="colChips">${state.cols.map((n) => `<button class="chip" aria-pressed="${draft.cols.includes(n)}" data-col="${esc(n)}">${esc(n)}${n === draft.autoCol && !draft.colsEdited ? `<span class="auto">auto</span>` : ""}</button>`).join("")}<button class="chip new" id="newColBtn">+ New</button></div>
-        <div class="new-col" id="newColRow" hidden><input id="newColName" placeholder="${esc(term)} name"><button class="btn ghost" id="newColAdd">Add</button></div>
 
         <div class="row sticky-actions">
           <button class="btn ghost" id="back">Back</button>
@@ -1653,12 +1658,11 @@ button { cursor: pointer; }
       draft.cols = draft.cols.includes(n) ? draft.cols.filter((c) => c !== n) : [...draft.cols, n];
       keepScroll(stepPick);
     };
-    $("newColBtn").onclick = () => { $("newColRow").hidden = false; $("newColName").focus(); };
-    $("newColAdd").onclick = () => {
-      const n = $("newColName").value.trim(); if (!n) return;
-      if (!state.cols.includes(n)) state.cols.push(n);
-      draft.cols = [...new Set([...draft.cols, n])]; draft.colsEdited = true; save(); keepScroll(stepPick);
-    };
+    $("newColBtn").onclick = () => openNewDrawerSheet((n) => {
+      const have = state.cols.find((c) => c.toLowerCase() === n.toLowerCase()), name = have || n;
+      if (!have) state.cols.push(n);
+      draft.cols = [...new Set([...draft.cols, name])]; draft.colsEdited = true; save(); stepPick();
+    }, () => stepPick());
     $("back").onclick = () => { draft.error = null; backToNote(); };
     $("saveBtn").onclick = commit;
     $("notTool").onclick = () => stepMadeCapture(null, false);
@@ -1776,7 +1780,7 @@ button { cursor: pointer; }
     closeSheet(); renderHome();
     toast(`Into the toolkit · ${item.cols.join(" + ")}`);
     if (wasInline) {
-      $("qText").value = ""; $("qFrom").value = ""; clearPhoto(); syncQuick(); autoFocus("qText", 340);
+      $("qText").value = ""; $("qFrom").value = ""; clearPhoto(); syncQuick(); setTimeout(() => $("qText").focus(), 340);
       const sb = $("toSaves"); sb.classList.remove("bump"); void sb.offsetWidth; sb.classList.add("bump");
     }
   }
@@ -1846,7 +1850,6 @@ button { cursor: pointer; }
 
   // ---------- item detail: what it is, where it came from, did you try it ----------
   function openDetail(id) {
-    dropKeyboard();
     const i = state.items.find((x) => x.id === id); if (!i) return;
     draft = { inline: false, detail: id };
     $("scrim").hidden = false; $("sheet").hidden = false;
@@ -2081,16 +2084,11 @@ button { cursor: pointer; }
   // Drag and drop: an image or a link dropped anywhere on the page goes to the Add screen.
   let dragDepth = 0;
   const hasDroppable = (e) => [...(e.dataTransfer?.types || [])].some((t) => t === "Files" || t === "text/uri-list" || t === "text/plain");
-  // Only drops from outside the app count. Dragging a link or image that's already in the app is ignored.
-  let innerDrag = false;
-  addEventListener("dragstart", () => { innerDrag = true; });
-  addEventListener("dragend", () => { innerDrag = false; });
-  addEventListener("dragenter", (e) => { if (innerDrag || !hasDroppable(e)) return; e.preventDefault(); dragDepth++; $("dropzone").hidden = false; });
-  addEventListener("dragover", (e) => { if (innerDrag || !hasDroppable(e)) return; e.preventDefault(); e.dataTransfer.dropEffect = "copy"; });
+  addEventListener("dragenter", (e) => { if (!hasDroppable(e)) return; e.preventDefault(); dragDepth++; $("dropzone").hidden = false; });
+  addEventListener("dragover", (e) => { if (!hasDroppable(e)) return; e.preventDefault(); e.dataTransfer.dropEffect = "copy"; });
   addEventListener("dragleave", () => { if (--dragDepth <= 0) { dragDepth = 0; $("dropzone").hidden = true; } });
   addEventListener("drop", (e) => {
     e.preventDefault(); dragDepth = 0; $("dropzone").hidden = true;
-    if (innerDrag) { innerDrag = false; return; }
     if ($("sheet").classList.contains("on")) closeSheet();
     showView("cap");
     const f = [...(e.dataTransfer?.files || [])].find((x) => /^image\//.test(x.type));
@@ -2182,22 +2180,28 @@ button { cursor: pointer; }
   }
   // Three pages side by side: Add | Toolkit | Workflow. pos runs 0 → 2; each page slides in over the one before it.
   const PAGES = ["cap", "lib", "flow"];
+<<<<<<< Updated upstream
   // Pages sit side by side like iOS: each one is exactly one screen-width from the next. No overlap, no fade.
+=======
+>>>>>>> Stashed changes
   function layoutPages(pos) {
     PAGES.forEach((c, n) => {
-      const el = document.querySelector("." + c), d = n - pos;
-      el.style.transform = `translate3d(${d * 100}%,0,0)`;
-      el.style.opacity = "";
+      const el = document.querySelector("." + c), d = pos - n;
+      if (d < 0) { el.style.transform = `translateX(${Math.min(1, -d) * 100}%)`; el.style.opacity = ""; }
+      else { const k = Math.min(1, d); el.style.transform = `translateX(${-28 * k}%)`; el.style.opacity = 1 - .75 * k; }
       el.classList.toggle("off", Math.abs(d) > .5);
+<<<<<<< Updated upstream
       el.classList.toggle("far", Math.abs(d) >= 1.5);
+=======
+>>>>>>> Stashed changes
     });
   }
   function showView(v) {
     if (!PAGES.includes(v)) return;
     $("screen").dataset.view = v;
     layoutPages(PAGES.indexOf(v));
-    if (v === "cap") autoFocus("qText", 380);
-    if (v === "flow") { renderFlow(); autoFocus("flowText", 380); }
+    if (v === "cap") setTimeout(() => $("qText").focus(), 380);
+    if (v === "flow") { renderFlow(); setTimeout(() => $("flowText").focus(), 380); }
   }
   $("toSaves").onclick = () => showView("lib");
   $("toFlow").onclick = () => showView("flow");
@@ -2205,64 +2209,40 @@ button { cursor: pointer; }
   $("flowBack").onclick = () => showView("lib");
   const pageIdx = () => PAGES.indexOf($("screen").dataset.view);
   // Drag position, kept to the pages next to where you started
-  const dragPos = (from, dx, W) => {
-    let p = Math.max(from - 1, Math.min(from + 1, from - dx / W));      // one page at a time
-    if (p < 0) p = p * .25; if (p > 2) p = 2 + (p - 2) * .25;           // soft resistance past the first and last page
-    return p;
-  };
+  const dragPos = (from, dx, W) => Math.max(Math.max(0, from - 1), Math.min(Math.min(2, from + 1), from - dx / W));
   function settlePage(from, pos, dx, flick) {
-    const moved = pos - from;
-    const to = Math.max(0, Math.min(2, flick || Math.abs(moved) > .15 ? from + (dx < 0 ? 1 : -1) : from));
+    const to = flick ? Math.max(0, Math.min(2, from + (dx < 0 ? 1 : -1))) : Math.round(pos);
     if (to !== from) showView(PAGES[to]); else layoutPages(from);
   }
 
-  // Horizontal swipe between pages, tuned to feel like Instagram/Snapchat: it locks on after a few
-  // pixels of sideways movement, follows the finger 1:1, and a light flick or a short drag is enough.
-  // Touch uses touch events (so iOS can't steal the gesture for scrolling); the mouse uses pointer events.
+  // Horizontal swipe between pages. Follows the finger; settles past halfway or on a quick flick.
   let page = null;
   const views = document.querySelector(".views");
-  const canStart = (t) => !t.closest("input, .chips, .fab-menu") && !$("sheet").classList.contains("on");
-  function dragStart(x, y, target) {
-    if (!canStart(target)) { page = null; return; }
-    page = { x, y, t: performance.now(), from: pageIdx(), active: false, vx: 0 };
-  }
-  // returns true once the gesture is ours (sideways)
-  function dragMove(x, y) {
-    if (!page) return false;
-    const dx = x - page.x, dy = y - page.y;
+  views.addEventListener("pointerdown", (e) => {
+    if (e.target.closest("textarea, input, .chips")) return;
+    if ($("sheet").classList.contains("on")) return;
+    page = { x: e.clientX, y: e.clientY, t: performance.now(), from: pageIdx(), active: false, id: e.pointerId };
+  });
+  addEventListener("pointermove", (e) => {
+    if (!page || e.pointerId !== page.id) return;
+    const dx = e.clientX - page.x, dy = e.clientY - page.y;
     if (!page.active) {
-      if (Math.abs(dy) > 12 && Math.abs(dy) > Math.abs(dx) * 2) { page = null; return false; }   // clearly scrolling
-      if (Math.abs(dx) < 4 || Math.abs(dx) < Math.abs(dy) * .6) return false;                    // not decided yet
+      if (Math.abs(dx) < 10 || Math.abs(dx) < Math.abs(dy) * 1.2) { if (Math.abs(dy) > 14) page = null; return; }
       page.active = true; views.classList.add("dragging");
-      if (document.activeElement && /TEXTAREA|INPUT/.test(document.activeElement.tagName)) document.activeElement.blur();
-      window.getSelection?.().removeAllRanges();
     }
-    const now = performance.now(), dt = Math.max(1, now - (page.lt || page.t));
-    page.vx = page.vx * .4 + ((dx - (page.dx || 0)) / dt) * .6;   // smoothed finger speed, px/ms
-    page.lt = now; page.dx = dx; page.pos = dragPos(page.from, dx, views.getBoundingClientRect().width);
+    page.dx = dx; page.pos = dragPos(page.from, dx, views.getBoundingClientRect().width);
     layoutPages(page.pos);
-    return true;
-  }
-  function dragEnd() {
-    if (!page) return;
-    const { active, pos = page.from, dx = 0, from, vx = 0, lt = 0 } = page; page = null;
+  });
+  function endPage(e) {
+    if (!page || (e && e.pointerId !== page.id)) return;
+    const { active, pos = page.from, dx = 0, t, from } = page; page = null;
     if (!active) return;
-    swallowClick = true; setTimeout(() => (swallowClick = false), 80);
+    swallowClick = true; setTimeout(() => (swallowClick = false), 60);
     views.classList.remove("dragging");
-    const flick = Math.abs(vx) > .12 && performance.now() - lt < 160 && Math.sign(vx) === Math.sign(dx);
-    settlePage(from, pos, dx, flick);
+    settlePage(from, pos, dx, Math.abs(dx) / Math.max(1, performance.now() - t) > .5);
   }
-  // touch
-  views.addEventListener("touchstart", (e) => { if (e.touches.length === 1) dragStart(e.touches[0].clientX, e.touches[0].clientY, e.target); else page = null; }, { passive: true });
-  views.addEventListener("touchmove", (e) => { if (page && dragMove(e.touches[0].clientX, e.touches[0].clientY) && e.cancelable) e.preventDefault(); }, { passive: false });
-  views.addEventListener("touchend", dragEnd);
-  views.addEventListener("touchcancel", dragEnd);
-  // mouse / trackpad click-drag (desktop)
-  let mouseId = null;
-  views.addEventListener("pointerdown", (e) => { if (e.pointerType !== "mouse") return; mouseId = e.pointerId; dragStart(e.clientX, e.clientY, e.target); });
-  addEventListener("pointermove", (e) => { if (e.pointerId === mouseId) dragMove(e.clientX, e.clientY); });
-  addEventListener("pointerup", (e) => { if (e.pointerId === mouseId) { mouseId = null; dragEnd(); } });
-  addEventListener("pointercancel", (e) => { if (e.pointerId === mouseId) { mouseId = null; dragEnd(); } });
+  addEventListener("pointerup", endPage);
+  addEventListener("pointercancel", endPage);
 
   // Two-finger trackpad swipe: arrives as horizontal scrolling. Drives the same motion as a drag.
   let wheel = null, wheelIdle = 0, wheelCooldown = 0;
@@ -2302,7 +2282,6 @@ button { cursor: pointer; }
   const flowSrc = (st) => st.item ? (st.item.status === "using" ? "using" : st.item.status) : "sug";
   const srcPill = (k) => k === "sug" ? `<span class="st st-sug">Suggested</span>` : `<span class="st st-${k}">${esc(statusLabel(k))}</span>`;
   async function buildFlow(goal) {
-    dropKeyboard();
     const run = ++flowRun;
     $("screen").querySelector(".flow").classList.add("has-out");
     const out = $("flowOut"); out.hidden = false;
@@ -2368,7 +2347,6 @@ button { cursor: pointer; }
   }
   function keepFlowScroll(fn) { const o = $("flowOut"), t = o.scrollTop; fn(); o.scrollTop = t; }
   function openSavedFlows() {
-    dropKeyboard();
     draft = { savedFlows: true };
     $("scrim").hidden = false; $("sheet").hidden = false;
     requestAnimationFrame(() => { $("scrim").classList.add("on"); $("sheet").classList.add("on"); });
@@ -2404,7 +2382,7 @@ button { cursor: pointer; }
     $("foNew").onclick = () => {
       flowRun++; state.flow = null; save(); savedCount();
       $("screen").querySelector(".flow").classList.remove("has-out"); $("flowOut").hidden = true;
-      $("flowText").value = ""; $("flowGo").disabled = true; autoFocus("flowText");
+      $("flowText").value = ""; $("flowGo").disabled = true; $("flowText").focus();
     };
   }
   function renderFlowOut() {
