@@ -455,7 +455,7 @@ button { cursor: pointer; }
 .opt { text-transform: none; letter-spacing: 0; opacity: .7; }
 .chips.wrap { flex-wrap: wrap; overflow: visible; }
 .chip .auto { margin-left: 6px; font: 500 9.5px/1 var(--font-label); text-transform: uppercase; letter-spacing: .06em; padding: 2px 4px; border-radius: 4px; background: rgba(255,255,255,.12); color: var(--ink); }
-.sticky-actions { position: sticky; bottom: -40px; background: var(--card); padding: 10px 0 0; margin-top: 4px; }
+.sticky-actions { position: sticky; bottom: -40px; z-index: 3; background: var(--card); box-shadow: 0 -12px 0 var(--card), -20px 0 0 var(--card), 20px 0 0 var(--card); padding: 10px 0 0; margin-top: 4px; }   /* solid, above anything scrolling behind it */
 
 /* ---------- voice ---------- */
 .mic { position: relative; }
@@ -1664,7 +1664,7 @@ button { cursor: pointer; }
         <input class="inp" id="fromWho" placeholder="Who? (optional)" value="${esc(draft.from || "")}">
 
         <div class="section-label">${esc(groupLabel(draft.cols.length))}</div>
-        <div class="chips wrap" id="colChips">${state.cols.map((n) => `<button class="chip" aria-pressed="${draft.cols.includes(n)}" data-col="${esc(n)}">${esc(n)}${n === draft.autoCol && !draft.colsEdited ? `<span class="auto">auto</span>` : ""}</button>`).join("")}<button class="chip new" id="newColBtn">+ New</button></div>
+        <div class="chips wrap" id="colChips">${state.cols.map((n) => `<button class="chip" aria-pressed="${draft.cols.includes(n)}" data-col="${esc(n)}">${esc(n)}</button>`).join("")}<button class="chip new" id="newColBtn">+ New</button></div>
         <div class="new-col" id="newColRow" hidden><input id="newColName" placeholder="${esc(term)} name"><button class="btn ghost" id="newColAdd">Add</button></div>
 
         <div class="row sticky-actions">
@@ -2191,7 +2191,7 @@ button { cursor: pointer; }
     if (!on) { capIntent = "tool"; $("intent").querySelectorAll("[data-intent]").forEach((x) => x.setAttribute("aria-checked", x.dataset.intent === "tool")); }
     $("qFind").disabled = !on;
     if (listening) return;
-    $("capHint").textContent = on ? (capPhoto && !$("qText").value.trim() ? "Add a note, or just send it" : "Return to find it") : "Type it, snap it, or upload a screenshot.";
+    $("capHint").textContent = "Type it, snap it, or upload a screenshot.";   // same hint whether or not you've typed
   }
   function quickFind() {
     const text = $("qText").value.trim(); if (!text && !capPhoto) return;
