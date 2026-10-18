@@ -776,6 +776,9 @@ button { cursor: pointer; }
 #device .cap, #device .flow { padding-left: var(--gutter); padding-right: var(--gutter); }
 #device .flow-out { margin: 0 calc(-1 * var(--gutter)); padding-left: var(--gutter); padding-right: var(--gutter); }
 #device .lib-top { padding: var(--sp-2) var(--gutter) 0; }
+#device .lib-top { padding-bottom: var(--sp-6); }   /* room between the Add / Workflow row and the count line */
+/* the backed text box bleeds out to the gutter so its text lines up with the heading above */
+#device .cap textarea { width: calc(100% + 34px); margin-left: -17px; margin-right: -17px; }
 #device .app-head { padding: var(--sp-1) var(--gutter) var(--sp-3); gap: var(--sp-4); }
 #device .list { padding-left: var(--gutter); padding-right: var(--gutter); }
 #device .chips { gap: var(--gap-inline); }
