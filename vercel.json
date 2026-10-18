@@ -1,5 +1,0 @@
-{
-  "outputDirectory": "public",
-  "rewrites": [{ "source": "/api/:route", "destination": "/api/index?route=:route" }],
-  "functions": { "api/index.js": { "maxDuration": 60 } }
-}

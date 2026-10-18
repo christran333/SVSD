@@ -306,7 +306,8 @@ async function handleApi(req, res, pathname) {
 }
 module.exports = { handleApi };
 
-if (require.main === module) http.createServer(async (req, res) => {
+// Always start the server: locally via npm start, and on Vercel, which runs server.js directly.
+http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host}`);
   if (url.pathname.startsWith("/api/")) return handleApi(req, res);
   try {
