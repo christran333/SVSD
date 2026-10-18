@@ -1198,7 +1198,12 @@ button { cursor: pointer; }
   // ---------- capture sheet ----------
   let draft = null;
   let ctl = null;
+  // Close the phone keyboard once you've sent something, so the results aren't hidden behind it.
+  const touch = matchMedia("(pointer: coarse)").matches;
+  const autoFocus = (id, ms = 0) => { if (!touch) setTimeout(() => $(id).focus(), ms); };   // on phones, the keyboard opens only when you tap
+  const dropKeyboard = () => { const a = document.activeElement; if (a && /TEXTAREA|INPUT/.test(a.tagName)) a.blur(); };
   function openSheet(preset) {
+    dropKeyboard();
     draft = { text: "", from: "", cands: [], pick: null, collection: filter !== "All" ? filter : state.cols[0], inline: false };
     if (preset) Object.assign(draft, preset, { inline: true });
     $("scrim").hidden = false; $("sheet").hidden = false;
@@ -1207,7 +1212,7 @@ button { cursor: pointer; }
   }
   // Leaving the search/pick steps: inline captures go back to the home field, sheet captures go back to the note.
   function backToNote() {
-    if (draft.inline) { closeSheet(); setTimeout(() => $("qText").focus(), 340); }
+    if (draft.inline) { closeSheet(); autoFocus("qText", 340); }
     else stepCompose();
   }
   function closeSheet() {
@@ -1306,6 +1311,7 @@ button { cursor: pointer; }
   }
 
   async function runSearch() {
+    dropKeyboard();
     $("sheetBody").innerHTML = `
       <div style="display:flex;flex-direction:column;gap:12px">
         ${draft.photo ? `<h2>Reading your photo…</h2><div class="reading"><img src="${draft.photo}" alt=""></div>` : `<h2>Looking for “${esc(draft.text.trim())}”</h2>`}
@@ -1560,7 +1566,7 @@ button { cursor: pointer; }
     closeSheet(); renderHome();
     toast(`Into the toolkit · ${item.cols.join(" + ")}`);
     if (wasInline) {
-      $("qText").value = ""; $("qFrom").value = ""; clearPhoto(); syncQuick(); setTimeout(() => $("qText").focus(), 340);
+      $("qText").value = ""; $("qFrom").value = ""; clearPhoto(); syncQuick(); autoFocus("qText", 340);
       const sb = $("toSaves"); sb.classList.remove("bump"); void sb.offsetWidth; sb.classList.add("bump");
     }
   }
@@ -1630,6 +1636,7 @@ button { cursor: pointer; }
 
   // ---------- item detail: what it is, where it came from, did you try it ----------
   function openDetail(id) {
+    dropKeyboard();
     const i = state.items.find((x) => x.id === id); if (!i) return;
     draft = { inline: false, detail: id };
     $("scrim").hidden = false; $("sheet").hidden = false;
@@ -1978,8 +1985,8 @@ button { cursor: pointer; }
     if (!PAGES.includes(v)) return;
     $("screen").dataset.view = v;
     layoutPages(PAGES.indexOf(v));
-    if (v === "cap") setTimeout(() => $("qText").focus(), 380);
-    if (v === "flow") { renderFlow(); setTimeout(() => $("flowText").focus(), 380); }
+    if (v === "cap") autoFocus("qText", 380);
+    if (v === "flow") { renderFlow(); autoFocus("flowText", 380); }
   }
   $("toSaves").onclick = () => showView("lib");
   $("toFlow").onclick = () => showView("flow");
@@ -2073,6 +2080,7 @@ button { cursor: pointer; }
   const flowSrc = (st) => st.item ? (st.item.status === "using" ? "using" : st.item.status) : "sug";
   const srcPill = (k) => k === "sug" ? `<span class="st st-sug">Suggested</span>` : `<span class="st st-${k}">${esc(statusLabel(k))}</span>`;
   async function buildFlow(goal) {
+    dropKeyboard();
     const run = ++flowRun;
     $("screen").querySelector(".flow").classList.add("has-out");
     const out = $("flowOut"); out.hidden = false;
@@ -2138,6 +2146,7 @@ button { cursor: pointer; }
   }
   function keepFlowScroll(fn) { const o = $("flowOut"), t = o.scrollTop; fn(); o.scrollTop = t; }
   function openSavedFlows() {
+    dropKeyboard();
     draft = { savedFlows: true };
     $("scrim").hidden = false; $("sheet").hidden = false;
     requestAnimationFrame(() => { $("scrim").classList.add("on"); $("sheet").classList.add("on"); });
@@ -2173,7 +2182,7 @@ button { cursor: pointer; }
     $("foNew").onclick = () => {
       flowRun++; state.flow = null; save(); savedCount();
       $("screen").querySelector(".flow").classList.remove("has-out"); $("flowOut").hidden = true;
-      $("flowText").value = ""; $("flowGo").disabled = true; $("flowText").focus();
+      $("flowText").value = ""; $("flowGo").disabled = true; autoFocus("flowText");
     };
   }
   function renderFlowOut() {
