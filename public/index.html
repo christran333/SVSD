@@ -344,7 +344,7 @@ button { cursor: pointer; }
 /* first-screen constellation: drifting square points, softly linked */
 .cap-bg { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; display: block; }
 .cap > *:not(.cap-bg) { position: relative; z-index: 1; }
-.lib > *:not(.cap-bg):not(.fab) { position: relative; z-index: 1; }
+.lib > *:not(.cap-bg):not(.fab):not(.fab-menu) { position: relative; z-index: 1; }   /* the + and its menu keep their pinned spots */
 .flow > *:not(.cap-bg) { position: relative; z-index: 1; }
 .lib .list { background-color: transparent; }
 /* toolkit header matches the first page: mono label over a big tight headline */
@@ -868,6 +868,19 @@ button { cursor: pointer; }
 #device .edit-btn { width: 40px; height: 40px; top: 10px; right: 10px; }
 #device .edit-btn svg { width: 18px; height: 18px; }
 #device .edit-btn::after { content: ""; position: absolute; inset: -6px; border-radius: 50%; }
+
+/* ===== Splash: covers the first paint so you never see pages sliding into place ===== */
+.views.booting .view, .views.booting .pg-ind, .views.booting .fab, .views.booting #qFind, .views.booting #flowGo, .views.booting .pager button { transition: none !important; }
+.splash { position: absolute; inset: 0; z-index: 60; background: var(--app-bg); color: var(--ink); display: flex; flex-direction: column; justify-content: space-between;
+  padding: calc(56px + env(safe-area-inset-top, 0px)) var(--gutter, 20px) calc(40px + env(safe-area-inset-bottom, 0px)); transition: opacity .45s ease, transform .55s cubic-bezier(.7,0,.2,1); }
+.splash.done { opacity: 0; transform: translateY(-3%); pointer-events: none; }
+.sp-top, .sp-row { display: flex; justify-content: space-between; font: 500 11px/1 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.sp-mark { font-family: var(--font-display); font-weight: 700; font-size: 64px; line-height: .9; letter-spacing: -0.045em; }
+.sp-tape { display: inline-block; margin-top: 18px; padding: 6px 9px; background: var(--ink); color: var(--app-bg); font: 600 12px/1 var(--font-mono); letter-spacing: .06em; text-transform: uppercase; transform: rotate(-1.5deg); min-width: 9ch; }
+.sp-sub { margin-top: 18px; max-width: 26ch; color: var(--muted); font-size: 15px; line-height: 1.4; }
+.sp-bar { margin-top: 12px; height: 3px; background: var(--line); overflow: hidden; }
+.sp-bar i { display: block; height: 100%; background: var(--ink); transform-origin: left; transform: scaleX(var(--p, 0)); transition: transform .12s linear; }
+@media (prefers-reduced-motion: reduce) { .splash { transition: opacity .2s; } .splash.done { transform: none; } }
 </style>
 </head>
 <body>
@@ -886,7 +899,16 @@ button { cursor: pointer; }
             <svg width="27" height="13" viewBox="0 0 27 13"><rect x=".5" y=".5" width="23" height="12" rx="3.8" fill="none" stroke="currentColor" opacity=".4"/><rect x="2" y="2" width="20" height="9" rx="2.5"/><path d="M25 4.5v4c.8-.3 1.4-1.1 1.4-2s-.6-1.7-1.4-2Z" opacity=".45"/></svg>
           </span>
         </div>
-        <div class="views">
+        <div class="splash" id="splash" aria-hidden="true">
+          <div class="sp-top"><span>SVSD &mdash; 2026</span><span>Prototype</span></div>
+          <div>
+            <div class="sp-mark">Toolkit</div>
+            <div class="sp-tape" id="spTape">Agentation</div>
+            <div class="sp-sub">Where the tools you hear about stop getting lost.</div>
+          </div>
+          <div><div class="sp-row"><span>Opening drawers</span><span id="spN">00</span></div><div class="sp-bar"><i id="spBar"></i></div></div>
+        </div>
+        <div class="views booting">
         <section class="view cap" aria-label="Add something">
           <canvas class="cap-bg" id="capBg" aria-hidden="true"></canvas>
           <div class="cap-top">
@@ -2645,6 +2667,22 @@ button { cursor: pointer; }
   window.addEventListener("load", setupDialKit);
 
   applyVariants(true);
+  // ---------- boot: hold the splash until fonts and the first layout are ready (at least ~1s), then reveal ----------
+  (function boot() {
+    const t0 = performance.now(), views = document.querySelector(".views"), splash = $("splash");
+    requestAnimationFrame(() => requestAnimationFrame(() => views.classList.remove("booting")));   // first paint never animates
+    if (!splash) return;
+    const names = ["Agentation", "Veo", "Spline", "Framer", "Are.na", "DialKit"]; let k = 0, p = 0, ready = false;
+    const tick = setInterval(() => {
+      p = ready ? Math.min(100, p + 9) : Math.min(88, p + Math.max(1, (88 - p) * .09));
+      $("spBar").style.setProperty("--p", p / 100); $("spN").textContent = String(Math.round(p)).padStart(2, "0");
+      if (++k % 4 === 0) $("spTape").textContent = names[(k / 4) % names.length];
+      if (p >= 100) { clearInterval(tick); splash.classList.add("done"); setTimeout(() => splash.remove(), 600); }
+    }, 45);
+    const loaded = new Promise((r) => document.readyState === "complete" ? r() : addEventListener("load", r, { once: true }));
+    Promise.race([Promise.all([document.fonts ? document.fonts.ready : null, loaded]), new Promise((r) => setTimeout(r, 2500))])
+      .then(() => setTimeout(() => (ready = true), Math.max(0, 900 - (performance.now() - t0))));
+  })();
   if (importFlowFromHash()) showView("flow");
   setMode("test");
   const APP_SERVER_VERSION = 5;   // must match SERVER_VERSION in server.js
