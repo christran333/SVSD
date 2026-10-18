@@ -1494,7 +1494,7 @@ button { cursor: pointer; }
   }
   // Leaving the search/pick steps: inline captures go back to the home field, sheet captures go back to the note.
   function backToNote() {
-    if (draft.inline) { closeSheet(); setTimeout(() => $("qText").focus(), 340); }
+    if (draft.inline) { closeSheet(); autoFocus("qText", 340); }
     else stepCompose();
   }
   function closeSheet() {
@@ -1846,7 +1846,7 @@ button { cursor: pointer; }
     closeSheet(); renderHome();
     toast(`Into the toolkit · ${item.cols.join(" + ")}`);
     if (wasInline) {
-      $("qText").value = ""; $("qFrom").value = ""; clearPhoto(); syncQuick(); setTimeout(() => $("qText").focus(), 340);
+      $("qText").value = ""; $("qFrom").value = ""; clearPhoto(); syncQuick(); autoFocus("qText", 340);
       const sb = $("toSaves"); sb.classList.remove("bump"); void sb.offsetWidth; sb.classList.add("bump");
     }
   }
@@ -2267,12 +2267,15 @@ button { cursor: pointer; }
       btn.style.filter = f >= 1 ? "" : `opacity(${f})`;
     });
   }
+  // Focus a text box only where there's a hardware keyboard; on phones it would pop the keyboard over the page
+  const touchOnly = matchMedia("(hover: none) and (pointer: coarse)").matches;
+  function autoFocus(id, delay) { if (!touchOnly) setTimeout(() => $(id)?.focus(), delay); }
   function showView(v) {
     if (!PAGES.includes(v)) return;
     $("screen").dataset.view = v;
     layoutPages(PAGES.indexOf(v));
-    if (v === "cap") setTimeout(() => $("qText").focus(), 380);
-    if (v === "flow") { renderFlow(); setTimeout(() => $("flowText").focus(), 380); }
+    if (v === "cap") autoFocus("qText", 380);
+    if (v === "flow") { renderFlow(); autoFocus("flowText", 380); }
   }
   $("toSaves").onclick = () => showView("lib");
   $("toFlow").onclick = () => showView("flow");
@@ -2465,7 +2468,7 @@ button { cursor: pointer; }
     $("foNew").onclick = () => {
       flowRun++; state.flow = null; save(); savedCount();
       $("screen").querySelector(".flow").classList.remove("has-out"); $("flowOut").hidden = true;
-      $("flowText").value = ""; $("flowGo").disabled = true; $("flowText").focus();
+      $("flowText").value = ""; $("flowGo").disabled = true; autoFocus("flowText", 0);
     };
   }
   function renderFlowOut() {
