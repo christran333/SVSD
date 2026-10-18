@@ -1097,7 +1097,8 @@ button { cursor: pointer; }
   let filter = "All";
   let mode = "test";
   const VKEY = "svsd-variants";
-  const V = Object.assign({ open: "capture", label: "mono", info: "flip", cards: "framed", forReq: "optional", alts: "collapsed" }, (() => { try { return JSON.parse(localStorage.getItem(VKEY)) || {}; } catch (e) { return {}; } })());
+  const PICKS = { open: "capture", label: "caps", info: "flip", cards: "compact", forReq: "optional", alts: "collapsed" };   // the team's chosen variants
+  const V = Object.assign({ ...PICKS }, (() => { try { return JSON.parse(localStorage.getItem(VKEY)) || {}; } catch (e) { return {}; } })());
   let term = "Drawer";
 
   function load() {
@@ -2560,6 +2561,7 @@ button { cursor: pointer; }
       return `<i style="background:${b};color:${inkOn(b)}">${esc((i.title || "?")[0].toUpperCase())}</i>`;
     }).join("");
   }
+  if (V.picksV !== 2) { Object.assign(V, PICKS, { picksV: 2 }); }   // one-time: everyone lands on the chosen picks; changes after this still stick
   function applyVariants(focus) {
     $("device").dataset.label = V.label;
     $("list").className = "list " + V.cards;
