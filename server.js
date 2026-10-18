@@ -22,7 +22,8 @@ const path = require("node:path");
 })();
 
 const PORT = Number(process.env.PORT) || 3000;
-const API_KEY = process.env.ANTHROPIC_API_KEY || "";
+// Forgive messy pastes (spaces, quotes, line breaks, or the whole "ANTHROPIC_API_KEY=..." line).
+const API_KEY = String(process.env.ANTHROPIC_API_KEY || "").replace(/\s+/g, "").replace(/["']/g, "").replace(/^ANTHROPIC_API_KEY=/, "");
 const MODEL = process.env.CLAUDE_MODEL || "claude-sonnet-5-5";
 const PUBLIC = path.join(__dirname, "public");
 // Bump together with APP_SERVER_VERSION in public/index.html whenever the API changes.
@@ -301,7 +302,7 @@ async function handleApi(req, res, pathname) {
     return send(res, 404, { error: "Not found" });
   } catch (e) {
     console.error(e);
-    return send(res, e.status === 401 ? 401 : 500, { error: e.status === 401 ? "The API key was rejected. Check ANTHROPIC_API_KEY." : e.message || "Something went wrong." });
+    return send(res, e.status === 401 ? 401 : 500, { error: e.status === 401 ? (process.env.VERCEL ? "The API key was rejected. In Vercel → Settings → Environment Variables, re-paste ANTHROPIC_API_KEY (just the sk-ant-… part), then Redeploy." : "The API key was rejected. Check ANTHROPIC_API_KEY in .env.") : e.message || "Something went wrong." });
   }
 }
 // One handler for every request: the API, plus the app's files.
