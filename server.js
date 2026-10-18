@@ -304,10 +304,8 @@ async function handleApi(req, res, pathname) {
     return send(res, e.status === 401 ? 401 : 500, { error: e.status === 401 ? "The API key was rejected. Check ANTHROPIC_API_KEY." : e.message || "Something went wrong." });
   }
 }
-module.exports = { handleApi };
-
-// Always start the server: locally via npm start, and on Vercel, which runs server.js directly.
-http.createServer(async (req, res) => {
+// One handler for every request: the API, plus the app's files.
+async function handler(req, res) {
   const url = new URL(req.url, `http://${req.headers.host}`);
   if (url.pathname.startsWith("/api/")) return handleApi(req, res);
   try {
@@ -319,7 +317,14 @@ http.createServer(async (req, res) => {
     console.error(e);
     return send(res, 500, { error: e.message || "Something went wrong." });
   }
-}).on("error", (e) => {
+}
+// Vercel calls the exported handler (and serves public/ from its CDN).
+// Locally, `npm start` runs this file and we start a normal server.
+module.exports = handler;
+module.exports.handleApi = handleApi;
+// (Vercel sets VERCEL=1, so no server is started there.)
+
+if (!process.env.VERCEL) http.createServer(handler).on("error", (e) => {
   if (e.code === "EADDRINUSE") {
     console.log(`\n  Port ${PORT} is already in use, probably an older copy of this server still running.`);
     console.log(`  Stop it and start fresh with:\n\n    lsof -ti :${PORT} | xargs kill; npm start\n`);
