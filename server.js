@@ -227,16 +227,21 @@ async function workflow(goal, items = []) {
     id: String(x.id || ""), title: String(x.title || "").slice(0, 60), url: String(x.url || "").slice(0, 200),
     status: String(x.status || ""), about: String(x.forWhat || x.blurb || "").slice(0, 160), kind: String(x.kind || ""),
   }));
-  const prompt = `A designer wants to make something and asked for a simple workflow built from their own toolkit.
+  const prompt = `A designer asked for a workflow built around their own toolkit.
 
-Goal: ${String(goal).slice(0, 400)}
+What they asked: ${String(goal).slice(0, 400)}
+
+Read what kind of ask it is and handle it:
+- A goal or project they're working on: plan how to make it.
+- An open ask for a project idea (e.g. "surprise me", "something with tools I haven't tried"): invent one small, concrete project they could finish in an afternoon or a weekend, and plan it. Put the project in the title.
+- A tool they want to learn or use (in their toolkit or not): build a first project around that tool. It must be one of the steps, even if it isn't in their toolkit yet.
 
 Their toolkit (status: using = uses it now, tried = tried it, want = saved but hasn't tried yet, nope = didn't like it):
 ${JSON.stringify(kit)}
 
-Build a short, practical workflow: 3 to 6 steps in the order they'd actually work.
-- Each step uses one tool. Prefer tools from their toolkit, including ones they want to try when they genuinely fit; that's the point, to get them using what they saved. Skip "nope" tools.
-- Only add a tool that isn't in their toolkit when there's a real gap (at most 2). Use real, well-known tools with their official homepage URL.
+Build a short, practical workflow: 2 to 6 steps in the order they'd actually work. Fewer is better when fewer does the job.
+- Each step uses one tool. Use only the tools that genuinely fit; never pad the flow just to include more of their toolkit. Prefer their toolkit, especially "want" tools they haven't tried when they fit; that's the point, to get them using what they saved. Skip "nope" tools.
+- Only add a tool that isn't in their toolkit when there's a real gap (at most 2, not counting a tool they named). Use real, well-known tools with their official homepage URL.
 - Don't force a toolkit tool that doesn't fit the goal. Videos or articles can be a step if they're a reference for the work.
 
 Finish with only a JSON object, no other text, like:

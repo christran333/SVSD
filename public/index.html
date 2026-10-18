@@ -882,6 +882,8 @@ button { cursor: pointer; }
 @keyframes spThud { 0% { transform: scale(1, 1); } 35% { transform: scale(1.04, .93); } 100% { transform: scale(1, 1); } }
 .sp-drop { transform-box: fill-box; transform-origin: 50% 50%; }
 @media (prefers-reduced-motion: reduce) { .splash { transition: opacity .2s; } .splash.done { transform: none; } .sp-box.thud { animation: none; } }
+#device .fo-starts { margin-top: var(--sp-2); gap: 6px; }
+#device .fo-starts .chip { font-size: 13px; padding: 7px 11px; }
 /* First paint never animates: pages appear already in place */
 .views.booting .view, .views.booting .pg-ind, .views.booting .fab, .views.booting #qFind, .views.booting #flowGo, .views.booting .pager button { transition: none !important; }
 </style>
@@ -1003,8 +1005,9 @@ button { cursor: pointer; }
           <div class="flow-out" id="flowOut" hidden></div>
           <div class="cap-body" id="flowAsk">
             <div class="cap-date">Workflow</div>
-            <h1 class="cap-q">What are you trying to make?</h1>
-            <textarea id="flowText" rows="3" placeholder="A project, a deliverable, or just the vibe of it…" aria-label="What you're trying to make"></textarea>
+            <h1 class="cap-q">What do you want to make or try?</h1>
+            <textarea id="flowText" rows="3" placeholder="A project you're on, a tool you want to learn, or “surprise me”…" aria-label="What you want to make or try"></textarea>
+            <div class="chips wrap fo-starts" id="flowStarts" aria-label="Ideas"></div>
             <div class="cap-tools">
               <span class="cap-hint" id="flowHint">We'll map out how to use the tools in your toolkit for it.</span>
             </div>
@@ -2336,7 +2339,18 @@ button { cursor: pointer; }
   // ---------- workflow screen (step 1: just the prompt) ----------
   function renderFlow() {
     const n = live().length;
-    $("flowHint").textContent = `We'll map out how to use the ${n} ${n === 1 ? "tool" : "tools"} in your toolkit for it.`;
+    $("flowHint").textContent = `Uses only the tools that fit, from the ${n} in your toolkit, plus new ones when there's a gap.`;
+    // one-tap starters: the three kinds of ask the workflow handles
+    const untried = live().filter((x) => x.status === "want");
+    const starts = [
+      ["Project with tools I haven't tried", "Give me a small project that gets me using the tools I saved but haven't tried yet"],
+      untried[0] ? [`Learn ${untried[0].title}`, `A first project to learn ${untried[0].title}, using my other tools where they fit`] : ["Learn a new tool", "A first project to learn "],
+      ["Workflow for what I'm making", "I'm making "],
+    ];
+    $("flowStarts").innerHTML = starts.map(([l, t]) => `<button class="chip" data-start="${esc(t)}">${esc(l)}</button>`).join("");
+    $("flowStarts").querySelectorAll("[data-start]").forEach((b) => b.onclick = () => {
+      const t = $("flowText"); t.value = b.dataset.start; t.dispatchEvent(new Event("input")); t.focus(); t.setSelectionRange(t.value.length, t.value.length);
+    });
     savedCount();
     if (state.flow && $("flowOut").hidden) { $("screen").querySelector(".flow").classList.add("has-out"); $("flowOut").hidden = false; renderFlowOut(); }
   }
