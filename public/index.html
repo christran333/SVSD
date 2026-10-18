@@ -348,7 +348,7 @@ button { cursor: pointer; }
 /* first-screen constellation: drifting square points, softly linked */
 .cap-bg { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; display: block; }
 .cap > *:not(.cap-bg) { position: relative; z-index: 1; }
-.lib > *:not(.cap-bg):not(.fab):not(.fab-menu) { position: relative; z-index: 1; }   /* .fab and .fab-menu float, so they keep their own absolute position */
+.lib > *:not(.cap-bg):not(.fab):not(.fab-menu) { position: relative; z-index: 1; }   /* the + and its menu keep their pinned spots */
 .flow > *:not(.cap-bg) { position: relative; z-index: 1; }
 .lib .list { background-color: transparent; }
 /* toolkit header matches the first page: mono label over a big tight headline */
@@ -451,6 +451,7 @@ button { cursor: pointer; }
 .best.note-only { border-color: var(--line); }
 .tag-best { position: absolute; top: -10px; left: 14px; background: #FFFFFF; color: #000; font: 600 10px/1 var(--font-label); letter-spacing: .08em; text-transform: uppercase; padding: 4px 7px; border-radius: 6px; }
 .cand-pv.big { width: 112px; }
+.cand-pv, .cand-pv.big { aspect-ratio: 1.91 / 1; }   /* the shape link previews are made in, so site images aren't cropped */
 .cand.alt { grid-template-columns: 84px 1fr; padding: 8px; }
 .linkish { background: none; border: 0; padding: 2px 0; color: var(--muted); font-size: 13px; text-align: left; text-decoration: underline; text-underline-offset: 3px; }
 .alts { display: flex; flex-direction: column; gap: 8px; }
@@ -459,7 +460,7 @@ button { cursor: pointer; }
 .opt { text-transform: none; letter-spacing: 0; opacity: .7; }
 .chips.wrap { flex-wrap: wrap; overflow: visible; }
 .chip .auto { margin-left: 6px; font: 500 9.5px/1 var(--font-label); text-transform: uppercase; letter-spacing: .06em; padding: 2px 4px; border-radius: 4px; background: rgba(255,255,255,.12); color: var(--ink); }
-.sticky-actions { position: sticky; bottom: -40px; background: var(--card); padding: 10px 0 0; margin-top: 4px; }
+.sticky-actions { position: sticky; bottom: -40px; z-index: 3; background: var(--card); box-shadow: 0 -12px 0 var(--card), -20px 0 0 var(--card), 20px 0 0 var(--card); padding: 10px 0 0; margin-top: 4px; }   /* solid, above anything scrolling behind it */
 
 /* ---------- voice ---------- */
 .mic { position: relative; }
@@ -778,6 +779,9 @@ button { cursor: pointer; }
 #device .cap, #device .flow { padding-left: var(--gutter); padding-right: var(--gutter); }
 #device .flow-out { margin: 0 calc(-1 * var(--gutter)); padding-left: var(--gutter); padding-right: var(--gutter); }
 #device .lib-top { padding: var(--sp-2) var(--gutter) 0; }
+#device .lib-top { padding-bottom: var(--sp-6); }   /* room between the Add / Workflow row and the count line */
+/* the backed text box bleeds out to the gutter so its text lines up with the heading above */
+#device .cap textarea { width: calc(100% + 34px); margin-left: -17px; margin-right: -17px; }
 #device .app-head { padding: var(--sp-1) var(--gutter) var(--sp-3); gap: var(--sp-4); }
 #device .list { padding-left: var(--gutter); padding-right: var(--gutter); }
 #device .chips { gap: var(--gap-inline); }
@@ -800,7 +804,8 @@ button { cursor: pointer; }
 #device .detail textarea.inp { min-height: 72px; }
 #device .seg button { height: var(--h-control); padding: 0 var(--sp-2); }
 #device .origin { padding: var(--sp-4); gap: var(--sp-1); border-radius: var(--r); }
-#device .origin .section-label { margin-bottom: var(--sp-1); }
+#device .origin { border: 1px solid var(--line); padding: var(--sp-3) var(--sp-4); font-size: var(--t-body); line-height: 1.4; }   /* reads like the fields above it, just not editable */
+#device .origin .heard-as { font-size: 13px; }
 #device .btn { height: var(--h-button); padding: 0 var(--sp-5); display: inline-flex; align-items: center; justify-content: center; }
 #device .row { gap: var(--gap-inline); }
 #device .section-label { font-size: var(--t-label); line-height: 1; }
@@ -827,6 +832,58 @@ button { cursor: pointer; }
   .sheet { padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)); }
   .toast { top: calc(10px + env(safe-area-inset-top, 0px)); }
 }
+
+/* ===== Bottom dock: the page bar and the round action button share one line on every screen ===== */
+#device { --dock-b: 22px; --dock-h: 58px; }
+@media (max-width: 600px) { #device { --dock-b: calc(10px + env(safe-area-inset-bottom, 0px)); } }
+#device .pager { bottom: var(--dock-b); height: var(--dock-h); align-items: center; box-sizing: border-box; }
+#device .fab, #device #qFind, #device #flowGo {
+  position: absolute; z-index: 6; right: var(--gutter, 20px); bottom: calc(var(--dock-b) + (var(--dock-h) - 56px) / 2);
+  width: 56px; height: 56px; margin: 0;
+}
+#device .cap-foot { position: static; }
+#device .cap, #device .flow { padding-bottom: calc(var(--dock-b) + var(--dock-h) + 16px); }
+#device .lib .list { padding-bottom: calc(var(--dock-b) + var(--dock-h) + 32px); }
+#device .fab-menu { bottom: calc(var(--dock-b) + var(--dock-h) + 12px); }
+#device .flow-out { padding-bottom: calc(var(--dock-b) + var(--dock-h) + 40px); }
+#device .flow.has-out { padding-bottom: 0; }   /* the workflow scrolls under the dock instead */
+
+/* ===== Dock follows the finger: the page highlight slides with the swipe, the right-hand button stays put and crossfades ===== */
+#device .pager .pg-ind { position: absolute; left: 4px; top: 4px; width: 58px; height: 48px; border-radius: 999px; background: var(--ink); transform: translate3d(calc(var(--pp, 1) * 61px), 0, 0); transition: transform .42s cubic-bezier(.22,.9,.28,1); will-change: transform; pointer-events: none; }
+#device .pager button { position: relative; z-index: 1; background: transparent !important; color: color-mix(in srgb, var(--app-bg) calc(var(--c, 0) * 100%), #5C5C66); transition: color .42s cubic-bezier(.22,.9,.28,1); }
+#device .views.dragging .pager button { transition: none; }
+#device .fab { transition: transform .25s cubic-bezier(.2,.8,.2,1), translate .42s cubic-bezier(.22,.9,.28,1), scale .42s cubic-bezier(.22,.9,.28,1), filter .3s; }
+#device #qFind, #device #flowGo { transition: transform .15s, opacity .2s, translate .42s cubic-bezier(.22,.9,.28,1), scale .42s cubic-bezier(.22,.9,.28,1), filter .3s; }
+#device .views.dragging .pg-ind, #device .views.dragging .fab, #device .views.dragging #qFind, #device .views.dragging #flowGo { transition: none; }
+
+/* Workflow: the WORKFLOW / Save / New row stays pinned while the steps scroll under it */
+#device .flow-out { overscroll-behavior: contain; }
+/* Inside a workflow nothing is pinned: the Toolkit link, WORKFLOW / Save / New and the title
+   all live in the scroll and move away together with the steps, one seamless page. */
+#device .flow.has-out .cap-top { display: none; }
+#device .flow-out { padding-top: 0; }
+#device .fo-top { margin: 0; padding: 0 0 var(--sp-2); }
+#device .fo-back { padding: 6px 0; margin-bottom: var(--sp-5); }
+#device .fo-goal { margin: var(--sp-3) 0 0; }
+#device .fo-sum { margin-top: var(--sp-5); }
+
+/* Card edit button: bigger on screen, and an even bigger invisible tap area for thumbs */
+#device .edit-btn { width: 40px; height: 40px; top: 10px; right: 10px; }
+#device .edit-btn svg { width: 18px; height: 18px; }
+#device .edit-btn::after { content: ""; position: absolute; inset: -6px; border-radius: 50%; }
+
+/* ===== Splash: covers the first paint so you never see pages sliding into place ===== */
+.views.booting .view, .views.booting .pg-ind, .views.booting .fab, .views.booting #qFind, .views.booting #flowGo, .views.booting .pager button { transition: none !important; }
+.splash { position: absolute; inset: 0; z-index: 60; background: var(--app-bg); color: var(--ink); display: flex; flex-direction: column; justify-content: space-between;
+  padding: calc(56px + env(safe-area-inset-top, 0px)) var(--gutter, 20px) calc(40px + env(safe-area-inset-bottom, 0px)); transition: opacity .45s ease, transform .55s cubic-bezier(.7,0,.2,1); }
+.splash.done { opacity: 0; transform: translateY(-3%); pointer-events: none; }
+.sp-top, .sp-row { display: flex; justify-content: space-between; font: 500 11px/1 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.sp-mark { font-family: var(--font-display); font-weight: 700; font-size: 64px; line-height: .9; letter-spacing: -0.045em; }
+.sp-tape { display: inline-block; margin-top: 18px; padding: 6px 9px; background: var(--ink); color: var(--app-bg); font: 600 12px/1 var(--font-mono); letter-spacing: .06em; text-transform: uppercase; transform: rotate(-1.5deg); min-width: 9ch; }
+.sp-sub { margin-top: 18px; max-width: 26ch; color: var(--muted); font-size: 15px; line-height: 1.4; }
+.sp-bar { margin-top: 12px; height: 3px; background: var(--line); overflow: hidden; }
+.sp-bar i { display: block; height: 100%; background: var(--ink); transform-origin: left; transform: scaleX(var(--p, 0)); transition: transform .12s linear; }
+@media (prefers-reduced-motion: reduce) { .splash { transition: opacity .2s; } .splash.done { transform: none; } }
 </style>
 </head>
 <body>
@@ -845,7 +902,16 @@ button { cursor: pointer; }
             <svg width="27" height="13" viewBox="0 0 27 13"><rect x=".5" y=".5" width="23" height="12" rx="3.8" fill="none" stroke="currentColor" opacity=".4"/><rect x="2" y="2" width="20" height="9" rx="2.5"/><path d="M25 4.5v4c.8-.3 1.4-1.1 1.4-2s-.6-1.7-1.4-2Z" opacity=".45"/></svg>
           </span>
         </div>
-        <div class="views">
+        <div class="splash" id="splash" aria-hidden="true">
+          <div class="sp-top"><span>SVSD &mdash; 2026</span><span>Prototype</span></div>
+          <div>
+            <div class="sp-mark">Toolkit</div>
+            <div class="sp-tape" id="spTape">Agentation</div>
+            <div class="sp-sub">Where the tools you hear about stop getting lost.</div>
+          </div>
+          <div><div class="sp-row"><span>Opening drawers</span><span id="spN">00</span></div><div class="sp-bar"><i id="spBar"></i></div></div>
+        </div>
+        <div class="views booting">
         <section class="view cap" aria-label="Add something">
           <canvas class="cap-bg" id="capBg" aria-hidden="true"></canvas>
           <div class="cap-top">
@@ -925,7 +991,8 @@ button { cursor: pointer; }
           </div>
         </section>
         <nav class="pager" aria-label="Pages">
-          <button data-go="cap" aria-label="Add"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+          <span class="pg-ind" aria-hidden="true"></span>
+          <button data-go="cap" aria-label="Add"><svg viewBox="0 0 256 256" fill="currentColor"><path d="M200,40H56A16,16,0,0,0,40,56V200a16,16,0,0,0,16,16H200a16,16,0,0,0,16-16V56A16,16,0,0,0,200,40Zm0,160H56V56H200V200ZM168,128a8,8,0,0,1-8,8H136v24a8,8,0,0,1-16,0V136H96a8,8,0,0,1,0-16h24V96a8,8,0,0,1,16,0v24h24A8,8,0,0,1,168,128Z"/></svg></button>
           <button data-go="lib" aria-label="Toolkit"><svg viewBox="0 0 256 256" fill="currentColor"><path d="M104,40H56A16,16,0,0,0,40,56v48a16,16,0,0,0,16,16h48a16,16,0,0,0,16-16V56A16,16,0,0,0,104,40Zm0,64H56V56h48v48Zm96-64H152a16,16,0,0,0-16,16v48a16,16,0,0,0,16,16h48a16,16,0,0,0,16-16V56A16,16,0,0,0,200,40Zm0,64H152V56h48v48Zm-96,32H56a16,16,0,0,0-16,16v48a16,16,0,0,0,16,16h48a16,16,0,0,0,16-16V152A16,16,0,0,0,104,136Zm0,64H56V152h48v48Zm96-64H152a16,16,0,0,0-16,16v48a16,16,0,0,0,16,16h48a16,16,0,0,0,16-16V152A16,16,0,0,0,200,136Zm0,64H152V152h48v48Z"/></svg></button>
           <button data-go="flow" aria-label="Workflow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3.5" width="7" height="5.5" rx="1"/><rect x="14" y="15" width="7" height="5.5" rx="1"/><path d="M10 6.25h3.5a2 2 0 0 1 2 2V15"/></svg></button>
         </nav>
@@ -1601,7 +1668,8 @@ button { cursor: pointer; }
         <input class="inp" id="fromWho" placeholder="Who? (optional)" value="${esc(draft.from || "")}">
 
         <div class="section-label">${esc(groupLabel(draft.cols.length))}</div>
-        <div class="chips wrap" id="colChips">${state.cols.map((n) => `<button class="chip" aria-pressed="${draft.cols.includes(n)}" data-col="${esc(n)}">${esc(n)}${n === draft.autoCol && !draft.colsEdited ? `<span class="auto">auto</span>` : ""}</button>`).join("")}<button class="chip new" id="newColBtn">+ New</button></div>
+        <div class="chips wrap" id="colChips">${state.cols.map((n) => `<button class="chip" aria-pressed="${draft.cols.includes(n)}" data-col="${esc(n)}">${esc(n)}</button>`).join("")}<button class="chip new" id="newColBtn">+ New</button></div>
+        <div class="new-col" id="newColRow" hidden><input id="newColName" placeholder="${esc(term)} name"><button class="btn ghost" id="newColAdd">Add</button></div>
 
         <div class="row sticky-actions">
           <button class="btn ghost" id="back">Back</button>
@@ -1850,8 +1918,8 @@ button { cursor: pointer; }
         <label class="section-label" for="dTake">Notes</label>
         <textarea class="inp" id="dTake" rows="2" placeholder="${esc(takeHint)}">${esc(i.take)}</textarea>
 
+        <div class="section-label">Where it came from</div>
         <div class="origin">
-          <div class="section-label">Where it came from</div>
           <div>${originLine(i)}</div>
           ${i.heard ? `<div class="heard-as">You wrote “${esc(i.heard)}”</div>` : ""}
           ${i.seen ? `<img class="seen-img" src="${i.seen}" alt="The photo you snapped">` : ""}
@@ -2120,7 +2188,7 @@ button { cursor: pointer; }
     if (!on) { capIntent = "tool"; $("intent").querySelectorAll("[data-intent]").forEach((x) => x.setAttribute("aria-checked", x.dataset.intent === "tool")); }
     $("qFind").disabled = !on;
     if (listening) return;
-    $("capHint").textContent = on ? (capPhoto && !$("qText").value.trim() ? "Add a note, or just send it" : "Return to find it") : "Type it, snap it, or upload a screenshot.";
+    $("capHint").textContent = "Type it, snap it, or upload a screenshot.";   // same hint whether or not you've typed
   }
   function quickFind() {
     const text = $("qText").value.trim(); if (!text && !capPhoto) return;
@@ -2151,12 +2219,25 @@ button { cursor: pointer; }
   }
   // Three pages side by side: Add | Toolkit | Workflow. pos runs 0 → 2; each page slides in over the one before it.
   const PAGES = ["cap", "lib", "flow"];
+  // Pages sit side by side like iOS: each one is exactly one screen-width from the next. No overlap, no fade.
+  const DOCK_BTN = { cap: "qFind", lib: "openCapture", flow: "flowGo" };
   function layoutPages(pos) {
+    const W = document.querySelector(".views").clientWidth;             // read before any writes
+    const pager = document.querySelector(".pager"), near = Math.round(Math.max(0, Math.min(2, pos)));
+    pager.style.setProperty("--pp", Math.max(-.15, Math.min(2.15, pos)));
+    pager.querySelectorAll("[data-go]").forEach((b, n) => { b.classList.toggle("on", b.dataset.go === PAGES[near]); b.style.setProperty("--c", Math.max(0, 1 - Math.abs(n - pos))); });
     PAGES.forEach((c, n) => {
       const el = document.querySelector("." + c), d = pos - n;
       if (d < 0) { el.style.transform = `translateX(${Math.min(1, -d) * 100}%)`; el.style.opacity = ""; }
       else { const k = Math.min(1, d); el.style.transform = `translateX(${-28 * k}%)`; el.style.opacity = 1 - .75 * k; }
       el.classList.toggle("off", Math.abs(d) > .5);
+      el.classList.toggle("far", Math.abs(d) >= 1.5);
+      // the page's round button is pinned to the dock: undo the page's slide, fade it as the page leaves
+      const btn = $(DOCK_BTN[c]); if (!btn) return;
+      const f = Math.max(0, 1 - Math.abs(d) * 1.3);
+      btn.style.translate = `${-d * W}px 0`;
+      btn.style.scale = String(.8 + .2 * f);
+      btn.style.filter = f >= 1 ? "" : `opacity(${f})`;
     });
   }
   function showView(v) {
@@ -2258,8 +2339,8 @@ button { cursor: pointer; }
     renderFlowOut();
   }
   function flowHeadHTML(goal, sum) {
-    return `<div class="fo-head"><div class="cap-date">Workflow</div><span class="fo-acts">${state.flow ? `<button class="fo-new fo-copy${isSaved() ? " done" : ""}" id="foSave" aria-label="Save workflow"><svg viewBox="0 0 24 24" fill="${isSaved() ? "currentColor" : "none"}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5h12a1 1 0 0 1 1 1V21l-7-4.5L5 21V4.5a1 1 0 0 1 1-1z"/></svg><span>${isSaved() ? "Saved" : "Save"}</span></button>` : ""}<button class="fo-new" id="foNew">New</button></span></div>
-      <h2 class="fo-goal">${esc(goal)}</h2>${sum ? `<p class="fo-sum">${esc(sum)}</p>` : ""}`;
+    return `<div class="fo-top"><button class="back-cap fo-back" data-fo-back><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>Toolkit</button><div class="fo-head"><div class="cap-date">Workflow</div><span class="fo-acts">${state.flow ? `<button class="fo-new fo-copy${isSaved() ? " done" : ""}" id="foSave" aria-label="Save workflow"><svg viewBox="0 0 24 24" fill="${isSaved() ? "currentColor" : "none"}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5h12a1 1 0 0 1 1 1V21l-7-4.5L5 21V4.5a1 1 0 0 1 1-1z"/></svg><span>${isSaved() ? "Saved" : "Save"}</span></button>` : ""}<button class="fo-new" id="foNew">New</button></span></div>
+      <h2 class="fo-goal">${esc(goal)}</h2></div>${sum ? `<p class="fo-sum">${esc(sum)}</p>` : ""}`;
   }
   // Copy: the workflow as plain text, plus a link that rebuilds it on another device
   function flowLink(f) {
@@ -2341,6 +2422,7 @@ button { cursor: pointer; }
   }
   $("flowSaved").onclick = openSavedFlows;
   function wireFlowHead() {
+    $("flowOut").querySelector("[data-fo-back]")?.addEventListener("click", () => showView("lib"));
     if ($("foSave")) $("foSave").onclick = toggleSaveFlow;
     $("foNew").onclick = () => {
       flowRun++; state.flow = null; save(); savedCount();
@@ -2416,7 +2498,7 @@ button { cursor: pointer; }
       el.style.strokeDashoffset = len - lit;
     });
     if (!head) head = lastEnd;                                    // between lines: rest where the last one landed
-    const c = out.querySelector(".fo-head");
+    const c = out.querySelector("circle.fo-head");
     if (head) { c.setAttribute("cx", head[1]); c.setAttribute("cy", head[2]); c.style.opacity = 1; } else c.style.opacity = 0;
   }
   $("flowOut").addEventListener("scroll", () => { cancelAnimationFrame(flowRaf); flowRaf = requestAnimationFrame(flowScroll); }, { passive: true });
@@ -2556,6 +2638,22 @@ button { cursor: pointer; }
   window.addEventListener("load", setupDialKit);
 
   applyVariants(true);
+  // ---------- boot: hold the splash until fonts and the first layout are ready (at least ~1s), then reveal ----------
+  (function boot() {
+    const t0 = performance.now(), views = document.querySelector(".views"), splash = $("splash");
+    requestAnimationFrame(() => requestAnimationFrame(() => views.classList.remove("booting")));   // first paint never animates
+    if (!splash) return;
+    const names = ["Agentation", "Veo", "Spline", "Framer", "Are.na", "DialKit"]; let k = 0, p = 0, ready = false;
+    const tick = setInterval(() => {
+      p = ready ? Math.min(100, p + 9) : Math.min(88, p + Math.max(1, (88 - p) * .09));
+      $("spBar").style.setProperty("--p", p / 100); $("spN").textContent = String(Math.round(p)).padStart(2, "0");
+      if (++k % 4 === 0) $("spTape").textContent = names[(k / 4) % names.length];
+      if (p >= 100) { clearInterval(tick); splash.classList.add("done"); setTimeout(() => splash.remove(), 600); }
+    }, 45);
+    const loaded = new Promise((r) => document.readyState === "complete" ? r() : addEventListener("load", r, { once: true }));
+    Promise.race([Promise.all([document.fonts ? document.fonts.ready : null, loaded]), new Promise((r) => setTimeout(r, 2500))])
+      .then(() => setTimeout(() => (ready = true), Math.max(0, 900 - (performance.now() - t0))));
+  })();
   if (importFlowFromHash()) showView("flow");
   setMode("test");
   const APP_SERVER_VERSION = 5;   // must match SERVER_VERSION in server.js
