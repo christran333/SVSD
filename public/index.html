@@ -2001,46 +2001,57 @@ button { cursor: pointer; }
   };
   function settlePage(from, pos, dx, flick) {
     const moved = pos - from;
-    const to = Math.max(0, Math.min(2, flick || Math.abs(moved) > .22 ? from + (dx < 0 ? 1 : -1) : from));
+    const to = Math.max(0, Math.min(2, flick || Math.abs(moved) > .15 ? from + (dx < 0 ? 1 : -1) : from));
     if (to !== from) showView(PAGES[to]); else layoutPages(from);
   }
 
-  // Horizontal swipe between pages. Follows the finger; settles past halfway or on a quick flick.
+  // Horizontal swipe between pages, tuned to feel like Instagram/Snapchat: it locks on after a few
+  // pixels of sideways movement, follows the finger 1:1, and a light flick or a short drag is enough.
+  // Touch uses touch events (so iOS can't steal the gesture for scrolling); the mouse uses pointer events.
   let page = null;
   const views = document.querySelector(".views");
-  views.addEventListener("pointerdown", (e) => {
-    // Swipes can start anywhere, the big text boxes included (they're most of the Add screen).
-    // Only small inputs and the sideways-scrolling filter chips keep the gesture for themselves.
-    if (e.target.closest("input, .chips, .fab-menu")) return;
-    if ($("sheet").classList.contains("on")) return;
-    page = { x: e.clientX, y: e.clientY, t: performance.now(), from: pageIdx(), active: false, id: e.pointerId };
-  });
-  addEventListener("pointermove", (e) => {
-    if (!page || e.pointerId !== page.id) return;
-    const dx = e.clientX - page.x, dy = e.clientY - page.y;
+  const canStart = (t) => !t.closest("input, .chips, .fab-menu") && !$("sheet").classList.contains("on");
+  function dragStart(x, y, target) {
+    if (!canStart(target)) { page = null; return; }
+    page = { x, y, t: performance.now(), from: pageIdx(), active: false, vx: 0 };
+  }
+  // returns true once the gesture is ours (sideways)
+  function dragMove(x, y) {
+    if (!page) return false;
+    const dx = x - page.x, dy = y - page.y;
     if (!page.active) {
-      // Lock to sideways early and forgive a diagonal thumb; give up only on a clearly vertical scroll.
-      if (Math.abs(dx) < 6 || Math.abs(dx) < Math.abs(dy) * .75) { if (Math.abs(dy) > 18 && Math.abs(dy) > Math.abs(dx) * 1.6) page = null; return; }
+      if (Math.abs(dy) > 12 && Math.abs(dy) > Math.abs(dx) * 2) { page = null; return false; }   // clearly scrolling
+      if (Math.abs(dx) < 4 || Math.abs(dx) < Math.abs(dy) * .6) return false;                    // not decided yet
       page.active = true; views.classList.add("dragging");
-      if (document.activeElement && /TEXTAREA|INPUT/.test(document.activeElement.tagName)) document.activeElement.blur();   // drop the keyboard while swiping
+      if (document.activeElement && /TEXTAREA|INPUT/.test(document.activeElement.tagName)) document.activeElement.blur();
       window.getSelection?.().removeAllRanges();
     }
-    const now = performance.now();
-    page.vx = (dx - (page.dx || 0)) / Math.max(1, now - (page.lt || page.t));   // finger speed right now, px/ms
+    const now = performance.now(), dt = Math.max(1, now - (page.lt || page.t));
+    page.vx = page.vx * .4 + ((dx - (page.dx || 0)) / dt) * .6;   // smoothed finger speed, px/ms
     page.lt = now; page.dx = dx; page.pos = dragPos(page.from, dx, views.getBoundingClientRect().width);
     layoutPages(page.pos);
-  });
-  function endPage(e) {
-    if (!page || (e && e.pointerId !== page.id)) return;
+    return true;
+  }
+  function dragEnd() {
+    if (!page) return;
     const { active, pos = page.from, dx = 0, from, vx = 0, lt = 0 } = page; page = null;
     if (!active) return;
-    swallowClick = true; setTimeout(() => (swallowClick = false), 60);
+    swallowClick = true; setTimeout(() => (swallowClick = false), 80);
     views.classList.remove("dragging");
-    const flick = Math.abs(vx) > .2 && performance.now() - lt < 140 && Math.sign(vx) === Math.sign(dx);
+    const flick = Math.abs(vx) > .12 && performance.now() - lt < 160 && Math.sign(vx) === Math.sign(dx);
     settlePage(from, pos, dx, flick);
   }
-  addEventListener("pointerup", endPage);
-  addEventListener("pointercancel", endPage);
+  // touch
+  views.addEventListener("touchstart", (e) => { if (e.touches.length === 1) dragStart(e.touches[0].clientX, e.touches[0].clientY, e.target); else page = null; }, { passive: true });
+  views.addEventListener("touchmove", (e) => { if (page && dragMove(e.touches[0].clientX, e.touches[0].clientY) && e.cancelable) e.preventDefault(); }, { passive: false });
+  views.addEventListener("touchend", dragEnd);
+  views.addEventListener("touchcancel", dragEnd);
+  // mouse / trackpad click-drag (desktop)
+  let mouseId = null;
+  views.addEventListener("pointerdown", (e) => { if (e.pointerType !== "mouse") return; mouseId = e.pointerId; dragStart(e.clientX, e.clientY, e.target); });
+  addEventListener("pointermove", (e) => { if (e.pointerId === mouseId) dragMove(e.clientX, e.clientY); });
+  addEventListener("pointerup", (e) => { if (e.pointerId === mouseId) { mouseId = null; dragEnd(); } });
+  addEventListener("pointercancel", (e) => { if (e.pointerId === mouseId) { mouseId = null; dragEnd(); } });
 
   // Two-finger trackpad swipe: arrives as horizontal scrolling. Drives the same motion as a drag.
   let wheel = null, wheelIdle = 0, wheelCooldown = 0;
