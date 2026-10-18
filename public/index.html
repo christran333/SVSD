@@ -778,6 +778,11 @@ button { cursor: pointer; }
 #device .fo-head { position: sticky; top: -24px; z-index: 4; margin: -24px calc(-1 * var(--gutter, 20px)) 0; padding: 20px var(--gutter, 20px) 12px;
   background: linear-gradient(to bottom, var(--app-bg) 78%, rgba(10,10,11,0)); }
 #device .fo-goal { margin-top: 10px; }
+
+/* Card edit button: bigger on screen, and an even bigger invisible tap area for thumbs */
+#device .edit-btn { width: 40px; height: 40px; top: 10px; right: 10px; }
+#device .edit-btn svg { width: 18px; height: 18px; }
+#device .edit-btn::after { content: ""; position: absolute; inset: -6px; border-radius: 50%; }
 </style>
 </head>
 <body>
