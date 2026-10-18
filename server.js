@@ -3,6 +3,7 @@
 // and exposes two endpoints:
 //   POST /api/search  { q, from }  -> candidates found with Claude + web search, each with a preview
 //   GET  /api/preview?url=...      -> { image, favicon } for any saved link
+//   POST /api/flow    { goal, items } -> a step-by-step workflow built from the toolkit
 //   GET  /api/status               -> { live: boolean, model }
 
 const http = require("node:http");
@@ -21,18 +22,19 @@ const path = require("node:path");
 })();
 
 const PORT = Number(process.env.PORT) || 3000;
-const API_KEY = process.env.ANTHROPIC_API_KEY || "";
+// Forgive messy pastes (spaces, quotes, line breaks, or the whole "ANTHROPIC_API_KEY=..." line).
+const API_KEY = String(process.env.ANTHROPIC_API_KEY || "").replace(/\s+/g, "").replace(/["']/g, "").replace(/^ANTHROPIC_API_KEY=/, "");
 const MODEL = process.env.CLAUDE_MODEL || "claude-sonnet-5-5";
 const PUBLIC = path.join(__dirname, "public");
 // Bump together with APP_SERVER_VERSION in public/index.html whenever the API changes.
-const SERVER_VERSION = 4;
+const SERVER_VERSION = 5;
 
 // ---------- helpers ----------
 const send = (res, code, body, type = "application/json") => {
   res.writeHead(code, { "content-type": type, "cache-control": "no-store" });
   res.end(type === "application/json" ? JSON.stringify(body) : body);
 };
-const readBody = (req) => new Promise((ok, bad) => {
+const readBody = (req) => ("body" in req && req.body !== undefined) ? Promise.resolve(typeof req.body === "string" ? JSON.parse(req.body || "{}") : (req.body || {})) : new Promise((ok, bad) => {
   let d = ""; req.on("data", (c) => { d += c; if (d.length > 8e6) req.destroy(); }); // 8MB: room for one downscaled photo
   req.on("end", () => { try { ok(d ? JSON.parse(d) : {}); } catch (e) { bad(e); } });
 });
@@ -219,38 +221,111 @@ Finish with only a JSON object, no other text, like:
   return { summary: String(out.summary || "").slice(0, 400), tools };
 }
 
+// ---------- workflow: chain toolkit tools (plus a few suggestions) into steps for a goal ----------
+async function workflow(goal, items = []) {
+  const kit = (Array.isArray(items) ? items : []).slice(0, 60).map((x) => ({
+    id: String(x.id || ""), title: String(x.title || "").slice(0, 60), url: String(x.url || "").slice(0, 200),
+    status: String(x.status || ""), about: String(x.forWhat || x.blurb || "").slice(0, 160), kind: String(x.kind || ""),
+  }));
+  const prompt = `A designer wants to make something and asked for a simple workflow built from their own toolkit.
+
+Goal: ${String(goal).slice(0, 400)}
+
+Their toolkit (status: using = uses it now, tried = tried it, want = saved but hasn't tried yet, nope = didn't like it):
+${JSON.stringify(kit)}
+
+Build a short, practical workflow: 3 to 6 steps in the order they'd actually work.
+- Each step uses one tool. Prefer tools from their toolkit, including ones they want to try when they genuinely fit; that's the point, to get them using what they saved. Skip "nope" tools.
+- Only add a tool that isn't in their toolkit when there's a real gap (at most 2). Use real, well-known tools with their official homepage URL.
+- Don't force a toolkit tool that doesn't fit the goal. Videos or articles can be a step if they're a reference for the work.
+
+Finish with only a JSON object, no other text, like:
+{"title":"Mobile micro-interaction","summary":"One plain sentence on the approach.","steps":[{"id":"<toolkit id, or empty for a suggestion>","title":"Rive","url":"https://rive.app","step":"Animate the interaction","use":"Build the button's press and release states as a state machine","brand":"#1D1D1D"}]}
+- "step" is a 2-5 word verb phrase. "use" says what this tool does in THIS workflow, max 16 words.
+- "title" under 40 characters.`;
+  const r = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "x-api-key": API_KEY, "anthropic-version": "2023-06-01", "content-type": "application/json" },
+    body: JSON.stringify({ model: MODEL, max_tokens: 1500, messages: [{ role: "user", content: prompt }] }),
+  });
+  const data = await r.json();
+  if (!r.ok) { const err = new Error(data?.error?.message || `Claude API error ${r.status}`); err.status = r.status; throw err; }
+  const last = (data.content || []).filter((b) => b.type === "text").map((b) => b.text).pop() || "";
+  let out;
+  try { out = JSON.parse((/\{[\s\S]*\}/.exec(last) || [])[0]); } catch { throw new Error("Couldn't map out a workflow. Try again."); }
+  const ids = new Set(kit.map((k) => k.id));
+  const steps = (Array.isArray(out.steps) ? out.steps : []).filter((x) => x && typeof x.title === "string").slice(0, 6).map((x) => {
+    const id = ids.has(String(x.id || "")) ? String(x.id) : "";
+    return {
+      id, title: x.title.slice(0, 40), url: /^https?:\/\//.test(x.url || "") ? x.url : "",
+      step: String(x.step || "").slice(0, 40), use: String(x.use || "").slice(0, 160),
+      brand: /^#[0-9a-f]{6}$/i.test(x.brand || "") ? x.brand : "",
+    };
+  }).filter((x) => x.id || x.url);
+  await Promise.all(steps.filter((x) => !x.id).map(async (x) => Object.assign(x, await previewFor(x.url))));
+  return { title: String(out.title || "").slice(0, 60), summary: String(out.summary || "").slice(0, 240), steps };
+}
+
 // ---------- server ----------
 const TYPES = { ".html": "text/html; charset=utf-8", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".png": "image/png", ".json": "application/json", ".woff2": "font/woff2", ".jpg": "image/jpeg" };
 
-http.createServer(async (req, res) => {
-  const url = new URL(req.url, `http://${req.headers.host}`);
+// ---------- API routes (shared by the local server and Vercel's api/index.js) ----------
+const NO_KEY = process.env.VERCEL ? "No API key on Vercel yet. Add ANTHROPIC_API_KEY in Project Settings → Environment Variables, then redeploy." : "No API key yet. Add ANTHROPIC_API_KEY to .env and restart the server.";
+async function handleApi(req, res, pathname) {
+  const url = new URL(req.url, `http://${req.headers.host || "localhost"}`);
+  if (pathname) url.pathname = pathname;
   try {
     if (url.pathname === "/api/status") return send(res, 200, { live: Boolean(API_KEY), model: MODEL, version: SERVER_VERSION });
 
     if (url.pathname === "/api/preview") return send(res, 200, await previewFor(url.searchParams.get("url")));
 
     if (url.pathname === "/api/search" && req.method === "POST") {
-      if (!API_KEY) return send(res, 400, { error: "No API key yet. Add ANTHROPIC_API_KEY to .env and restart the server." });
+      if (!API_KEY) return send(res, 400, { error: NO_KEY });
       const { q, from, stashes, image } = await readBody(req);
       if ((!q || !String(q).trim()) && !image) return send(res, 400, { error: "Type what you heard about, or add a photo." });
       return send(res, 200, { candidates: await search(q || "", from, stashes, image) });
     }
 
     if (url.pathname === "/api/made" && req.method === "POST") {
-      if (!API_KEY) return send(res, 400, { error: "No API key yet. Add ANTHROPIC_API_KEY to .env and restart the server." });
+      if (!API_KEY) return send(res, 400, { error: NO_KEY });
       const { item, stashes } = await readBody(req);
       return send(res, 200, await howMade(item || {}, stashes));
     }
 
+    if (url.pathname === "/api/flow" && req.method === "POST") {
+      if (!API_KEY) return send(res, 400, { error: NO_KEY });
+      const { goal, items } = await readBody(req);
+      if (!goal || !String(goal).trim()) return send(res, 400, { error: "Say what you're trying to make." });
+      return send(res, 200, await workflow(goal, items));
+    }
+
+    return send(res, 404, { error: "Not found" });
+  } catch (e) {
+    console.error(e);
+    return send(res, e.status === 401 ? 401 : 500, { error: e.status === 401 ? (process.env.VERCEL ? "The API key was rejected. In Vercel → Settings → Environment Variables, re-paste ANTHROPIC_API_KEY (just the sk-ant-… part), then Redeploy." : "The API key was rejected. Check ANTHROPIC_API_KEY in .env.") : e.message || "Something went wrong." });
+  }
+}
+// One handler for every request: the API, plus the app's files.
+async function handler(req, res) {
+  const url = new URL(req.url, `http://${req.headers.host}`);
+  if (url.pathname.startsWith("/api/")) return handleApi(req, res);
+  try {
     // static files
     let file = path.normalize(path.join(PUBLIC, url.pathname === "/" ? "index.html" : url.pathname));
     if (!file.startsWith(PUBLIC) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) file = path.join(PUBLIC, "index.html");
     return send(res, 200, fs.readFileSync(file), TYPES[path.extname(file)] || "application/octet-stream");
   } catch (e) {
     console.error(e);
-    return send(res, e.status === 401 ? 401 : 500, { error: e.status === 401 ? "The API key was rejected. Check ANTHROPIC_API_KEY in .env." : e.message || "Something went wrong." });
+    return send(res, 500, { error: e.message || "Something went wrong." });
   }
-}).on("error", (e) => {
+}
+// Vercel calls the exported handler (and serves public/ from its CDN).
+// Locally, `npm start` runs this file and we start a normal server.
+module.exports = handler;
+module.exports.handleApi = handleApi;
+// (Vercel sets VERCEL=1, so no server is started there.)
+
+if (!process.env.VERCEL) http.createServer(handler).on("error", (e) => {
   if (e.code === "EADDRINUSE") {
     console.log(`\n  Port ${PORT} is already in use, probably an older copy of this server still running.`);
     console.log(`  Stop it and start fresh with:\n\n    lsof -ti :${PORT} | xargs kill; npm start\n`);
