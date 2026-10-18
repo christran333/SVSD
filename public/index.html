@@ -849,8 +849,12 @@ button { cursor: pointer; }
       blurb: "Vlogs with fast, documentary-style b-roll.",
       forWhat: "Reference for how he cuts the b-roll intros", heard: "casey neistat intros", via: "person", from: "Miguel",
       cols: ["Inspo", "Motion"], status: "want", take: "", savedAt: "2026-10-14", example: true },
+    { id: "e6", title: "DialKit", url: "https://www.dialkit.dev", kind: "tool", brand: "#0A0A0B",
+      blurb: "Live controls beside your interface for tuning motion, layout, color and animation timing.",
+      forWhat: "Tuning animation springs and easing by feel instead of guessing numbers", heard: "dial kit", via: "other", from: "",
+      cols: ["Design tools", "Motion"], status: "want", take: "", savedAt: "2026-10-17", example: true },
   ];
-  const EXAMPLE_ORDER = ["e1","e5","e2","e3","e4"];
+  const EXAMPLE_ORDER = ["e6","e1","e5","e2","e3","e4"];
   const DEFAULT_COLS = ["Design tools", "Motion", "Inspo"];
 
   let state = load();
@@ -1714,6 +1718,7 @@ button { cursor: pointer; }
     { k: ["are.na", "arena", "are na"], r: { title: "Are.na", url: "https://www.are.na", kind: "site", brand: "#F4F1EC", blurb: "Collect and connect references into channels." } },
     { k: ["veo"], r: { title: "Veo", url: "https://deepmind.google/models/veo/", kind: "tool", brand: "#1A73E8", blurb: "Google DeepMind's video generation model." } },
     { k: ["framer"], r: { title: "Framer", url: "https://www.framer.com", kind: "tool", brand: "#0055FF", blurb: "Website builder with interactive components." } },
+    { k: ["dialkit", "dial kit", "dial-kit"], r: { title: "DialKit", url: "https://www.dialkit.dev", kind: "tool", brand: "#0A0A0B", blurb: "Live controls for tuning motion, layout, color and animation timing right in your interface." } },
     { k: ["figma"], r: { title: "Figma", url: "https://www.figma.com", kind: "tool", brand: "#A259FF", blurb: "Collaborative interface design tool." } },
   ];
   function testSearch(q, signal) {
@@ -2123,60 +2128,107 @@ button { cursor: pointer; }
     const l = document.createElement("link"); l.rel = "stylesheet"; l.href = "/vendor/dialkit/dialkit.css"; document.head.appendChild(l);
   }
 
-/* ---------- first-screen background: drifting squares, all neighbours softly connected ---------- */
+/* ---------- first-screen background: drifting squares in 3D, softly connected, slowly rotating ---------- */
 function constellation(cv, opt) {
   if (!cv) return;
   const ctx = cv.getContext("2d"), host = cv.parentElement;
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const LINK_ALPHA = opt.line, DENSITY = opt.density, DIM = opt.dim;   // keep LINK_ALPHA low: the lines should whisper
-  let W = 0, H = 0, dpr = 2, pts = [], order = [], raf = 0, last = 0;
+  const SPIN = 0.10;   // radians per second around the vertical axis (one turn in about a minute)
+  let W = 0, H = 0, DEPTH = 0, F = 1, dpr = 2, pts = [], order = [], raf = 0, last = 0, clock = 0, lastFix = 0, edges = new Map();
   const rnd = (a, b) => a + Math.random() * (b - a);
   function make() {
+    DEPTH = Math.max(W, H) * 0.9; F = Math.max(W, H) * 1.4;   // F = camera distance: bigger is flatter, smaller is more perspective
     const n = Math.round(W * H * DENSITY);
     pts = Array.from({ length: n }, () => {
       const big = Math.random() < 0.16;
-      return { x: rnd(0, W), y: rnd(0, H), vx: rnd(-.12, .12), vy: rnd(-.12, .12),
+      const hx = rnd(-W / 2, W / 2), hy = rnd(-H / 2, H / 2), hz = rnd(-DEPTH / 2, DEPTH / 2);
+      return { x: hx, y: hy, z: hz, hx, hy, hz, u: 0, v: 0, k: 1, depth: .5, fade: 1,
+               ax: rnd(28, 72), ay: rnd(28, 72), az: rnd(28, 72), sx: rnd(.09, .26), sy: rnd(.09, .26), sz: rnd(.09, .26),
+               px: rnd(0, 6.28), py: rnd(0, 6.28), pz: rnd(0, 6.28),
+               bx: rnd(8, 22), by: rnd(8, 22), bz: rnd(8, 22), tx: rnd(.3, .6), ty: rnd(.3, .6), tz: rnd(.3, .6),
                s: big ? rnd(4, 6) : rnd(2, 3.4), a: big ? rnd(.85, 1) : rnd(.4, .85),
                ph: rnd(0, 6.28), sp: rnd(.4, 1.2) };
     });
-    // greedy nearest-neighbour walk from the top-left point: one path through everything
-    const left = pts.map((_, i) => i).sort((i, j) => (pts[i].x + pts[i].y) - (pts[j].x + pts[j].y));
+    // greedy nearest-neighbour walk from one corner of the cloud: one path through everything (distances are 3D)
+    const left = pts.map((_, i) => i).sort((i, j) => (pts[i].x + pts[i].y + pts[i].z) - (pts[j].x + pts[j].y + pts[j].z));
     order = [left.shift()];
     while (left.length) {
       const c = pts[order[order.length - 1]]; let bi = 0, bd = 1e9;
-      left.forEach((j, k) => { const d = Math.hypot(c.x - pts[j].x, c.y - pts[j].y); if (d < bd) { bd = d; bi = k; } });
+      left.forEach((j, k) => { const d = Math.hypot(c.x - pts[j].x, c.y - pts[j].y, c.z - pts[j].z); if (d < bd) { bd = d; bi = k; } });
       order.push(left.splice(bi, 1)[0]);
+    }
+    untangle();
+    edges = new Map(); for (let k = 1; k < order.length; k++) edges.set(ekey(order[k - 1], order[k]), 1);
+  }
+  const ekey = (a, b) => a < b ? a + "," + b : b + "," + a;
+  // 2-opt: keep flipping stretches of the path while that makes it shorter. A shortest path never crosses itself,
+  // so this removes tangles; it also runs while the squares drift, and each flip only changes two lines.
+  // Done in 3D, so the path stays tidy from every angle as the cloud turns.
+  function untangle(slack = 0) {
+    const D = (i, j) => Math.hypot(pts[i].x - pts[j].x, pts[i].y - pts[j].y, pts[i].z - pts[j].z), n = order.length;
+    for (let pass = 0, again = true; again && pass < 12; pass++) {
+      again = false;
+      for (let i = 0; i < n - 1; i++) for (let j = i + 1; j < n; j++) {
+        const b = order[i], c = order[j], a = i > 0 ? order[i - 1] : -1, d = j < n - 1 ? order[j + 1] : -1;
+        const delta = (a >= 0 ? D(a, c) - D(a, b) : 0) + (d >= 0 ? D(b, d) - D(c, d) : 0);
+        if (delta < -(0.5 + slack)) { order = order.slice(0, i).concat(order.slice(i, j + 1).reverse(), order.slice(j + 1)); again = true; }
+      }
+    }
+  }
+  // Drift every square in 3D, turn the whole cloud (around the vertical axis, with a gentle tilt), then project with perspective.
+  function place() {
+    const ry = clock * SPIN, rx = 0.3 + 0.12 * Math.sin(clock * 0.11);
+    const cy = Math.cos(ry), sy = Math.sin(ry), cx = Math.cos(rx), sx = Math.sin(rx);
+    for (const p of pts) {
+      p.x = p.hx + p.ax * Math.sin(clock * p.sx + p.px) + p.bx * Math.sin(clock * p.tx + p.py);
+      p.y = p.hy + p.ay * Math.cos(clock * p.sy + p.py) + p.by * Math.cos(clock * p.ty + p.px);
+      p.z = p.hz + p.az * Math.sin(clock * p.sz + p.pz) + p.bz * Math.cos(clock * p.tz + p.py);
+      const x1 = p.x * cy + p.z * sy, z1 = -p.x * sy + p.z * cy;      // turn around Y
+      const y2 = p.y * cx - z1 * sx, z2 = p.y * sx + z1 * cx;         // tilt around X
+      p.k = F / (F + z2);                                             // perspective: near squares bigger, far ones smaller
+      p.u = W / 2 + x1 * p.k; p.v = H / 2 + y2 * p.k;
+      p.depth = Math.min(1, Math.max(0, (z2 + DEPTH * .5) / DEPTH));  // 0 = near, 1 = far
+      p.fade = 1.05 - 0.7 * p.depth;                                  // far ones dim
     }
   }
   function size() {
     W = host.clientWidth; H = host.clientHeight; if (!W || !H) return;
     cv.width = W * dpr; cv.height = H * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    make(); draw(0);
+    make(); place(); draw(0);
   }
-  function draw(t) {
+  function draw(t, dt = 0) {
     ctx.clearRect(0, 0, W, H);
-    const al = pts.map(p => DIM * p.a * (0.8 + 0.2 * Math.sin(t * p.sp + p.ph)));
-    // one continuous line threaded through the squares in a fixed order, like a constellation
+    const al = pts.map(p => DIM * p.a * p.fade * (0.8 + 0.2 * Math.sin(t * p.sp + p.ph)));
+    // one continuous line threaded through the squares. When untangling swaps a link, the old one fades out and the new one fades in
+    // (about 0.8s) instead of popping, so the line always looks like it is gently re-threading itself.
+    const want = new Set();
+    for (let k = 1; k < order.length; k++) { const key = ekey(order[k - 1], order[k]); want.add(key); if (!edges.has(key)) edges.set(key, 0); }
+    const step = dt / 800;
     ctx.lineWidth = 1; ctx.lineJoin = "round";
-    for (let k = 1; k < order.length; k++) {
-      const a = pts[order[k - 1]], b = pts[order[k]], d = Math.hypot(a.x - b.x, a.y - b.y);
-      ctx.strokeStyle = `rgba(255,255,255,${LINK_ALPHA * Math.max(0.4, 1 - d / 420)})`;
-      ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+    for (const [key, v] of edges) {
+      const on = want.has(key), nv = on ? Math.min(1, v + step) : Math.max(0, v - step);
+      if (!on && nv <= 0) { edges.delete(key); continue; }
+      edges.set(key, nv);
+      const [i, j] = key.split(",").map(Number), a = pts[i], b = pts[j], d = Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z);
+      const e = nv * nv * (3 - 2 * nv);   // ease
+      ctx.strokeStyle = `rgba(255,255,255,${LINK_ALPHA * Math.max(0.4, 1 - d / 420) * e * (a.fade + b.fade) / 2})`;
+      ctx.beginPath(); ctx.moveTo(a.u, a.v); ctx.lineTo(b.u, b.v); ctx.stroke();
     }
-    for (let i = 0; i < pts.length; i++) {
-      const p = pts[i]; ctx.fillStyle = `rgba(255,255,255,${al[i]})`;
-      ctx.fillRect(p.x - p.s / 2, p.y - p.s / 2, p.s, p.s);
+    // squares far to near, so close ones sit on top
+    const byDepth = pts.map((_, i) => i).sort((i, j) => pts[j].depth - pts[i].depth);
+    for (const i of byDepth) {
+      const p = pts[i], s = p.s * p.k; ctx.fillStyle = `rgba(255,255,255,${al[i]})`;
+      ctx.fillRect(p.u - s / 2, p.v - s / 2, s, s);
     }
   }
   function tick(now) {
     raf = requestAnimationFrame(tick);
     const dt = Math.min(50, now - (last || now)); last = now;
-    for (const p of pts) {
-      p.x += p.vx * dt / 16; p.y += p.vy * dt / 16;
-      if (p.x < 0 || p.x > W) { p.vx *= -1; p.x = Math.max(0, Math.min(W, p.x)); }
-      if (p.y < 0 || p.y > H) { p.vy *= -1; p.y = Math.max(0, Math.min(H, p.y)); }
-    }
-    draw(now / 1000);
+    clock += dt / 1000;
+    place();
+    if (clock - lastFix > 4) { lastFix = clock; untangle(150); }
+    draw(clock, dt);
   }
   function run() { if (!raf && !reduce) { last = 0; raf = requestAnimationFrame(tick); } }
   function stop() { cancelAnimationFrame(raf); raf = 0; }
@@ -2187,8 +2239,8 @@ function constellation(cv, opt) {
   if (scr) new MutationObserver(sync).observe(scr, { attributes: true, attributeFilter: ["data-view"] });
   size(); sync();
 }
-constellation(document.getElementById("capBg"), { line: 0.3, density: 1 / 7500, dim: 1, onLib: false });
-constellation(document.getElementById("libBg"), { line: 0.16, density: 1 / 11000, dim: 0.55, onLib: true });   // quieter: the cards sit on top of it
+constellation(document.getElementById("capBg"), { line: 0.22, density: 1 / 11000, dim: 0.72, onLib: false });   // same faintness as the toolkit
+constellation(document.getElementById("libBg"), { line: 0.22, density: 1 / 11000, dim: 0.72, onLib: true });   // quieter: the cards sit on top of it
 </script>
 </body>
 </html>
