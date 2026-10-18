@@ -872,18 +872,21 @@ button { cursor: pointer; }
 #device .edit-btn svg { width: 18px; height: 18px; }
 #device .edit-btn::after { content: ""; position: absolute; inset: -6px; border-radius: 50%; }
 
-/* ===== Splash: covers the first paint so you never see pages sliding into place ===== */
+
+/* ===== Loading screen: tool blocks drop into the Toolkit box while the app gets ready ===== */
+.splash { position: absolute; inset: 0; z-index: 60; background: var(--app-bg); display: grid; place-items: center; transition: opacity .45s ease, transform .6s cubic-bezier(.7,0,.2,1); }
+.splash.done { opacity: 0; transform: scale(1.04); pointer-events: none; }
+.sp-logo { width: 62%; max-width: 300px; overflow: visible; }
+.sp-box { transform-box: fill-box; transform-origin: 50% 100%; }
+.sp-box.thud { animation: spThud .32s cubic-bezier(.3,1.6,.5,1); }
+@keyframes spThud { 0% { transform: scale(1, 1); } 35% { transform: scale(1.04, .93); } 100% { transform: scale(1, 1); } }
+.sp-drop { transform-box: fill-box; transform-origin: 50% 50%; }
+.sp-meta { position: absolute; left: var(--gutter, 20px); right: var(--gutter, 20px); bottom: calc(44px + env(safe-area-inset-bottom, 0px)); display: flex; justify-content: space-between;
+  font: 500 11px/1 var(--font-label); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.sp-meta b { color: var(--ink); font-weight: 600; }
+@media (prefers-reduced-motion: reduce) { .splash { transition: opacity .2s; } .splash.done { transform: none; } .sp-box.thud { animation: none; } }
+/* First paint never animates: pages appear already in place */
 .views.booting .view, .views.booting .pg-ind, .views.booting .fab, .views.booting #qFind, .views.booting #flowGo, .views.booting .pager button { transition: none !important; }
-.splash { position: absolute; inset: 0; z-index: 60; background: var(--app-bg); color: var(--ink); display: flex; flex-direction: column; justify-content: space-between;
-  padding: calc(56px + env(safe-area-inset-top, 0px)) var(--gutter, 20px) calc(40px + env(safe-area-inset-bottom, 0px)); transition: opacity .45s ease, transform .55s cubic-bezier(.7,0,.2,1); }
-.splash.done { opacity: 0; transform: translateY(-3%); pointer-events: none; }
-.sp-top, .sp-row { display: flex; justify-content: space-between; font: 500 11px/1 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
-.sp-mark { font-family: var(--font-display); font-weight: 700; font-size: 64px; line-height: .9; letter-spacing: -0.045em; }
-.sp-tape { display: inline-block; margin-top: 18px; padding: 6px 9px; background: var(--ink); color: var(--app-bg); font: 600 12px/1 var(--font-mono); letter-spacing: .06em; text-transform: uppercase; transform: rotate(-1.5deg); min-width: 9ch; }
-.sp-sub { margin-top: 18px; max-width: 26ch; color: var(--muted); font-size: 15px; line-height: 1.4; }
-.sp-bar { margin-top: 12px; height: 3px; background: var(--line); overflow: hidden; }
-.sp-bar i { display: block; height: 100%; background: var(--ink); transform-origin: left; transform: scaleX(var(--p, 0)); transition: transform .12s linear; }
-@media (prefers-reduced-motion: reduce) { .splash { transition: opacity .2s; } .splash.done { transform: none; } }
 </style>
 </head>
 <body>
@@ -902,14 +905,38 @@ button { cursor: pointer; }
             <svg width="27" height="13" viewBox="0 0 27 13"><rect x=".5" y=".5" width="23" height="12" rx="3.8" fill="none" stroke="currentColor" opacity=".4"/><rect x="2" y="2" width="20" height="9" rx="2.5"/><path d="M25 4.5v4c.8-.3 1.4-1.1 1.4-2s-.6-1.7-1.4-2Z" opacity=".45"/></svg>
           </span>
         </div>
-        <div class="splash" id="splash" aria-hidden="true">
-          <div class="sp-top"><span>SVSD &mdash; 2026</span><span>Prototype</span></div>
-          <div>
-            <div class="sp-mark">Toolkit</div>
-            <div class="sp-tape" id="spTape">Agentation</div>
-            <div class="sp-sub">Where the tools you hear about stop getting lost.</div>
-          </div>
-          <div><div class="sp-row"><span>Opening drawers</span><span id="spN">00</span></div><div class="sp-bar"><i id="spBar"></i></div></div>
+        <div class="splash" id="splash" aria-label="Loading Toolkit" role="img">
+          <svg class="sp-logo" viewBox="520 100 1760 1460" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <clipPath id="spClip"><rect width="813.554" height="813.554" transform="translate(574.455 719.16)"/></clipPath>
+              <path id="spFront" d="M776.825 999.506L573.055 901.703V1337.1L776.825 1434.91L980.595 1532.71L1184.37 1434.91L1388.14 1337.1L1388.13 901.703L1184.36 999.511L980.595 1097.31L776.825 999.506Z"/>
+              <!-- blocks vanish once they pass the front rim of the box -->
+              <mask id="spIn" maskUnits="userSpaceOnUse" x="0" y="-400" width="2808" height="2400">
+                <rect x="0" y="-400" width="2808" height="2400" fill="#fff"/>
+                <path d="M565.5 905.2L776.8 902L980.6 999.8L1184.4 902L1398.7 906.7L981.3 1109.3Z" fill="#000"/>
+                <use href="#spFront" fill="#000"/>
+              </mask>
+            </defs>
+            <g fill="#fff">
+              <path d="M1133.17 672.585V240.193H1006.43V152.152H1345.46V240.193H1219.08V672.585H1133.17Z"/>
+              <path d="M1338.36 478.754C1338.36 441.834 1345.7 408.227 1360.37 377.934C1375.04 347.64 1394.21 324.92 1417.88 309.773C1441.55 294.627 1468.17 287.053 1497.75 287.053C1547.45 287.053 1586.51 306.578 1614.91 345.628C1643.31 384.442 1657.51 429.882 1657.51 481.949C1657.51 520.763 1650.05 555.79 1635.14 587.03C1620.47 618.27 1601.06 641.819 1576.92 657.675C1553.02 673.295 1526.75 681.106 1498.11 681.106C1452.2 681.106 1414.09 663.592 1383.8 628.565C1353.51 593.538 1338.36 543.601 1338.36 478.754ZM1422.14 484.079C1422.14 522.183 1429.59 551.056 1444.5 570.7C1459.41 590.107 1477.4 599.81 1498.46 599.81C1519.05 599.81 1536.69 589.988 1551.36 570.345C1566.03 550.701 1573.37 521.71 1573.37 483.369C1573.37 445.976 1565.91 417.457 1551 397.814C1536.09 378.17 1518.23 368.349 1497.4 368.349C1476.81 368.349 1459.06 378.17 1444.15 397.814C1429.48 417.457 1422.14 446.212 1422.14 484.079Z"/>
+              <path d="M1702.59 478.754C1702.59 441.834 1709.930 408.227 1724.6 377.934C1739.27 347.64 1758.44 324.92 1782.11 309.773C1805.78 294.627 1832.4 287.053 1861.99 287.053C1911.69 287.053 1950.74 306.578 1979.14 345.628C2007.54 384.442 2021.74 429.882 2021.74 481.949C2021.74 520.763 2014.28 555.79 1999.37 587.03C1984.7 618.27 1965.29 641.819 1941.15 657.675C1917.25 673.295 1890.98 681.106 1862.34 681.106C1816.43 681.106 1778.32 663.592 1748.03 628.565C1717.74 593.538 1702.59 543.601 1702.59 478.754ZM1786.37 484.079C1786.37 522.183 1793.83 551.056 1808.74 570.7C1823.65 590.107 1841.63 599.81 1862.7 599.81C1883.29 599.81 1900.92 589.988 1915.59 570.345C1930.27 550.701 1937.6 521.71 1937.6 483.369C1937.6 445.976 1930.15 417.457 1915.24 397.814C1900.33 378.17 1882.46 368.349 1861.63 368.349C1841.04 368.349 1823.29 378.17 1808.38 397.814C1793.71 417.457 1786.37 446.212 1786.37 484.079Z"/>
+              <path d="M2085.99 672.585V152.152H2168V672.585H2085.99Z"/>
+              <path d="M1488.28 1231.52V711.082H1574.19V942.188L1748.49 711.082H1864.58L1703.76 913.788L1873.1 1231.52H1761.63L1644.12 987.274L1574.19 1074.25V1231.52H1488.28Z"/>
+              <path d="M1917.12 803.383V711.082H1999.13V803.383H1917.12ZM1917.12 1231.52V854.503H1999.13V1231.52H1917.12Z"/>
+              <path d="M2224.55 854.503V934.023H2168.82V1085.96C2168.82 1118.86 2169.64 1137.91 2171.3 1143.12C2174.61 1152.59 2181.36 1157.32 2191.54 1157.32C2199.11 1157.32 2210 1154.12 2224.2 1147.73L2231.3 1225.13C2212.36 1235.07 2190.94 1240.04 2167.04 1240.04C2146.21 1240.04 2129.530 1235.07 2116.99 1225.13C2104.44 1215.19 2096.04 1200.87 2091.78 1182.17C2088.47 1168.44 2086.81 1140.52 2086.81 1098.39V934.023H2049.18V854.503H2086.81V779.597L2168.82 721.377V854.503H2224.55Z"/>
+            </g>
+            <g class="sp-box" id="spBox">
+              <g clip-path="url(#spClip)">
+                <path d="M981.348 719.16L1398.71 906.671L981.348 1109.3L565.498 905.158L981.348 719.16Z" fill="#fff"/>
+                <path d="M1184.37 901.965L980.596 999.768L776.826 901.965L980.596 804.539L1184.37 901.965Z" fill="#000"/>
+                <use href="#spFront" fill="#000" stroke="#fff" stroke-width="15"/>
+                <path d="M978.321 1106.28L978.321 1523.64" stroke="#fff" stroke-width="18"/>
+              </g>
+            </g>
+            <g id="spDrops" mask="url(#spIn)"></g>
+          </svg>
+          <div class="sp-meta"><span>Opening your toolkit</span><span><b id="spN">00</b>/06</span></div>
         </div>
         <div class="views booting">
         <section class="view cap" aria-label="Add something">
@@ -2640,21 +2667,47 @@ button { cursor: pointer; }
   window.addEventListener("load", setupDialKit);
 
   applyVariants(true);
-  // ---------- boot: hold the splash until fonts and the first layout are ready (at least ~1s), then reveal ----------
-  (function boot() {
-    const t0 = performance.now(), views = document.querySelector(".views"), splash = $("splash");
-    requestAnimationFrame(() => requestAnimationFrame(() => views.classList.remove("booting")));   // first paint never animates
-    if (!splash) return;
-    const names = ["Agentation", "Veo", "Spline", "Framer", "Are.na", "DialKit"]; let k = 0, p = 0, ready = false;
-    const tick = setInterval(() => {
-      p = ready ? Math.min(100, p + 9) : Math.min(88, p + Math.max(1, (88 - p) * .09));
-      $("spBar").style.setProperty("--p", p / 100); $("spN").textContent = String(Math.round(p)).padStart(2, "0");
-      if (++k % 4 === 0) $("spTape").textContent = names[(k / 4) % names.length];
-      if (p >= 100) { clearInterval(tick); splash.classList.add("done"); setTimeout(() => splash.remove(), 600); }
-    }, 45);
+  // first paint never animates (no half-swiped pages on open)
+  requestAnimationFrame(() => requestAnimationFrame(() => document.querySelector(".views").classList.remove("booting")));
+  // ---------- loading screen: tools drop into the box, one per beat, until the app is ready ----------
+  (function splash() {
+    const el = $("splash"); if (!el) return;
+    const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches, t0 = performance.now();
+    const NS = "http://www.w3.org/2000/svg", drops = $("spDrops"), box = $("spBox");
+    // little "tools": a block, a disc, a wedge, a bar — white with a black rim, like the app's cards
+    const SHAPES = [
+      (g) => `<rect x="-105" y="-105" width="210" height="210" rx="16" ${g}/>`,
+      (g) => `<circle r="112" ${g}/>`,
+      (g) => `<path d="M0 -125L122 95H-122Z" ${g}/>`,
+      (g) => `<rect x="-150" y="-58" width="300" height="116" rx="16" ${g}/>`,
+    ];
+    let n = 0, ready = false, done = false;
+    function drop() {
+      if (done) return;
+      const g = document.createElementNS(NS, "g"), x = 980 + (Math.random() - .5) * 120, spin = (Math.random() - .5) * 140;
+      g.innerHTML = SHAPES[n % SHAPES.length](`fill="#fff" stroke="#000" stroke-width="22"`);
+      drops.appendChild(g);
+      const fall = g.animate([
+        { transform: `translate(${x}px, 180px) rotate(0deg)`, opacity: 0 },
+        { transform: `translate(${x}px, 330px) rotate(${spin * .3}deg)`, opacity: 1, offset: .18 },
+        { transform: `translate(${980 + (x - 980) * .3}px, 1080px) rotate(${spin}deg)`, opacity: 1 },
+      ], { duration: reduce ? 1 : 620, easing: "cubic-bezier(.55,0,.9,.6)", fill: "forwards" });
+      fall.onfinish = () => {
+        g.remove(); n++;
+        $("spN").textContent = String(Math.min(n, 6)).padStart(2, "0");
+        box.classList.remove("thud"); void box.getBoundingClientRect(); box.classList.add("thud");
+        if (ready && n >= 3) return finish();
+        setTimeout(drop, 120);
+      };
+    }
+    function finish() {
+      done = true; $("spN").textContent = "06";
+      setTimeout(() => { el.classList.add("done"); setTimeout(() => el.remove(), 650); }, 260);
+    }
     const loaded = new Promise((r) => document.readyState === "complete" ? r() : addEventListener("load", r, { once: true }));
-    Promise.race([Promise.all([document.fonts ? document.fonts.ready : null, loaded]), new Promise((r) => setTimeout(r, 2500))])
-      .then(() => setTimeout(() => (ready = true), Math.max(0, 900 - (performance.now() - t0))));
+    Promise.race([Promise.all([document.fonts ? document.fonts.ready : null, loaded]), new Promise((r) => setTimeout(r, 3500))]).then(() => (ready = true));
+    setTimeout(() => { if (!done) finish(); }, 6000);   // never hold anyone hostage
+    drop();
   })();
   if (importFlowFromHash()) showView("flow");
   setMode("test");
