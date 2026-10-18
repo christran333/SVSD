@@ -855,12 +855,12 @@ button { cursor: pointer; }
 
 /* Workflow: the WORKFLOW / Save / New row stays pinned while the steps scroll under it */
 #device .flow-out { overscroll-behavior: contain; }
-/* Inside a workflow the top of the screen is one solid band: Toolkit link, WORKFLOW / Save / New, and the title.
-   The title block is pinned; steps scroll underneath and fade out just below it. */
-#device .flow.has-out .cap-top { position: relative; z-index: 5; background: var(--app-bg); margin: -8px calc(-1 * var(--gutter)) 0; padding: 8px var(--gutter) 0; }
+/* Inside a workflow nothing is pinned: the Toolkit link, WORKFLOW / Save / New and the title
+   all live in the scroll and move away together with the steps, one seamless page. */
+#device .flow.has-out .cap-top { display: none; }
 #device .flow-out { padding-top: 0; }
-#device .fo-top { position: sticky; top: 0; z-index: 4; margin: 0 calc(-1 * var(--gutter)); padding: var(--sp-3) var(--gutter) var(--sp-4); background: var(--app-bg); }
-#device .fo-top::after { content: ""; position: absolute; left: 0; right: 0; top: 100%; height: 28px; background: linear-gradient(var(--app-bg), rgba(10,10,11,0)); pointer-events: none; }
+#device .fo-top { margin: 0; padding: 0 0 var(--sp-2); }
+#device .fo-back { padding: 6px 0; margin-bottom: var(--sp-5); }
 #device .fo-goal { margin: var(--sp-3) 0 0; }
 #device .fo-sum { margin-top: var(--sp-5); }
 
@@ -2345,7 +2345,7 @@ button { cursor: pointer; }
     renderFlowOut();
   }
   function flowHeadHTML(goal, sum) {
-    return `<div class="fo-top"><div class="fo-head"><div class="cap-date">Workflow</div><span class="fo-acts">${state.flow ? `<button class="fo-new fo-copy${isSaved() ? " done" : ""}" id="foSave" aria-label="Save workflow"><svg viewBox="0 0 24 24" fill="${isSaved() ? "currentColor" : "none"}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5h12a1 1 0 0 1 1 1V21l-7-4.5L5 21V4.5a1 1 0 0 1 1-1z"/></svg><span>${isSaved() ? "Saved" : "Save"}</span></button>` : ""}<button class="fo-new" id="foNew">New</button></span></div>
+    return `<div class="fo-top"><button class="back-cap fo-back" data-fo-back><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>Toolkit</button><div class="fo-head"><div class="cap-date">Workflow</div><span class="fo-acts">${state.flow ? `<button class="fo-new fo-copy${isSaved() ? " done" : ""}" id="foSave" aria-label="Save workflow"><svg viewBox="0 0 24 24" fill="${isSaved() ? "currentColor" : "none"}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5h12a1 1 0 0 1 1 1V21l-7-4.5L5 21V4.5a1 1 0 0 1 1-1z"/></svg><span>${isSaved() ? "Saved" : "Save"}</span></button>` : ""}<button class="fo-new" id="foNew">New</button></span></div>
       <h2 class="fo-goal">${esc(goal)}</h2></div>${sum ? `<p class="fo-sum">${esc(sum)}</p>` : ""}`;
   }
   // Copy: the workflow as plain text, plus a link that rebuilds it on another device
@@ -2429,6 +2429,7 @@ button { cursor: pointer; }
   }
   $("flowSaved").onclick = openSavedFlows;
   function wireFlowHead() {
+    $("flowOut").querySelector("[data-fo-back]")?.addEventListener("click", () => showView("lib"));
     if ($("foSave")) $("foSave").onclick = toggleSaveFlow;
     $("foNew").onclick = () => {
       flowRun++; state.flow = null; save(); savedCount();
