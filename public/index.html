@@ -881,9 +881,6 @@ button { cursor: pointer; }
 .sp-box.thud { animation: spThud .32s cubic-bezier(.3,1.6,.5,1); }
 @keyframes spThud { 0% { transform: scale(1, 1); } 35% { transform: scale(1.04, .93); } 100% { transform: scale(1, 1); } }
 .sp-drop { transform-box: fill-box; transform-origin: 50% 50%; }
-.sp-meta { position: absolute; left: var(--gutter, 20px); right: var(--gutter, 20px); bottom: calc(44px + env(safe-area-inset-bottom, 0px)); display: flex; justify-content: space-between;
-  font: 500 11px/1 var(--font-label); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
-.sp-meta b { color: var(--ink); font-weight: 600; }
 @media (prefers-reduced-motion: reduce) { .splash { transition: opacity .2s; } .splash.done { transform: none; } .sp-box.thud { animation: none; } }
 /* First paint never animates: pages appear already in place */
 .views.booting .view, .views.booting .pg-ind, .views.booting .fab, .views.booting #qFind, .views.booting #flowGo, .views.booting .pager button { transition: none !important; }
@@ -936,7 +933,6 @@ button { cursor: pointer; }
             </g>
             <g id="spDrops" mask="url(#spIn)"></g>
           </svg>
-          <div class="sp-meta"><span>Opening your toolkit</span><span><b id="spN">00</b>/06</span></div>
         </div>
         <div class="views booting">
         <section class="view cap" aria-label="Add something">
@@ -2694,14 +2690,13 @@ button { cursor: pointer; }
       ], { duration: reduce ? 1 : 620, easing: "cubic-bezier(.55,0,.9,.6)", fill: "forwards" });
       fall.onfinish = () => {
         g.remove(); n++;
-        $("spN").textContent = String(Math.min(n, 6)).padStart(2, "0");
         box.classList.remove("thud"); void box.getBoundingClientRect(); box.classList.add("thud");
         if (ready && n >= 3) return finish();
         setTimeout(drop, 120);
       };
     }
     function finish() {
-      done = true; $("spN").textContent = "06";
+      done = true;
       setTimeout(() => { el.classList.add("done"); setTimeout(() => el.remove(), 650); }, 260);
     }
     const loaded = new Promise((r) => document.readyState === "complete" ? r() : addEventListener("load", r, { once: true }));
