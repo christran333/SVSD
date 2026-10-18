@@ -1806,7 +1806,7 @@ button { cursor: pointer; }
       : serverStatus.live
         ? `<span class="status-dot ok"></span>Each "Find it" runs Claude (${esc(serverStatus.model)}) with web search on your API key. A few cents per search.`
         : serverStatus.reachable
-          ? `<span class="status-dot"></span>No API key found. Add ANTHROPIC_API_KEY to .env and restart the server.`
+          ? `<span class="status-dot"></span>${/vercel\.app$/.test(location.hostname) ? "No API key on this deploy. In Vercel: Settings → Environment Variables → add ANTHROPIC_API_KEY, then redeploy." : "No API key found. Add ANTHROPIC_API_KEY to .env and restart the server."}`
           : `<span class="status-dot"></span>Can't reach the local server. Run <code>npm start</code> and open localhost.`;
   }
   $("modeTest").onclick = () => setMode("test");

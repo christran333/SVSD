@@ -33,7 +33,7 @@ const send = (res, code, body, type = "application/json") => {
   res.writeHead(code, { "content-type": type, "cache-control": "no-store" });
   res.end(type === "application/json" ? JSON.stringify(body) : body);
 };
-const readBody = (req) => new Promise((ok, bad) => {
+const readBody = (req) => ("body" in req && req.body !== undefined) ? Promise.resolve(typeof req.body === "string" ? JSON.parse(req.body || "{}") : (req.body || {})) : new Promise((ok, bad) => {
   let d = ""; req.on("data", (c) => { d += c; if (d.length > 8e6) req.destroy(); }); // 8MB: room for one downscaled photo
   req.on("end", () => { try { ok(d ? JSON.parse(d) : {}); } catch (e) { bad(e); } });
 });
@@ -268,40 +268,55 @@ Finish with only a JSON object, no other text, like:
 // ---------- server ----------
 const TYPES = { ".html": "text/html; charset=utf-8", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".png": "image/png", ".json": "application/json", ".woff2": "font/woff2", ".jpg": "image/jpeg" };
 
-http.createServer(async (req, res) => {
-  const url = new URL(req.url, `http://${req.headers.host}`);
+// ---------- API routes (shared by the local server and Vercel's api/index.js) ----------
+const NO_KEY = process.env.VERCEL ? "No API key on Vercel yet. Add ANTHROPIC_API_KEY in Project Settings → Environment Variables, then redeploy." : "No API key yet. Add ANTHROPIC_API_KEY to .env and restart the server.";
+async function handleApi(req, res, pathname) {
+  const url = new URL(req.url, `http://${req.headers.host || "localhost"}`);
+  if (pathname) url.pathname = pathname;
   try {
     if (url.pathname === "/api/status") return send(res, 200, { live: Boolean(API_KEY), model: MODEL, version: SERVER_VERSION });
 
     if (url.pathname === "/api/preview") return send(res, 200, await previewFor(url.searchParams.get("url")));
 
     if (url.pathname === "/api/search" && req.method === "POST") {
-      if (!API_KEY) return send(res, 400, { error: "No API key yet. Add ANTHROPIC_API_KEY to .env and restart the server." });
+      if (!API_KEY) return send(res, 400, { error: NO_KEY });
       const { q, from, stashes, image } = await readBody(req);
       if ((!q || !String(q).trim()) && !image) return send(res, 400, { error: "Type what you heard about, or add a photo." });
       return send(res, 200, { candidates: await search(q || "", from, stashes, image) });
     }
 
     if (url.pathname === "/api/made" && req.method === "POST") {
-      if (!API_KEY) return send(res, 400, { error: "No API key yet. Add ANTHROPIC_API_KEY to .env and restart the server." });
+      if (!API_KEY) return send(res, 400, { error: NO_KEY });
       const { item, stashes } = await readBody(req);
       return send(res, 200, await howMade(item || {}, stashes));
     }
 
     if (url.pathname === "/api/flow" && req.method === "POST") {
-      if (!API_KEY) return send(res, 400, { error: "No API key yet. Add ANTHROPIC_API_KEY to .env and restart the server." });
+      if (!API_KEY) return send(res, 400, { error: NO_KEY });
       const { goal, items } = await readBody(req);
       if (!goal || !String(goal).trim()) return send(res, 400, { error: "Say what you're trying to make." });
       return send(res, 200, await workflow(goal, items));
     }
 
+    return send(res, 404, { error: "Not found" });
+  } catch (e) {
+    console.error(e);
+    return send(res, e.status === 401 ? 401 : 500, { error: e.status === 401 ? "The API key was rejected. Check ANTHROPIC_API_KEY." : e.message || "Something went wrong." });
+  }
+}
+module.exports = { handleApi };
+
+if (require.main === module) http.createServer(async (req, res) => {
+  const url = new URL(req.url, `http://${req.headers.host}`);
+  if (url.pathname.startsWith("/api/")) return handleApi(req, res);
+  try {
     // static files
     let file = path.normalize(path.join(PUBLIC, url.pathname === "/" ? "index.html" : url.pathname));
     if (!file.startsWith(PUBLIC) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) file = path.join(PUBLIC, "index.html");
     return send(res, 200, fs.readFileSync(file), TYPES[path.extname(file)] || "application/octet-stream");
   } catch (e) {
     console.error(e);
-    return send(res, e.status === 401 ? 401 : 500, { error: e.status === 401 ? "The API key was rejected. Check ANTHROPIC_API_KEY in .env." : e.message || "Something went wrong." });
+    return send(res, 500, { error: e.message || "Something went wrong." });
   }
 }).on("error", (e) => {
   if (e.code === "EADDRINUSE") {
