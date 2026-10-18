@@ -841,6 +841,14 @@ button { cursor: pointer; }
 #device .flow-out { padding-bottom: calc(var(--dock-b) + var(--dock-h) + 40px); }
 #device .flow.has-out { padding-bottom: 0; }   /* the workflow scrolls under the dock instead */
 
+/* ===== Dock follows the finger: the page highlight slides with the swipe, the right-hand button stays put and crossfades ===== */
+#device .pager .pg-ind { position: absolute; left: 4px; top: 4px; width: 58px; height: 48px; border-radius: 999px; background: var(--ink); transform: translate3d(calc(var(--pp, 1) * 61px), 0, 0); transition: transform .42s cubic-bezier(.22,.9,.28,1); will-change: transform; pointer-events: none; }
+#device .pager button { position: relative; z-index: 1; background: transparent !important; color: color-mix(in srgb, var(--app-bg) calc(var(--c, 0) * 100%), #5C5C66); transition: color .42s cubic-bezier(.22,.9,.28,1); }
+#device .views.dragging .pager button { transition: none; }
+#device .fab { transition: transform .25s cubic-bezier(.2,.8,.2,1), translate .42s cubic-bezier(.22,.9,.28,1), scale .42s cubic-bezier(.22,.9,.28,1), filter .3s; }
+#device #qFind, #device #flowGo { transition: transform .15s, opacity .2s, translate .42s cubic-bezier(.22,.9,.28,1), scale .42s cubic-bezier(.22,.9,.28,1), filter .3s; }
+#device .views.dragging .pg-ind, #device .views.dragging .fab, #device .views.dragging #qFind, #device .views.dragging #flowGo { transition: none; }
+
 /* Workflow: the WORKFLOW / Save / New row stays pinned while the steps scroll under it */
 #device .flow-out { overscroll-behavior: contain; }
 #device .fo-head { position: sticky; top: -24px; z-index: 4; margin: -24px calc(-1 * var(--gutter, 20px)) 0; padding: 20px var(--gutter, 20px) 12px;
@@ -949,6 +957,7 @@ button { cursor: pointer; }
           </div>
         </section>
         <nav class="pager" aria-label="Pages">
+          <span class="pg-ind" aria-hidden="true"></span>
           <button data-go="cap" aria-label="Add"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
           <button data-go="lib" aria-label="Toolkit"><svg viewBox="0 0 256 256" fill="currentColor"><path d="M104,40H56A16,16,0,0,0,40,56v48a16,16,0,0,0,16,16h48a16,16,0,0,0,16-16V56A16,16,0,0,0,104,40Zm0,64H56V56h48v48Zm96-64H152a16,16,0,0,0-16,16v48a16,16,0,0,0,16,16h48a16,16,0,0,0,16-16V56A16,16,0,0,0,200,40Zm0,64H152V56h48v48Zm-96,32H56a16,16,0,0,0-16,16v48a16,16,0,0,0,16,16h48a16,16,0,0,0,16-16V152A16,16,0,0,0,104,136Zm0,64H56V152h48v48Zm96-64H152a16,16,0,0,0-16,16v48a16,16,0,0,0,16,16h48a16,16,0,0,0,16-16V152A16,16,0,0,0,200,136Zm0,64H152V152h48v48Z"/></svg></button>
           <button data-go="flow" aria-label="Workflow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3.5" width="7" height="5.5" rx="1"/><rect x="14" y="15" width="7" height="5.5" rx="1"/><path d="M10 6.25h3.5a2 2 0 0 1 2 2V15"/></svg></button>
@@ -2183,13 +2192,24 @@ button { cursor: pointer; }
   // Three pages side by side: Add | Toolkit | Workflow. pos runs 0 → 2; each page slides in over the one before it.
   const PAGES = ["cap", "lib", "flow"];
   // Pages sit side by side like iOS: each one is exactly one screen-width from the next. No overlap, no fade.
+  const DOCK_BTN = { cap: "qFind", lib: "openCapture", flow: "flowGo" };
   function layoutPages(pos) {
+    const W = document.querySelector(".views").clientWidth;             // read before any writes
+    const pager = document.querySelector(".pager"), near = Math.round(Math.max(0, Math.min(2, pos)));
+    pager.style.setProperty("--pp", Math.max(-.15, Math.min(2.15, pos)));
+    pager.querySelectorAll("[data-go]").forEach((b, n) => { b.classList.toggle("on", b.dataset.go === PAGES[near]); b.style.setProperty("--c", Math.max(0, 1 - Math.abs(n - pos))); });
     PAGES.forEach((c, n) => {
       const el = document.querySelector("." + c), d = n - pos;
       el.style.transform = `translate3d(${d * 100}%,0,0)`;
       el.style.opacity = "";
       el.classList.toggle("off", Math.abs(d) > .5);
       el.classList.toggle("far", Math.abs(d) >= 1.5);
+      // the page's round button is pinned to the dock: undo the page's slide, fade it as the page leaves
+      const btn = $(DOCK_BTN[c]); if (!btn) return;
+      const f = Math.max(0, 1 - Math.abs(d) * 1.3);
+      btn.style.translate = `${-d * W}px 0`;
+      btn.style.scale = String(.8 + .2 * f);
+      btn.style.filter = f >= 1 ? "" : `opacity(${f})`;
     });
   }
   function showView(v) {
