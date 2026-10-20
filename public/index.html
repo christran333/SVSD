@@ -52,7 +52,7 @@ button { cursor: pointer; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 .page {
-  display: grid; grid-template-columns: 1fr 280px; gap: 32px; align-items: center;
+  display: grid; grid-template-columns: 1fr; gap: 32px; align-items: center;
   max-width: 1100px; height: 100%; margin: 0 auto;
   padding-block: 20px;
   padding-left: max(16px, env(safe-area-inset-left, 0px));
@@ -1036,56 +1036,8 @@ button { cursor: pointer; }
     </div></div>
   </div>
 
-  <aside class="panel" aria-label="Variants">
-    <div>
-      <h3>Variants</h3>
-      <p class="lede">Flip these to compare layouts live. When a combo feels right, copy your picks and paste them to Claude.</p>
-    </div>
-    <div class="field">
-      <span>Preview device</span>
-      <div class="device-switch" role="group" aria-label="Preview device">
-        <button id="phoneView" data-device-view="phone" aria-pressed="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="7" y="2.5" width="10" height="19" rx="2"/><path d="M10.5 5h3"/></svg>
-          <span>Phone</span>
-        </button>
-        <button id="desktopView" data-device-view="desktop" aria-pressed="false">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M8 20h8M12 16v4M5 20h14"/></svg>
-          <span>Laptop</span>
-        </button>
-      </div>
-    </div>
-    <div id="variantGroups" style="display:flex;flex-direction:column;gap:16px"></div>
-    <button class="copy-btn" id="copyPicks">Copy picks</button>
-    <hr>
-    <div class="field">
-      <span>Search mode</span>
-      <div class="seg" role="group" aria-label="Search mode">
-        <button id="modeTest" aria-pressed="true">Test</button>
-        <button id="modeLive" aria-pressed="false">Live (API)</button>
-      </div>
-      <div class="small" id="modeNote"></div>
-    </div>
-    <div class="field">
-      <label for="termSel"><span class="section-label">Name for a group</span></label>
-      <select id="termSel">
-        <option value="Drawer">Drawer</option>
-        <option value="Bin">Bin</option>
-        <option value="Rack">Rack</option>
-        <option value="Shelf">Shelf</option>
-        <option value="Box">Box</option>
-      </select>
-      <div class="small">What a group of tools is called. Workshop words, not "board" or "channel".</div>
-    </div>
-    <div class="field">
-      <span>Data</span>
-      <div class="small">Saves live in this browser only for now. Example items are marked.</div>
-      <button class="linkbtn" id="resetBtn">Reset to example items</button>
-      <button class="linkbtn" id="clearBtn">Clear everything</button>
-    </div>
-  </aside>
 </div>
 
-<script src="/vendor/dialkit/dialkit.js"></script>
 <script>
 (() => {
   const $ = (id) => document.getElementById(id);
@@ -2117,8 +2069,7 @@ button { cursor: pointer; }
   // ---------- side panel ----------
   function setMode(m) {
     mode = m;
-    $("modeTest").setAttribute("aria-pressed", m === "test");
-    $("modeLive").setAttribute("aria-pressed", m === "live");
+    if (!$("modeNote")) return;
     $("modeNote").innerHTML = m === "test"
       ? `<span class="status-dot ok"></span>Canned results, no usage spent. Good for tuning UI and motion.`
       : serverStatus.live
@@ -2127,12 +2078,7 @@ button { cursor: pointer; }
           ? `<span class="status-dot"></span>${/vercel\.app$/.test(location.hostname) ? "No API key on this deploy. In Vercel: Settings → Environment Variables → add ANTHROPIC_API_KEY, then redeploy." : "No API key found. Add ANTHROPIC_API_KEY to .env and restart the server."}`
           : `<span class="status-dot"></span>Can't reach the local server. Run <code>npm start</code> and open localhost.`;
   }
-  $("modeTest").onclick = () => setMode("test");
-  $("modeLive").onclick = () => setMode("live");
-  $("termSel").onchange = (e) => { term = e.target.value; applyTerm(); };
   function applyTerm() { renderHome(); }
-  $("resetBtn").onclick = () => { state = { items: EXAMPLE_ORDER.map((id) => EXAMPLES.find((x) => x.id === id)), cols: DEFAULT_COLS.slice() }; save(); filter = "All"; renderHome(); toast("Reset to examples"); };
-  $("clearBtn").onclick = () => { state = { items: [], cols: DEFAULT_COLS.slice() }; save(); filter = "All"; renderHome(); toast("Cleared"); };
 
   // ---------- quick capture (capture-first home) ----------
   let capPhoto = "";
@@ -2236,6 +2182,7 @@ button { cursor: pointer; }
     { key: "alts", label: "Other matches", opts: [["collapsed", "Behind “Not it?”"], ["shown", "Always shown"]] },
   ];
   function renderVariants() {
+    if (!$("variantGroups")) return;
     $("variantGroups").innerHTML = VARIANTS.map((g) => `
       <div class="field">
         <span>${esc(g.label)}</span>
@@ -2585,15 +2532,6 @@ button { cursor: pointer; }
     const b = e.target.closest("[data-view]"); if (!b || V.cards === b.dataset.view) return;
     V.cards = b.dataset.view; openIds.clear(); applyVariants();
   });
-  $("variantGroups").addEventListener("click", (e) => {
-    const b = e.target.closest("[data-vk]"); if (!b) return;
-    V[b.dataset.vk] = b.dataset.vv; applyVariants(b.dataset.vk === "open");
-  });
-  $("copyPicks").onclick = () => {
-    const text = "SVSD variant picks: " + VARIANTS.map((g) => `${g.label}: ${g.opts.find(([v]) => v === V[g.key])[1]}`).join("; ") + `; Group name: ${term}`;
-    navigator.clipboard.writeText(text).then(() => toast("Picks copied"), () => toast(text));
-  };
-
   // Switch the stage between the phone and laptop frames.
   function setDeviceView(view) {
     const isDesktop = view === "desktop";
@@ -2601,8 +2539,6 @@ button { cursor: pointer; }
     document.querySelectorAll("[data-device-view]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.deviceView === view)));
     fitDevice();
   }
-  $("phoneView").onclick = () => setDeviceView("phone");
-  $("desktopView").onclick = () => setDeviceView("desktop");
   setDeviceView("phone");
 
   // Fit the selected true-size device to the window
@@ -2619,65 +2555,6 @@ button { cursor: pointer; }
   }
   addEventListener("resize", fitDevice); fitDevice();
 
-  // DialKit: tune the loading animation live. Values persist in this browser; "Copy values" hands them to Claude.
-  function setupDialKit() {
-    if (!window.DialKit || matchMedia("(max-width: 600px)").matches) return;
-    const { createDialKit, createDialRoot } = window.DialKit;
-    const dial = createDialKit("Loading animation", {
-      preview: { type: "action", label: "Preview loader" },
-      cards: [3, 1, 5, 1],
-      spread: [12, 0, 40, 1],
-      tilt: [3, 0, 14, 0.5],
-      depth: [0.05, 0, 0.15, 0.01],
-      radius: [4, 0, 28, 1],
-      motion: {
-        float: [6, 0, 24, 1],
-        floatSpeed: [2.4, 0.6, 6, 0.1],
-        stagger: [0.18, 0, 0.6, 0.02],
-        sheenSpeed: [1.4, 0.4, 4, 0.1],
-        sheen: [0.14, 0, 0.4, 0.01],
-      },
-      glow: { color: { type: "color", default: "#C8FF5A" }, size: [0, 0, 60, 1] },
-      status: { show: true, every: [1.8, 0.6, 4, 0.1] },
-      copy: { type: "action", label: "Copy values" },
-    }, {
-      persist: { key: "svsd-loader-v2" },
-      onAction: (a) => {
-        if (a === "preview") previewLoader();
-        if (a === "copy") {
-          const text = "SVSD loader values: " + JSON.stringify(dial.getValues());
-          navigator.clipboard.writeText(text).then(() => toast("Loader values copied"), () => toast(text));
-        }
-      },
-    });
-    dial.subscribe((v) => {
-      const d = $("device").style;
-      d.setProperty("--ld-spread", v.spread + "px"); d.setProperty("--ld-tilt", v.tilt + "deg");
-      d.setProperty("--ld-scale-step", v.depth); d.setProperty("--ld-radius", v.radius + "px");
-      d.setProperty("--ld-float", v.motion.float + "px"); d.setProperty("--ld-float-speed", v.motion.floatSpeed + "s");
-      d.setProperty("--ld-stagger", v.motion.stagger + "s"); d.setProperty("--ld-sheen-speed", v.motion.sheenSpeed + "s");
-      d.setProperty("--ld-sheen", v.motion.sheen); d.setProperty("--ld-glow", v.glow.color); d.setProperty("--ld-glow-size", v.glow.size + "px");
-      $("device").dataset.ldStatus = v.status.show ? "on" : "off";
-      const countChanged = Math.round(v.cards) !== ldCount;
-      ldCount = Math.round(v.cards); ldStatusEvery = v.status.every;
-      if (countChanged && document.querySelector(".finder")) previewLoader();   // re-deal with the new card count
-    });
-    createDialRoot({ position: "top-left", theme: "dark", defaultOpen: false });
-  }
-  // Show the loader in the sheet without running a search, so it can be tuned.
-  function previewLoader() {
-    if (!$("sheet").classList.contains("on")) {
-      draft = { inline: false, preview: true, cands: [] };
-      $("scrim").hidden = false; $("sheet").hidden = false;
-      requestAnimationFrame(() => { $("scrim").classList.add("on"); $("sheet").classList.add("on"); });
-    }
-    $("sheetBody").innerHTML = `<div style="display:flex;flex-direction:column;gap:12px">
-        <h2>Looking for “dial kit”</h2>${finderHTML("tool")}
-        <div class="row"><button class="btn ghost" id="stop">Close preview</button></div></div>`;
-    startFinderStatus();
-    $("stop").onclick = closeSheet;
-  }
-  window.addEventListener("load", setupDialKit);
 
   applyVariants(true);
   // first paint never animates (no half-swiped pages on open)
@@ -2729,7 +2606,6 @@ button { cursor: pointer; }
     if ((st.version || 0) < APP_SERVER_VERSION) {
       const w = document.createElement("div"); w.className = "stale";
       w.innerHTML = "<b>Restart the server.</b> It's running older code than this page, so search and photos may fail. In Terminal: Ctrl+C, then <code>npm start</code>. After that it restarts itself when the code changes.";
-      document.querySelector(".panel").prepend(w);
       toast("Restart the server: Ctrl+C, then npm start");
     }
     setMode(st.live ? "live" : "test");
@@ -2737,14 +2613,7 @@ button { cursor: pointer; }
   }).catch(() => setMode("test"));
 })();
 </script>
-<!-- Agentation: click the icon in the bottom-right, then click any element to leave feedback for Claude. Dev only. -->
 <script>
-  // Agentation is a desktop feedback tool; skip it when the app runs on a phone.
-  if (!matchMedia("(max-width: 600px)").matches) {
-    const s = document.createElement("script"); s.src = "/vendor/agentation.js"; s.defer = true; document.body.appendChild(s);
-    const l = document.createElement("link"); l.rel = "stylesheet"; l.href = "/vendor/dialkit/dialkit.css"; document.head.appendChild(l);
-  }
-
 /* ---------- first-screen background: drifting squares in 3D, softly connected, slowly rotating ---------- */
 function constellation(cv, opt) {
   if (!cv) return;
